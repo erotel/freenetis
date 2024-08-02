@@ -1733,34 +1733,39 @@ class Json_Controller extends Controller
 	/**
 	 * Sends request to ARES API
 	 * 
-	 * @author Michal Kliment
+	 *  The new API is REST from 2023
+	 *
+	 * @author Michal Kliment & Lukáš Dulík
 	 * @param type $type
 	 * @param type $params
 	 * @return type
 	 */
 	private function send_ares_request($type, $params)
 	{
+		$data = array(
+			'start' => 0, 'pocet' => 1,
+			'razeni' => array('ico')
+		);
+		$url = 'https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/vyhledat' ;
 		switch ($type)
 		{
+			// find by name and optionally town
 			case 'standard':
-			
-				$url = 'http://wwwinfo.mfcr.cz/cgi-bin/ares/darv_std.cgi?obchodni_firma=' .
-					urlencode(text::cs_utf2ascii($params['name']));
-				
+
+				$data["obchodniJmeno"] = $params['name'];
+
 				if (isset($params['town']))
-					$url .= '&nazev_obce=' . urlencode($params['town']);
-				
-				$url .= '&diakritika=false&max_pocet=1&czk=utf';
-				
+					$data["sidlo"] = array('textovaAdresa' => $params['town']);
+
 				break;
-			
+
+			// find by organization identifier
 			case 'basic':
-				
-				$url = 'http://wwwinfo.mfcr.cz/cgi-bin/ares/darv_bas.cgi?ico=' .
-					$params['organization_identifier'];
-				
+
+				$data["ico"] = array($params['organization_identifier']);
+
 				break;
-			
+
 			default:
 				return array
 				(
@@ -1768,25 +1773,32 @@ class Json_Controller extends Controller
 					'Unknown ARES request type'
 				);
 		}
-		
-		$file = @file_get_contents($url);
-			
-		if ($file)
+
+		$options = array(
+		  'http' => array(
+			'method'  => 'POST',
+			'content' => json_encode( $data ),
+			'header'=>  "Content-Type: application/json\r\n" .
+						"Accept: application/json\r\n"
+			)
+		);
+
+		$context  = stream_context_create( $options );
+		$result = file_get_contents( $url, false, $context );
+
+
+		if ($result)
 		{
-			$xml = @simplexml_load_string($file);
+			$response = json_decode( $result );
 
-			if ($xml)
+			if ($response)
 			{
-				$ns = $xml->getDocNamespaces();
-
-				$data = $xml->children($ns['are']);
 
 				// return data
 				return array
 				(
 					'state' => 1,
-					'ns'	=> $ns,
-					'data'	=> $data
+					'data'	=> $response
 				);
 			}
 			else
@@ -1809,6 +1821,88 @@ class Json_Controller extends Controller
 			);
 		}
 	}
+	/**
+	 * Reads all the info from the decoded JSON array - adresses etc.
+	 * Saves it into our data structure - result variable
+	 *
+	 * @author Lukas Dulik
+	 * @param result $result // decoded json response
+	 * @param es $es // ekonomical subject
+	 * @return result
+	 */
+	private function parse_ares_response($result, $es)
+	{
+		$result['name'] = $es->obchodniJmeno;
+		// found record is person
+		if ($es->pravniForma == "101")
+		{
+			// split name in firstname and surname
+			$names = explode(" ", $result['name']);
+
+			$result['firstname'] = array_shift($names);
+			$result['lastname'] = array_pop($names);
+		}
+		else if (property_exists($es, "dic"))
+		{
+			$result['vat_organization_identifier'] = strval($es->dic);
+		}
+
+		$result['organization_identifier'] = strval($es->ico);
+
+		$hq = $es->sidlo;
+		// address
+		$result['zip_code'] = strval($hq->psc);
+		$result['town'] = strval($hq->nazevObce);
+		$result['quarter'] = strval($hq->nazevCastiObce);
+
+		if (property_exists($hq, 'nazevUlice'))
+		{
+			$result['street'] = strval($hq->nazevUlice);
+		}
+		else
+		{
+			$result['street'] = "";
+		}
+
+		$result['street_number'] = strval($hq->cisloDomovni);
+		$result['other_street_number'] = strval("");
+		return $result;
+	}
+
+	/**
+	 * Modifies the ares result to mark an error
+	 *
+	 * @author Lukas Dulik
+	 * @param result $result // decoded json response
+	 * @return result
+	 */
+	private function modify_ares_response_not_found($result)
+	{
+		$result['state'] = 0;
+		$result['text'] = __('Item not found');
+		return $result;
+	}
+
+	/**
+	 * Checks if Ares found an entry
+	 *
+	 * @author Lukas Dulik
+	 * @param result $result // decoded json response
+	 * @return result
+	 */
+	private function check_ares_response($result)
+	{
+		// no error in request
+		if ($result['state'])
+		{
+			if (count($result['data']->ekonomickeSubjekty) == 0)
+		   	{
+				$result = $this->modify_ares_response_not_found($result);
+			}
+
+		}
+		return $result;
+	}
 	
 	/**
 	 * Loads data about member from ARES
@@ -1817,169 +1911,90 @@ class Json_Controller extends Controller
 	 */
 	public function load_member_data_from_ares()
 	{
+		
 		$result = array
 		(
 			'state' => 0,
 			'text'	=> __('Invalid input data')
 		);
-		
+
 		$organization_identifier = $this->input->get('organization_identifier');
-		
-		// organization identifier is set
+
+		// option 1) organization identifier is set
+
+		$req = array();
 		if ($organization_identifier != '')
-		{	
+		{
+			$req['organization_identifier'] = $organization_identifier;
+
 			// find data by organization identifier
-			$result = $this->send_ares_request('basic', array
-			(
-				'organization_identifier' => $organization_identifier
-			));
+			$result = $this->send_ares_request('basic', $req);
+			// check if the request was successful
+			$result = $this->check_ares_response($result);
 
 			// no error in request
 			if ($result['state'])
 			{
-				$el = $result['data']->children($result['ns']['D'])->VBAS;
+				// the subject
+				$es = $result['data']->ekonomickeSubjekty[0];
 
 				// record was found
-				if (strval($el->ICO) == $organization_identifier)
+				if ($es->ico == $organization_identifier)
 				{
-					$result['name'] = strval($el->OF);
-
-					// found record is person
-					if ($el->PF->KPF == 101)
-					{
-						// split name in firstname and surname
-						$names = explode(" ", $result['name']);
-
-						$result['firstname'] = array_shift($names);
-						$result['lastname'] = array_pop($names);
-					}
-
-					$result['organization_identifier'] = strval($el->ICO);
-					$result['vat_organization_identifier'] = strval($el->DIC);
-					
-					// address
-					$result['zip_code'] = strval($el->AA->PSC);
-					$result['town'] = strval($el->AA->N);
-					$result['quarter'] = strval($el->AA->NCO);
-					$result['street'] = strval($el->AA->NU);
-					$result['street_number'] = strval($el->AA->CD);
-					$result['other_street_number'] = strval($el->AA->CA);
+					$result = $this->parse_ares_response($result, $es);
 				}
 				else
 				{
 					// record not found
-					$result['state'] = 0;
-					$result['text'] = __('Item not found');
+					$result = $this->modify_ares_response_not_found($result);
 				}
 			}
 		}
+
+		// option 2) search by name and town
+
 		else
 		{
 			$name = $this->input->get('name');
 			$town = new Town_Model((int) $this->input->get('town_id'));
-		
 			// name is set
 			if ($name != '')
 			{
 				// town is set
 				if ($town && $town->id)
 				{
-					// try find by name and town
-					$result = $this->send_ares_request('standard', array
-					(
-						'name' => $name,
-						'town' => $town->town
-					));
+
+					$req['name'] = $name;
+					$req['town'] = $town->town;
+
+					// find data by name and town
+					$result = $this->send_ares_request('standard', $req);
+					$result = $this->check_ares_response($result);
 
 					// no error in request
 					if ($result['state'])
 					{
-						// record was found
-						if (strval($result['data']->Odpoved->Pocet_zaznamu))
-						{
-							$el = $result['data']->Odpoved->Zaznam;
-
-							$result['name'] = strval($el->Obchodni_firma);
-
-							// found record is person
-							if ($el->Pravni_forma->children($result['ns']['dtt'])->Kod_PF == 101)
-							{
-								// split name in firstname and surname
-								$names = explode(" ", $result['name']);
-
-								$result['firstname'] = array_shift($names);
-								$result['lastname'] = array_pop($names);
-							}
-
-							$result['organization_identifier'] = strval($el->ICO);
-							$result['vat_organization_identifier'] = strval($el->DIC);
-
-							// address
-							$result['zip_code'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->PSC);
-							$result['town'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Nazev_obce);
-							$result['quarter'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Nazev_casti_obce);
-							$result['street'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Nazev_ulice);
-							$result['street_number'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Cislo_domovni);
-							$result['other_street_number'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Cislo_do_adresy);
-						}
-						else
-						{
-							// record not found
-							$result['state'] = 0;
-							$result['text'] = __('Item not found');
-						}
+						$es = $result['data']->ekonomickeSubjekty[0];
+						$result = $this->parse_ares_response($result, $es);
 					}
 				}
-				
-				// record not found by name and town, try only by name
+
+				// option 3) record not found by name and town, try only by name
 				if (!$result['state'])
 				{
-					$result = $this->send_ares_request('standard', array
-					(
-						'name' => $name
-					));
+					$req = array('name' => $name);
+					$result = $this->send_ares_request('standard', $req);
+					$result = $this->check_ares_response($result);
 
+					// no error in request
 					if ($result['state'])
 					{
-						// record was found
-						if (strval($result['data']->Odpoved->Pocet_zaznamu) > 0)
-						{
-							$el = $result['data']->Odpoved->Zaznam;
-
-							$result['name'] = strval($el->Obchodni_firma);
-
-							// found record is person
-							if ($el->Pravni_forma->children($result['ns']['dtt'])->Kod_PF == 101)
-							{
-								// split name in firstname and surname
-								$names = explode(" ", $result['name']);
-
-								$result['firstname'] = array_shift($names);
-								$result['lastname'] = array_pop($names);
-							}
-
-							$result['organization_identifier'] = strval($el->ICO);
-							$result['vat_organization_identifier'] = strval($el->DIC);
-
-							// address
-							$result['zip_code'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->PSC);
-							$result['town'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Nazev_obce);				
-							$result['quarter'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Nazev_casti_obce);
-							$result['street'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Nazev_ulice);
-							$result['street_number'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Cislo_domovni);
-							$result['other_street_number'] = strval($el->Identifikace->Adresa_ARES->children($result['ns']['dtt'])->Cislo_do_adresy);
-						}
-						else
-						{
-							// record not found
-							$result['state'] = 0;
-							$result['text'] = __('Item not found');
-						}
+						$es = $result['data']->ekonomickeSubjekty[0];
+						$result = $this->parse_ares_response($result, $es);
 					}
 				}
 			}
 		}
-		
 		// record was found
 		if ($result['state'])
 		{

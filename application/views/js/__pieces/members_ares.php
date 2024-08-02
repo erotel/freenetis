@@ -54,6 +54,20 @@ if (FALSE): ?><script type="text/javascript"><?php endif
 				$("#organization_identifier").val(data.organization_identifier);
 				$("#vat_organization_identifier").val(data.vat_organization_identifier);
 
+				var exists = false;
+				$('#town_id option').each(function(){
+					if (this.value == data.town_id) {
+						exists = true;
+						return false;
+					}
+				});
+				if (!exists) {
+					$('#town_id').append($('<option>', {
+					    value: data.town_id,
+						text: data.town+', '+data.zip_code
+					}));
+				}
+
 				$("#town_id").val(data.town_id);
 				$("#town_id").trigger('change');
 				$("#street_id").val(data.street_id);
