@@ -67,19 +67,42 @@ class Auto_credit_invoices_Model extends Model
         // --- vyber členy s kreditem > MIN_BALANCE a type = 2 (aktivní) ---
         $members_result = $db->query("
     SELECT
-        a.id                AS account_id,
-        a.member_id         AS member_id,
-        a.balance           AS balance,
-        m.name              AS member_name,
-        vs.variable_symbol  AS variable_symbol
-    FROM accounts a
-    JOIN members m
-        ON m.id = a.member_id
-    LEFT JOIN variable_symbols vs
-        ON vs.account_id = a.id
-    WHERE a.account_attribute_id = " . self::CREDIT_ATTR_ID . "
-      AND a.balance >= " . self::MIN_BALANCE . "
-      AND m.type = 2
+    a.id                       AS account_id,
+    a.member_id                AS member_id,
+    a.balance                  AS balance,
+    m.name                     AS member_name,
+    vs.variable_symbol         AS variable_symbol,
+
+    
+    s.street                   AS street_name,
+    ap.street_number           AS street_number,
+    t.town                     AS town_name,
+    t.zip_code                 AS zip_code,
+
+    
+    m.organization_identifier      AS ico,
+    m.vat_organization_identifier  AS dic
+
+FROM accounts a
+JOIN members m
+    ON m.id = a.member_id
+
+LEFT JOIN variable_symbols vs
+    ON vs.account_id = a.id
+
+LEFT JOIN address_points ap
+    ON ap.id = m.address_point_id
+
+LEFT JOIN streets s
+    ON s.id = ap.street_id
+
+LEFT JOIN towns t
+    ON t.id = ap.town_id
+
+WHERE a.account_attribute_id = " . self::CREDIT_ATTR_ID . "
+  AND a.balance >= " . self::MIN_BALANCE . "
+  AND m.type = 2;
+
 ");
 
         if (count($members_result) === 0) {
@@ -124,6 +147,14 @@ class Auto_credit_invoices_Model extends Model
             $member_id   = (int)$row->member_id;
             $member_name = (string)$row->member_name;
             $balance     = (float)$row->balance;
+            $street      = (string)$row->street_name;
+            $street_number = (string)$row->street_number;
+            $town          = (string)$row->town_name;
+            $zip           = (string)$row->zip_code;
+            $ico           = (string)$row->ico;
+            $dic           = (string)$row->dic;
+
+
             // výchozí VS = member_id (fallback)
             $var_sym = $member_id;
 
@@ -207,13 +238,13 @@ class Auto_credit_invoices_Model extends Model
                 $member_id,        // member_id
                 NULL,              // partner_company
                 $member_name,      // partner_name
-                NULL,              // partner_street
-                NULL,              // partner_street_number
-                NULL,              // partner_town
-                NULL,              // partner_zip_code
+                $street,              // partner_street
+                $street_number,              // partner_street_number
+                $town,              // partner_town
+                $zip,              // partner_zip_code
                 NULL,              // partner_country
-                NULL,              // organization_identifier
-                NULL,              // vat_organization_identifier
+                $ico,              // organization_identifier
+                $dic,              // vat_organization_identifier
                 NULL,              // phone_number
                 NULL,              // email
                 $next_nr,          // invoice_nr
