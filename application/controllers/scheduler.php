@@ -103,6 +103,19 @@ class Scheduler_Controller extends Controller
 			echo 'access denied';
 			die();
 		}
+		  // === TEST auto_credit_invoices přes GET parametr ===
+    if (isset($_GET['test_auto_credit'])) {
+        $mode  = $_GET['test_auto_credit'];         // 'dry' nebo 'real'
+        $force = TRUE;                              // ignoruje datum/čas + Settings
+        $dry   = ($mode !== 'real');                // vše kromě 'real' jede jako DRY-RUN
+
+        Auto_credit_invoices_Model::run(time(), $force, $dry);
+
+        echo "auto_credit_invoices spuštěno, režim: {$mode}\n";
+        // ukončíme, ať scheduler dál nic jiného nedělá
+        return;
+    }
+    // === /TEST blok ===
 		
 		// CRON failure detection (#754)
 		$last_active = intval(Settings::get('cron_last_active'));
@@ -269,11 +282,23 @@ class Scheduler_Controller extends Controller
 		// fee deduction (monthly)
 		if (Settings::get('finance_enabled'))
 		{
-			$this->fee_deduction();
+		    $this->fee_deduction();
+
+		    // automatické faktury z kreditu
+	        try
+	        {
+	            Auto_credit_invoices_Model::run($this->t);
+	        }
+	        catch (Exception $e)
+	        {
+	            self::log_error('auto_credit_invoices', $e, FALSE);
+	            Log_queue_Model::error('Error during auto_credit_invoices', $e);
+	        }
+
+	        //synchronize with vtiger CRM
+	        $this->vtiger_sync();
 		}
-		
-		//synchronize with vtiger CRM
-		$this->vtiger_sync();
+
 		
 		// set state of module (last activation time)
 		Settings::set('cron_state', date('Y-m-d H:i:s'));

@@ -6,7 +6,7 @@ $config['db_host'] = 'localhost';
 
 $config['db_user'] = 'freenetis';
 
-$config['db_password'] = 'password';
+$config['db_password'] = 'freenetis';
 
 $config['protocol'] = 'http';
 
