@@ -86,6 +86,25 @@ class Invoice_Pdf
                     padding: 0;
                 }
 
+                .page {
+                    width: 210mm;
+                    height: 297mm;
+                    margin: 0 auto;
+                    /* vystředění při náhledu */
+                    padding: 15mm;
+                    /* vnitřní okraje faktury */
+                    border: 1px solid #000;
+                    box-sizing: border-box;
+                }
+
+
+                .invoice {
+                    width: 100%;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 15px 20px 20px;
+                }
+
                 table.page-frame {
                     width: 100%;
                     /* 100 % šířky tiskové plochy (A4) */
@@ -134,11 +153,22 @@ class Invoice_Pdf
                     margin-top: 3px;
                 }
 
+
                 .box {
-                    border: 1px solid #000;
+
                     padding: 5px 7px;
                     margin-top: 6px;
                     font-size: 10px;
+                }
+
+                .box-inner {
+                    padding: 3px 5px;
+                }
+
+                .box p {
+                    margin: 0;
+                    padding: 0;
+                    text-decoration: none;
                 }
 
                 .box h4 {
@@ -315,171 +345,174 @@ class Invoice_Pdf
 
         <body>
 
-            <div class="page-frame">
+            <div class="page">
+                <div class="invoice">
 
-                <!-- Horní část: dodavatel / název faktury -->
-                <table class="top-row">
-                    <tr>
-                        <td style="width:55%;">
-                            <div class="supplier-name">PVfree.net z.s.</div>
-                            <div>Daliborka 3<br>796 01 Prostějov</div>
-                            <br>
-                            <div>IČ: 26656787</div>
-                            <div>DIČ: CZ26656787</div>
-                            <div>Telefon: 588 207 234</div>
-                            <div>E-mail: rada@pvfree.net</div>
-                            <div>www.pvfree.net</div>
-                        </td>
-                        <td style="width:45%; text-align:right;">
-                            <div class="invoice-title">FAKTURA - DAŇOVÝ DOKLAD</div>
-                            <div class="invoice-number">č. <?= htmlspecialchars($inv->invoice_nr) ?></div>
-
-                            <div style="margin-top:10px;">
-                                <table class="inline-table">
-                                    <tr>
-                                        <td class="label">Variabilní symbol:</td>
-                                        <td style="text-align:right;"><?= htmlspecialchars($vs) ?></td>
-                                    </tr>
-                                </table>
-                            </div>
-
-                            <div>
-                                <h4>Odběratel:</h4>
-                                <?= htmlspecialchars($inv->partner_name) ?><br>
-                                <div><?php if ($inv->partner_street): ?>
-                                        <?= htmlspecialchars($inv->partner_street) ?>
-                                    <?php endif; ?>
-                                    <?php if ($inv->partner_street_number): ?>
-                                        <?= htmlspecialchars($inv->partner_street_number) ?><br>
-                                    <?php endif; ?>
-                                    <?php if ($inv->partner_zip_code || $inv->partner_town): ?>
-                                        <?= htmlspecialchars(trim($inv->partner_zip_code . ' ' . $inv->partner_town)) ?><br>
-                                    <?php endif; ?>
-                                    <?php if ($inv->organization_identifier): ?>
-                                        IČO: <?= htmlspecialchars($inv->organization_identifier) ?><br>
-                                    <?php endif; ?>
-                                    <?php if ($inv->vat_organization_identifier): ?>
-                                        DIČ: <?= htmlspecialchars($inv->vat_organization_identifier) ?><br>
-                                    <?php endif; ?></div>
+                    <!-- Horní část: dodavatel / název faktury -->
+                    <table class="top-row">
+                        <tr>
+                            <td style="width:55%;">
+                                <div class="supplier-name">PVfree.net z.s.</div>
+                                <div>Daliborka 3<br>796 01 Prostějov</div>
                                 <br>
-                            </div>
+                                <div>IČ: 26656787</div>
+                                <div>DIČ: CZ26656787</div>
+                                <div>Telefon: 588 207 234</div>
+                                <div>E-mail: rada@pvfree.net</div>
+                                <div>www.pvfree.net</div>
+                            </td>
+                            <td style="width:45%; text-align:right;">
+                                <div class="invoice-title">FAKTURA - DAŇOVÝ DOKLAD </div>
+                                <div class="invoice-title">č. <?= htmlspecialchars($inv->invoice_nr) ?></div>
 
-                        </td>
-                    </tr>
-                </table>
+                                <div class="box" style="margin-top:10px;text-align:right;">
+                                    <table class="inline-table">
+                                        <tr>
+                                            <td>Variabilní symbol:</td>
+                                            <td style="text-align:left;"><?= htmlspecialchars($vs) ?></td>
+                                        </tr>
+                                    </table>
+                                </div>
 
-                <!-- Účet -->
-                <div class="account-box">
-                    Číslo účtu: <?= htmlspecialchars($acc) ?>
-                </div>
+                                <div class="box">
+                                    <div class="box-inner">
+                                        <h4>Odběratel:</h4>
+                                        <p><?= htmlspecialchars($inv->partner_name) ?></p>
+                                        <div><?php if ($inv->partner_street): ?>
+                                                <p> <?= htmlspecialchars($inv->partner_street) ?>
+                                                <?php endif; ?>
+                                                <?php if ($inv->partner_street_number): ?>
+                                                    <?= htmlspecialchars($inv->partner_street_number) ?></p>
+                                            <?php endif; ?>
+                                            <?php if ($inv->partner_zip_code || $inv->partner_town): ?>
+                                                <p> <?= htmlspecialchars(trim($inv->partner_zip_code . ' ' . $inv->partner_town)) ?></p>
+                                            <?php endif; ?>
+                                            <?php if ($inv->organization_identifier): ?>
+                                                <p> IČO: <?= htmlspecialchars($inv->organization_identifier) ?></p>
+                                            <?php endif; ?>
+                                            <?php if ($inv->vat_organization_identifier): ?>
+                                                <p> DIČ: <?= htmlspecialchars($inv->vat_organization_identifier) ?></p>
+                                            <?php endif; ?>
+                                        </div>
 
-                <!-- Datum a forma úhrady -->
-                <table class="dates-row">
-                    <tr>
-                        <td class="col">
-                            <span class="label">Datum vystavení:</span><br>
-                            <?= htmlspecialchars($date_inv) ?>
-                        </td>
-                        <td class="col">
-                            <span class="label">Datum splatnosti:</span><br>
-                            <?= htmlspecialchars($date_due) ?>
-                        </td>
-                        <td class="col">
-                            <span class="label">Datum uskutečnění plnění:</span><br>
-                            <?= htmlspecialchars($date_vat) ?>
-                        </td>
-                        <td class="col">
-                            <span class="label">Forma úhrady:</span><br>
-                            Příkazem
-                        </td>
-                    </tr>
-                </table>
-                <!-- Položky -->
-                <table class="items-table">
-                    <thead>
-                        <tr>
-                            <th>Označení dodávky</th>
-                            <th style="width:90px;">Cena</th>
-                            <th style="width:90px;">% DPH</th>
-                            <th style="width:70px;">DPH</th>
-                            <th style="width:80px;">Kč Celkem</th>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
+                    </table>
+
+                    <!-- Účet -->
+                    <div class="account-box">
+                        Číslo účtu: <?= htmlspecialchars($acc) ?>
+                    </div>
+
+                    <!-- Datum a forma úhrady -->
+                    <table class="dates-row">
                         <tr>
-                            <td>Platba za Připojení k síti Internet za období 01/2026</td>
-                            <td class="num">264,46</td>
-                            <td class="num">21%</td>
-                            <td class="num">55,54</td>
-                            <td class="num">320,00</td>
+                            <td class="col">
+                                <span class="label">Datum vystavení:</span><br>
+                                <?= htmlspecialchars($date_inv) ?>
+                            </td>
+                            <td class="col">
+                                <span class="label">Datum splatnosti:</span><br>
+                                <?= htmlspecialchars($date_due) ?>
+                            </td>
+                            <td class="col">
+                                <span class="label">Datum uskutečnění plnění:</span><br>
+                                <?= htmlspecialchars($date_vat) ?>
+                            </td>
+                            <td class="col">
+                                <span class="label">Forma úhrady:</span><br>
+                                Příkazem
+                            </td>
                         </tr>
+                    </table>
+                    <!-- Položky -->
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Označení dodávky</th>
+                                <th style="width:90px;">Cena</th>
+                                <th style="width:90px;">% DPH</th>
+                                <th style="width:70px;">DPH</th>
+                                <th style="width:80px;">Kč Celkem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Platba za Připojení k síti Internet za období 01/2026</td>
+                                <td class="num">264,46</td>
+                                <td class="num">21%</td>
+                                <td class="num">55,54</td>
+                                <td class="num">320,00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" class="num">Zaokrouhlení</td>
+                                <td class="num">0,00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" class="num">Zaplaceno na zalohách</td>
+                                <td class="num">-320,00</td>
+                            </tr>
+
+                            </tbodyt>
+                    </table>
+
+                    <!-- Celkem k úhradě -->
+                    <div class="total-box">
+                        CELKEM K ÚHRADĚ: &nbsp; 0,00 Kč
+                    </div>
+                    <div class="total-box">
+                        NEPLAŤTE ZAPLACENO ZÁLOHOU !
+                    </div>
+
+
+                    <!-- Vystavil -->
+                    <div style="margin-top:8px; font-size:10px;">
+                    </div>
+
+                    <!-- Text pod tabulkou -->
+                    <div class="middle-note">
+                        Spolek PVfree.net, z.s., založen 12.3.2004, zapsán pod značkou L 10341/KSBR Krajským soudem v Brně.<br>
+
+                    </div>
+
+                    <!-- Spodní část: QR + rekapitulace DPH + razítko -->
+                    <table class="bottom-row">
                         <tr>
-                            <td colspan="4" class="num">Zaokrouhlení</td>
-                            <td class="num">0,00</td>
+                            <td class="qr-box">
+                            </td>
+
+                            <td class="vat-box">
+                                <div><strong>Rekapitulace DPH v Kč:</strong></div>
+                                <table class="vat-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Základ v Kč</th>
+                                            <th>Sazba</th>
+                                            <th>DPH v Kč</th>
+                                            <th>Celkem s DPH v Kč</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="num">264,46</td>
+                                            <td class="num">21%</td>
+                                            <td class="num">55,54</td>
+                                            <td class="num">320,00</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+
                         </tr>
-                        <tr>
-                            <td colspan="4" class="num">Zaplaceno na zalohách</td>
-                            <td class="num">-320,00</td>
-                        </tr>
+                    </table>
 
-                        </tbodyt>
-                </table>
-
-                <!-- Celkem k úhradě -->
-                <div class="total-box">
-                    CELKEM K ÚHRADĚ: &nbsp; 0,00 Kč
-                </div>
-                <div class="total-box">
-                    NEPLAŤTE ZAPLACENO ZÁLOHOU !
-                </div>
-
-
-                <!-- Vystavil -->
-                <div style="margin-top:8px; font-size:10px;">
-                </div>
-
-                <!-- Text pod tabulkou -->
-                <div class="middle-note">
-                    Spolek PVfree.net, z.s., založen 12.3.2004, zapsán pod značkou L 10341/KSBR Krajským soudem v Brně.<br>
+                    <div class="footer">
+                    </div>
 
                 </div>
-
-                <!-- Spodní část: QR + rekapitulace DPH + razítko -->
-                <table class="bottom-row">
-                    <tr>
-                        <td class="qr-box">
-                        </td>
-
-                        <td class="vat-box">
-                            <div><strong>Rekapitulace DPH v Kč:</strong></div>
-                            <table class="vat-table">
-                                <thead>
-                                    <tr>
-                                        <th>Základ v Kč</th>
-                                        <th>Sazba</th>
-                                        <th>DPH v Kč</th>
-                                        <th>Celkem s DPH v Kč</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="num">264,46</td>
-                                        <td class="num">21%</td>
-                                        <td class="num">55,54</td>
-                                        <td class="num">320,00</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </td>
-
-                    </tr>
-                </table>
-
-                <div class="footer">
-                </div>
-
             </div>
-
         </body>
 
         </html>
