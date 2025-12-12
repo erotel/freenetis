@@ -41,9 +41,9 @@ class Auto_credit_invoices_Model extends Model
         // fakturujeme minulé období = předchozí měsíc
         #    $ts_prev = strtotime('-1 month', $timestamp);
         $ts_prev = $timestamp;
-        $year    = date('Y', $ts_prev);
-        $month   = date('m', $ts_prev);
-        $period  = $year . '-' . $month; // např. 2025-11
+        $month = (int)date('n', $ts_prev); // 1-12
+        $year  = (int)date('Y', $ts_prev);
+        $period = sprintf('%04d-%02d', $year, $month);
 
         // hlavní bankovní účet (type = 0)
         $bank_row = $db->query("
@@ -300,10 +300,68 @@ WHERE a.account_attribute_id = " . self::CREDIT_ATTR_ID . "
             // vytvoříme PDF faktury
             try {
                 Invoice_Pdf::generate($invoice_id);
+                // načti PDF cestu (předpokládám, že Invoice_Pdf::generate ji ukládá do invoices.pdf_path)
             } catch (Exception $e) {
                 // neblokujme kvůli PDF generování celý proces faktur
                 Log_queue_Model::error('auto_credit_invoices PDF error', $e);
             }
+
+            // === EMAIL S PDF FAKTUROU (na všechny emaily člena) ===
+            try {
+                // cesta k PDF (většinou se ukládá do invoices.pdf_path)
+                $pdf_row = $db->query("
+        SELECT pdf_filename, invoice_nr
+        FROM invoices
+        WHERE id = ?
+        LIMIT 1
+    ", array($invoice_id))->current();
+
+                $pdf_path = ($pdf_row && !empty($pdf_row->pdf_filename)) ? (string)$pdf_row->pdf_filename : '';
+
+                // některé instalace ukládají relativní cestu -> zkus převést na absolutní
+                if ($pdf_path !== '' && $pdf_path[0] !== '/') {
+                    $pdf_path = realpath(APPPATH . '../' . ltrim($pdf_path, '/'));
+                } else {
+                    $pdf_path = realpath($pdf_path);
+                }
+
+                if ($pdf_path && is_file($pdf_path) && is_readable($pdf_path)) {
+                    $emails = self::get_member_emails($member_id);
+
+                    if (count($emails)) {
+                        $eq = new Email_queue_Model();
+
+                        $invnr = ($pdf_row && !empty($pdf_row->invoice_nr)) ? (string)$pdf_row->invoice_nr : (string)$next_nr;
+
+                        $subject = sprintf('Faktura %s', $invnr);
+                        $body = sprintf(
+                            "Dobrý den,<br>\n<br>\nV příloze zasíláme fakturu za období %s.<br>\n<br>\nPVFREE<br>\n",
+                            $period
+                        );
+
+                        foreach ($emails as $to) {
+                            $eq->push(
+                                'noreply@pvfree.net',
+                                $to,
+                                $subject,
+                                $body,
+                                array(
+                                    array(
+                                        'path' => $pdf_path,
+                                        'name' => sprintf('faktura_%s.pdf', $invnr),
+                                        'mime' => 'application/pdf',
+                                    )
+                                )
+                            );
+                        }
+                    }
+                } else {
+                    Log_queue_Model::error('auto_credit_invoices: pdf_path not found/readable for invoice_id=' . $invoice_id);
+                }
+            } catch (Exception $e) {
+                Log_queue_Model::error('auto_credit_invoices: email enqueue PDF failed', $e);
+            }
+
 
 
             $created_count++;
@@ -324,6 +382,119 @@ WHERE a.account_attribute_id = " . self::CREDIT_ATTR_ID . "
             );
         }
 
+        if (!$dryRun) {
+            $self = new self();
+            $self->export_pohoda_monthly((int)$year, (int)$month);
+        }
+
+
         Log_queue_Model::info($msg);
+    }
+
+    /**
+     * Export POHODA XML pro zadaný měsíc a zařazení do email fronty s přílohou.
+     *
+     * Spouštět 1. den v měsíci pro stejný měsíc (faktury jsou na daný měsíc).
+     *
+     * @param int $year
+     * @param int $month 1-12
+     */
+    private function export_pohoda_monthly($year, $month)
+    {
+        $year  = (int)$year;
+        $month = (int)$month;
+
+
+        if ($year < 2000 || $year > 2100 || $month < 1 || $month > 12) {
+            throw new Exception('export_pohoda_monthly: invalid year/month');
+        }
+
+        // === cílový soubor ===
+        $dir = APPPATH . '../data/export';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $filename = sprintf('pohoda_%04d_%02d.xml', $year, $month);
+        $file = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $filename;
+
+        // Pokud už existuje a je neprázdný, neexportovat znovu (anti-duplicitní pojistka)
+        if (is_file($file) && filesize($file) > 100) {
+            return;
+        }
+
+        // === vygeneruj XML ===
+        $m = new Pohoda_export_Model();
+        $note = sprintf('AUTO PVFREE CREDIT %04d-%02d', $year, $month);
+        $invoices = $m->get_invoices_by_note($note);
+
+        if (!count($invoices)) {
+            // nic k exportu
+            return;
+        }
+
+        $xml = $m->build_xml($invoices);
+        $m->save_xml($year, $month, $xml, $filename); // uloží přesně na $file
+
+        // === zařaď email do fronty s přílohou ===
+        // TODO: nastav si adresáta podle reality (konfig / env / config file)
+        $to = 'slezi2@pvfree.net';
+
+        $subject = sprintf('POHODA export faktur %02d/%04d', $month, $year);
+        $body    = sprintf(
+            "Dobrý den,<br>\n<br>\nV příloze posílám POHODA XML export vystavených faktur za %02d/%04d.<br>\nPočet faktur: %d<br>\n<br>\nFreenetIS scheduler<br>\n",
+            $month,
+            $year,
+            count($invoices)
+        );
+
+        $eq = new Email_queue_Model();
+        $eq->push(
+            'noreply@pvfree.net',
+            $to,
+            $subject,
+            $body,
+            array(
+                array(
+                    'path' => $file,
+                    'name' => $filename,
+                    'mime' => 'application/xml',
+                )
+            )
+        );
+    }
+
+    /**
+     * Vrátí všechny emaily člena (unikátní), přes members -> users -> users_contacts -> contacts.
+     *
+     * contacts.type = 20 je email. :contentReference[oaicite:1]{index=1}
+     *
+     * @return string[]
+     */
+    private static function get_member_emails($member_id)
+    {
+        $db = Database::instance();
+
+        $rows = $db->query("
+        SELECT DISTINCT c.value AS email
+        FROM users u
+        JOIN users_contacts uc
+          ON uc.user_id = u.id
+        JOIN contacts c
+          ON c.id = uc.contact_id
+        WHERE u.member_id = ?
+          AND c.type = 20
+          AND c.value IS NOT NULL
+          AND c.value <> ''
+    ", array((int)$member_id))->as_array();
+
+        $emails = array();
+        foreach ($rows as $r) {
+            if (is_object($r)) $r = get_object_vars($r);
+            $e = trim((string)($r['email'] ?? ''));
+            if ($e !== '') $emails[$e] = true;
+        }
+
+        return array_keys($emails);
     }
 }

@@ -31,17 +31,17 @@ class Email_queue_Model	extends ORM
 	 * New e-mail in queue
 	 */
 	const STATE_NEW		= 0;
-	
+
 	/**
 	 * Successfully sent e-mail
 	 */
 	const STATE_OK		= 1;
-	
+
 	/**
 	 * Unsuccessfully sent e-mail, almost same as new
 	 */
 	const STATE_FAIL		= 2;
-	
+
 	/**
 	 * Returns current email queue, by default 10 e-mails to send
 	 * 
@@ -50,13 +50,13 @@ class Email_queue_Model	extends ORM
 	 * @return Mysql_Result
 	 */
 	public function get_current_queue($count = 10)
-	{		
-		return $this->where('state <> ',self::STATE_OK)
+	{
+		return $this->where('state <> ', self::STATE_OK)
 			->orderby('access_time')
-			->limit($count,0)
+			->limit($count, 0)
 			->find_all();
 	}
-	
+
 	/**
 	 * Returns all sent e-mails
 	 * 
@@ -69,12 +69,15 @@ class Email_queue_Model	extends ORM
 	 * @return Mysql_Result 
 	 */
 	public function get_all_sent_emails(
-			$limit_from = 0, $limit_results = 50,
-			$order_by = 'id', $order_by_direction = 'ASC', $filter_sql='')
-	{
+		$limit_from = 0,
+		$limit_results = 50,
+		$order_by = 'id',
+		$order_by_direction = 'ASC',
+		$filter_sql = ''
+	) {
 		// args
 		$args = array(Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL, self::STATE_OK);
-		
+
 		// sql body
 		$body = "SELECT eq.id, eq.from, eq.to, eq.subject, eq.state, eq.access_time,
 					fuc.user_id AS from_user_id,
@@ -90,27 +93,24 @@ class Email_queue_Model	extends ORM
 				LEFT JOIN users tu ON tuc.user_id = tu.id
 				WHERE eq.state = ?
 				GROUP BY eq.id";
-		
+
 		// filter
-		if (empty($filter_sql))
-		{
+		if (empty($filter_sql)) {
 			return $this->db->query("
 				$body
-				ORDER BY ".$this->db->escape_column($order_by)." $order_by_direction
+				ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
 				LIMIT " . intval($limit_from) . "," . intval($limit_results) . "
 			", $args);
-		}
-		else
-		{
+		} else {
 			return $this->db->query("
 				$body
 				HAVING $filter_sql
-				ORDER BY ".$this->db->escape_column($order_by)." $order_by_direction
+				ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
 				LIMIT " . intval($limit_from) . "," . intval($limit_results) . "
 			", $args);
 		}
 	}
-	
+
 	/**
 	 * Counts all sent e-mails
 	 * 
@@ -118,17 +118,16 @@ class Email_queue_Model	extends ORM
 	 * @param string $filter_sql
 	 * @return integer 
 	 */
-	public function count_all_sent_emails($filter_sql='')
+	public function count_all_sent_emails($filter_sql = '')
 	{
-		if (empty($filter_sql))
-		{
+		if (empty($filter_sql)) {
 			return  $this->db->query("
 				SELECT COUNT(*) AS total
 				FROM email_queues eq
 				WHERE eq.state = ?
 			", self::STATE_OK)->current()->total;
 		}
-		
+
 		// filter
 		$where = "";
 		if ($filter_sql != '')
@@ -153,13 +152,13 @@ class Email_queue_Model	extends ORM
 				WHERE eq.state = ?
 			) eq
 			$where
-		", array
-		(
-			Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL,
+		", array(
+			Contact_Model::TYPE_EMAIL,
+			Contact_Model::TYPE_EMAIL,
 			self::STATE_OK
 		))->current()->count;
 	}
-	
+
 	/**
 	 * Returns all sent e-mails for export
 	 * 
@@ -172,7 +171,7 @@ class Email_queue_Model	extends ORM
 		$having = '';
 		if (!empty($filter_sql))
 			$having = "HAVING $filter_sql";
-		
+
 		return $this->db->query("
 			SELECT eq.id,
 				CONCAT(eq.from, ' (', IFNULL(CONCAT(from_user_id, ' - ', from_user_name),'-'), ')') AS sender,
@@ -199,7 +198,7 @@ class Email_queue_Model	extends ORM
 			) eq
 		", Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL, self::STATE_OK);
 	}
-	
+
 	/**
 	 * Returns all sent e-mails for export
 	 * 
@@ -212,7 +211,7 @@ class Email_queue_Model	extends ORM
 		$having = '';
 		if (!empty($filter_sql))
 			$having = "HAVING $filter_sql";
-		
+
 		// cannot select from deleted table, so.. two step function
 		$ids = $this->db->query("
 			SELECT eq.*, fuc.user_id AS from_user_id,
@@ -229,24 +228,23 @@ class Email_queue_Model	extends ORM
 			WHERE eq.state = ?
             GROUP BY eq.id
 			$having
-		", array
-		(
-			Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL,
+		", array(
+			Contact_Model::TYPE_EMAIL,
+			Contact_Model::TYPE_EMAIL,
 			self::STATE_OK
 		))->as_array();
-		
+
 		$pids = array();
-		
-		foreach ($ids as $id)
-		{
+
+		foreach ($ids as $id) {
 			$pids[] = $id->id;
 		}
-		
+
 		$this->db->query("
 			DELETE FROM email_queues WHERE id IN (" . implode(',', $pids) . ")
 		");
 	}
-	
+
 	/**
 	 * Returns all unsent e-mails
 	 * 
@@ -259,14 +257,17 @@ class Email_queue_Model	extends ORM
 	 * @return Mysql_Result 
 	 */
 	public function get_all_unsent_emails(
-			$limit_from = 0, $limit_results = 50,
-			$order_by = 'id', $order_by_direction = 'ASC', $filter_sql='')
-	{
+		$limit_from = 0,
+		$limit_results = 50,
+		$order_by = 'id',
+		$order_by_direction = 'ASC',
+		$filter_sql = ''
+	) {
 		// filter
 		$having = "";
 		if ($filter_sql != '')
-			$having = 'HAVING '.$filter_sql;
-		
+			$having = 'HAVING ' . $filter_sql;
+
 		return $this->db->query("
 			SELECT eq.id, eq.from, eq.to, eq.subject, eq.state, eq.access_time,
 				fuc.user_id,
@@ -283,11 +284,11 @@ class Email_queue_Model	extends ORM
 			WHERE eq.state <> ?
             GROUP BY eq.id
 			$having
-			ORDER BY ".$this->db->escape_column($order_by)." $order_by_direction
+			ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
 			LIMIT " . intval($limit_from) . "," . intval($limit_results) . "
 		", Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL, self::STATE_OK);
 	}
-	
+
 	/**
 	 * Counts all unsent e-mails
 	 * 
@@ -295,21 +296,20 @@ class Email_queue_Model	extends ORM
 	 * @param string $filter_sql
 	 * @return integer 
 	 */
-	public function count_all_unsent_emails($filter_sql='')
+	public function count_all_unsent_emails($filter_sql = '')
 	{
-		if (empty($filter_sql))
-		{
+		if (empty($filter_sql)) {
 			return  $this->db->query("
 				SELECT COUNT(*) AS total
 				FROM email_queues eq
 				WHERE eq.state <> ?
 			", self::STATE_OK)->current()->total;
 		}
-		
+
 		// filter
 		$where = "";
 		if ($filter_sql != '')
-			$where = 'WHERE '.$filter_sql;
+			$where = 'WHERE ' . $filter_sql;
 
 		return $this->db->query("
 			SELECT COUNT(eq.id) as count
@@ -330,31 +330,71 @@ class Email_queue_Model	extends ORM
 				WHERE eq.state <> ?
 			) eq
 			$where
-		", array
-		(
-			Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL,
+		", array(
+			Contact_Model::TYPE_EMAIL,
+			Contact_Model::TYPE_EMAIL,
 			self::STATE_OK
 		))->current()->count;
 	}
-	
+
 	/**
 	 * Adds message to the beginning of queue (will be send first)
-	 * 
+	 *
 	 * @author Michal Kliment
-	 * @param type $from
-	 * @param type $to
-	 * @param type $subject
-	 * @param type $body
-	 * @return type 
 	 */
-	public function push($from, $to, $subject, $body)
+	public function push($from, $to, $subject, $body, array $attachments = [])
+	{
+		// vložení mailu "na začátek fronty"
+		$this->db->query("
+        INSERT INTO email_queues
+        SELECT
+            NULL, ?, ?, ?, ?, ?,
+            FROM_UNIXTIME(
+                UNIX_TIMESTAMP(COALESCE(MIN(access_time), NOW())) - 1
+            )
+        FROM email_queues
+    ", array(
+			$from,
+			$to,
+			$subject,
+			$body,
+			self::STATE_NEW
+		));
+
+		// ID vloženého mailu
+		$emailId = $this->db->query("SELECT LAST_INSERT_ID() AS id")
+			->current()
+			->id;
+
+		// uložení příloh
+		foreach ($attachments as $a) {
+			if (empty($a['path'])) {
+				continue;
+			}
+
+			$this->db->query("
+            INSERT INTO email_queue_attachments
+                (email_queue_id, path, name, mime, created_at)
+            VALUES
+                (?, ?, ?, ?, NOW())
+        ", array(
+				$emailId,
+				$a['path'],
+				$a['name'] ?? null,
+				$a['mime'] ?? null
+			));
+		}
+
+		return $emailId;
+	}
+
+	public function get_attachments($email_queue_id)
 	{
 		return $this->db->query("
-			INSERT INTO email_queues
-			SELECT
-				NULL, ?, ?, ?, ?, ?,
-				FROM_UNIXTIME(UNIX_TIMESTAMP(MIN(access_time))-1)
-			FROM email_queues
-		", array($from, $to, $subject, $body, self::STATE_NEW));
+        SELECT id, email_queue_id, path, name, mime
+        FROM email_queue_attachments
+        WHERE email_queue_id = ?
+        ORDER BY id
+    ", array((int)$email_queue_id));
 	}
 }

@@ -556,14 +556,14 @@ class Invoice_Pdf
         // uložení PDF
         $mpdf->Output($path, 'F');
 
-        /* // uložení cesty do DB
+         // uložení cesty do DB
         $db->query("
             UPDATE invoices
             SET pdf_filename = ?
             WHERE id = ?
             LIMIT 1
         ", array($path, $invoice_id));
-        */
+        
         return $path;
     }
 }
