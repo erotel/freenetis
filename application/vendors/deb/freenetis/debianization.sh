@@ -17,7 +17,7 @@ VERSION=$1
 DEBIAN=$2
 
 # create dirs ##################################################################
-mkdir ../deb_packages/tmp
+mkdir -p ../deb_packages/tmp
 cd ../deb_packages/tmp
 
 mkdir -m 755 DEBIAN
@@ -165,7 +165,7 @@ cd tmp
 
 # make package
 cd ..
-fakeroot dpkg-deb -b tmp ${NAME}_${VERSION}+${DEBIAN}.deb
+fakeroot dpkg-deb -b -Zgzip tmp ${NAME}_${VERSION}+${DEBIAN}.deb
 
 # clean-up mess ################################################################
 
