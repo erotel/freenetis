@@ -103,19 +103,6 @@ class Scheduler_Controller extends Controller
 			echo 'access denied';
 			die();
 		}
-		// === TEST auto_credit_invoices přes GET parametr ===
-		if (isset($_GET['test_auto_credit'])) {
-			$mode  = $_GET['test_auto_credit'];         // 'dry' nebo 'real'
-			$force = TRUE;                              // ignoruje datum/čas + Settings
-			$dry   = ($mode !== 'real');                // vše kromě 'real' jede jako DRY-RUN
-
-			Auto_credit_invoices_Model::run(time(), $force, $dry);
-
-			echo "auto_credit_invoices spuštěno, režim: {$mode}\n";
-			// ukončíme, ať scheduler dál nic jiného nedělá
-			return;
-		}
-		// === /TEST blok ===
 
 		// CRON failure detection (#754)
 		$last_active = intval(Settings::get('cron_last_active'));
@@ -321,19 +308,53 @@ class Scheduler_Controller extends Controller
 				// global options
 				$a_email = $a_email && Settings::get('email_enabled');
 				$a_sms = $a_sms && Settings::get('sms_enabled');
+
+				$activate = TRUE;
+				$a_email = TRUE;
+				$a_sms = FALSE;
 				// any rule?
 				if (!$activate) {
 					continue;
 				}
+
+
 				// import 
 				try {
 					// download&import
-					$bs = Bank_Statement_File_Importer::download(
-						$bank_account_model,
-						$settings,
-						$a_email,
-						$a_sms
-					);
+					// import
+
+					$local_file = Settings::get('bank_import_local_file');
+					Log::add('info', 'bank_import_local_file=' . ($local_file ?: '(empty)'));
+
+
+					if (!empty($local_file)) {
+						// === TEST MODE: import z lokálního souboru ===
+						$path = APPPATH . '../' . ltrim($local_file, '/');
+
+						if (!is_file($path) || !is_readable($path)) {
+							throw new Exception('Local bank statement file not readable: ' . $path);
+						}
+
+						// podle účtu zvolíme ext (typ importu)
+						// pro fio_json to bude 'json'
+						$ext = 'json';
+
+						$bs = Bank_Statement_File_Importer::import(
+							$bank_account_model,
+							$path,
+							$ext,
+							$a_email,
+							$a_sms
+						);
+					} else {
+						// === PRODUKCE: klasický download ===
+						$bs = Bank_Statement_File_Importer::download(
+							$bank_account_model,
+							$settings,
+							$a_email,
+							$a_sms
+						);
+					}
 
 					// inform
 					if ($bs) {

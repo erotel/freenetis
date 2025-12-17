@@ -11,7 +11,7 @@
  * 
  */
 
-require_once APPPATH.'libraries/importers/Duplicity_Exception.php';
+require_once APPPATH . 'libraries/importers/Duplicity_Exception.php';
 
 /**
  * Subclass for all bank statements importers of new generation (since 1.1).
@@ -46,7 +46,7 @@ abstract class Bank_Statement_File_Importer
 	 * Dir with driver classes
 	 */
 	const DIR = 'importers';
-	
+
 	/**
 	 * Available drivers (bank statements importers).
 	 * Each driver contains items:
@@ -58,34 +58,30 @@ abstract class Bank_Statement_File_Importer
 	 *
 	 * @var array
 	 */
-	private static $drivers = array
-	(
+	private static $drivers = array(
 		/* FIO - JSON - Obtained from FIO bank API  */
-		array
-		(
+		array(
 			'name'			=> 'FIO JSON API importer',
 			'class'			=> 'Json_Fio_Bank_Statement_File_Importer',
 			'bank_type'		=> Bank_account_Model::TYPE_FIO,
 			'extensions'	=> array('json')
 		),
 		/* FIO - CSV - Obtained from FIO e-banking  */
-		array
-		(
+		array(
 			'name'			=> 'FIO CSV importer',
 			'class'			=> 'Csv_Fio_Bank_Statement_File_Importer',
 			'bank_type'		=> Bank_account_Model::TYPE_FIO,
 			'extensions'	=> array('csv')
 		),
 		/* Tatrabanka - TXT - Obtained from TB B-mail */
-		array
-		(
+		array(
 			'name'          => 'Tatra bank E-mail importer',
 			'class'         => 'Txt_Tatra_Banka_Statement_File_Importer',
 			'bank_type'     => Bank_account_Model::TYPE_TATRABANKA,
 			'extensions'    => array('txt')
 		)
 	);
-	
+
 	/**
 	 * Gets available drivers.
 	 * 
@@ -95,7 +91,7 @@ abstract class Bank_Statement_File_Importer
 	{
 		return self::$drivers;
 	}
-	
+
 	/**
 	 * Tries to download statement and then import it.
 	 * 
@@ -112,53 +108,59 @@ abstract class Bank_Statement_File_Importer
 	 * @throws InvalidArgumentException On invalid bank account settings
 	 *									that cannot be use for proper download
 	 */
-	public static function download(Bank_account_Model $bank_account,
-			Bank_Account_Settings $settings, $send_emails, $send_sms)
-	{		
+	public static function download(
+		Bank_account_Model $bank_account,
+		Bank_Account_Settings $settings,
+		$send_emails,
+		$send_sms
+	) {
 		// get type
 		$type = $settings->get_download_statement_type();
 
-		if (empty($type))
-		{
+		if (empty($type)) {
 			throw new InvalidArgumentException(__('Unset download statement type'));
 		}
-		
+
 		// get url
 		$url = $settings->get_download_statement_url();
-		
-		if (empty($url))
-		{
+
+		if (empty($url)) {
 			throw new InvalidArgumentException(__('Unset download statement URL'));
 		}
-		
+
 		// obtain driver
 		$driver = self::factory($bank_account, $type);
 		$acc = $bank_account->account_nr . '/' . $bank_account->bank_nr;
 
-		if (!$driver)
-		{
+		if (!$driver) {
 			$m = __('File importer for bank %s is not available', $acc);
 			throw new InvalidArgumentException($m);
 		}
-		
+
 		// preparation before download
-		if (!$driver->before_download($bank_account, $settings))
-		{
+		if (!$driver->before_download($bank_account, $settings)) {
 			throw new Exception(__('Cannot prepare for statement download'));
 		}
 
 		// make download
 		$file_data = $driver->do_download($bank_account, $settings, $url);
 
-		if ($file_data === FALSE)
-		{
-			throw new Exception(__('Import download has failed caused by: %s',
-					implode('<br>', $driver->get_errors())));
+		if ($file_data === FALSE) {
+			throw new Exception(__(
+				'Import download has failed caused by: %s',
+				implode('<br>', $driver->get_errors())
+			));
 		}
-		
+
 		// import
-		return self::import_loaded($bank_account, $file_data, $url, $type,
-				$send_emails, $send_sms);
+		return self::import_loaded(
+			$bank_account,
+			$file_data,
+			$url,
+			$type,
+			$send_emails,
+			$send_sms
+		);
 	}
 
 	/**
@@ -176,23 +178,32 @@ abstract class Bank_Statement_File_Importer
 	 * @throws InvalidArgumentException On invalid file or bank account entity
 	 * @throws Exception On any error during parsing or storing of statement
 	 */
-	public static function import(Bank_account_Model $bank_account,
-			$filename, $ext, $send_emails = TRUE, $send_sms = FALSE)
-	{
+	public static function import(
+		Bank_account_Model $bank_account,
+		$filename,
+		$ext,
+		$send_emails = TRUE,
+		$send_sms = FALSE
+	) {
 		$fd = @file_get_contents($filename);
 
-		if ($fd == FALSE)
-		{
+		if ($fd == FALSE) {
 			$e = error_get_last();
 			$m = __('Cannot read from input file') . ' "' . $filename . '": '
-					. (isset($e['message']) ? $e['message'] : '');
+				. (isset($e['message']) ? $e['message'] : '');
 			throw new InvalidArgumentException($m);
 		}
 
-		return self::import_loaded($bank_account, $fd, $filename, $ext,
-				$send_emails, $send_sms);
+		return self::import_loaded(
+			$bank_account,
+			$fd,
+			$filename,
+			$ext,
+			$send_emails,
+			$send_sms
+		);
 	}
-	
+
 	/**
 	 * Imports a bank statement from given loaded file data to bank account
 	 * that is given by its database model. Throws error exceptions with
@@ -209,80 +220,86 @@ abstract class Bank_Statement_File_Importer
 	 * @throws InvalidArgumentException On invalid file or bank account entity
 	 * @throws Exception On any error during parsing or storing of statement
 	 */
-	private static function import_loaded(Bank_account_Model $bank_account,
-			$file_data, $filename, $ext, $send_emails = TRUE, $send_sms = FALSE)
-	{
+	private static function import_loaded(
+		Bank_account_Model $bank_account,
+		$file_data,
+		$filename,
+		$ext,
+		$send_emails = TRUE,
+		$send_sms = FALSE
+	) {
 		/* obtain driver */
 		$driver = self::factory($bank_account, $ext);
 
 		$acc = $bank_account->account_nr . '/' . $bank_account->bank_nr;
-		
-		if (!$driver)
-		{
+
+		if (!$driver) {
 			$m = __('File importer for bank %s is not available', $acc);
 			throw new InvalidArgumentException($m);
 		}
-		
+
 		$driver->inform_affected_member_by_email = $send_emails;
 		$driver->inform_affected_member_by_sms = $send_sms;
-		
+
 		/* set file data */
-		if (empty($file_data))
-		{
+		if (empty($file_data)) {
 			throw new Exception(__('Invalid file data'));
 		}
-		
+
 		$driver->set_file_data($file_data);
-		
+
 		/* check format */
-		if (!$driver->check_file_data_format())
-		{
-			$m = __('Invalid input file format in file "%s" caused by: %s',
-					array($filename, '<br>' . implode('<br>', $driver->get_errors())));
+		if (!$driver->check_file_data_format()) {
+			$m = __(
+				'Invalid input file format in file "%s" caused by: %s',
+				array($filename, '<br>' . implode('<br>', $driver->get_errors()))
+			);
 			throw new Exception($m);
 		}
-		
+
 		/* check header of statement */
 		$header_data = $driver->get_header_data();
-		
-		if ($header_data !== NULL)
-		{
-			if (!$header_data ||
+
+		if ($header_data !== NULL) {
+			if (
+				!$header_data ||
 				$header_data->get_bank_id() != $bank_account->bank_nr ||
-				$header_data->get_account_id() != $bank_account->account_nr)
-			{
+				$header_data->get_account_id() != $bank_account->account_nr
+			) {
 				$an = $header_data->get_account_id() . '/'
-						. $header_data->get_bank_id();
+					. $header_data->get_bank_id();
 				$m = __('Bank account number in listing (%s) header does not ' .
-						'match bank account %s in database!', array($an, $acc));
+					'match bank account %s in database!', array($an, $acc));
 				throw new Exception($m);
 			}
 		}
-		
+
 		/* parse file */
-		if (!$driver->parse_file_data())
-		{
-			$m = __('Error during parsing of statement file %s caused by: %s',
-					array($filename, '<br>' . implode('<br>', $driver->get_errors())));
+		if (!$driver->parse_file_data()) {
+			$m = __(
+				'Error during parsing of statement file %s caused by: %s',
+				array($filename, '<br>' . implode('<br>', $driver->get_errors()))
+			);
 			throw new Exception($m);
 		}
-		
+
 		/* store result */
 		$bank_statement = $driver->store();
-		
-		if (!$bank_statement || !$bank_statement->id)
-		{
-			$m = __('Error during storing of parsed file %s import caused by: %s',
-					array($filename, '<br>' . implode('<br>', $driver->get_errors())));
+
+		if (!$bank_statement || !$bank_statement->id) {
+			$m = __(
+				'Error during storing of parsed file %s import caused by: %s',
+				array($filename, '<br>' . implode('<br>', $driver->get_errors()))
+			);
 			throw new Exception($m);
 		}
-		
+
 		/* inform affected members */
 		$driver->notify_affected_members();
-		
+
 		return $bank_statement;
 	}
-	
+
 	/**
 	 * Creates an instance of file importer driver that is capable of
 	 * importing bank statement.
@@ -296,55 +313,54 @@ abstract class Bank_Statement_File_Importer
 	protected static function factory($bank_account, $ext)
 	{
 		// bank account check
-		if ($bank_account == NULL || !$bank_account->id)
-		{
+		if ($bank_account == NULL || !$bank_account->id) {
 			throw new InvalidArgumentException(__('Invalid bank account'));
 		}
-		
+
 		// find suitable driver
-		foreach (self::$drivers as $d)
-		{
-			if ($d['bank_type'] == $bank_account->type &&
-				in_array($ext, $d['extensions']))
-			{
+		foreach (self::$drivers as $d) {
+			if (
+				$d['bank_type'] == $bank_account->type &&
+				in_array($ext, $d['extensions'])
+			) {
 				$cn = $d['class'];
 				require_once dirname(__FILE__) . '/' . self::DIR . '/' . $cn . '.php';
 				return new $cn($bank_account);
 			}
 		}
-		
+
 		// not founded
 		return NULL;
 	}
-	
+
 	/**
 	 * Bank account model for importing of statement.
 	 *
 	 * @var Bank_account_Model
 	 */
 	private $bank_account = NULL;
-	
+
 	/**
 	 * Contains parsed file that contains a bank statement
 	 *
 	 * @var string
 	 */
 	private $file_data = NULL;
-	
+
 	/**
 	 * Error stack that contains translated errors
 	 * 
 	 * @var arrray
 	 */
 	private $errors = array();
-	
+
 	/**
 	 * Array of memeber IDs  that are affected by the content of file data
 	 *
 	 * @var array
 	 */
 	private $affected_members = array();
-	
+
 	/**
 	 * Inform affected by e-mail notification (ON by default) that contains
 	 * information about the received payment.
@@ -352,7 +368,7 @@ abstract class Bank_Statement_File_Importer
 	 * @var boolean
 	 */
 	private $inform_affected_member_by_email = TRUE;
-	
+
 	/**
 	 * Inform affected by SMS notification (OFF by default) that contains
 	 * information about the received payment.
@@ -360,7 +376,7 @@ abstract class Bank_Statement_File_Importer
 	 * @var boolean
 	 */
 	private $inform_affected_member_by_sms = FALSE;
-	
+
 	/**
 	 * Creates new instance od bank statement import.
 	 * 
@@ -370,7 +386,7 @@ abstract class Bank_Statement_File_Importer
 	{
 		$this->bank_account = $bam;
 	}
-	
+
 	/**
 	 * Get importer name.
 	 * 
@@ -378,14 +394,12 @@ abstract class Bank_Statement_File_Importer
 	 */
 	public function get_importer_name()
 	{
-		foreach (self::$drivers as $d)
-		{
-			if ($d['class'] == get_class($this))
-			{
+		foreach (self::$drivers as $d) {
+			if ($d['class'] == get_class($this)) {
 				return $d['name'];
 			}
 		}
-		
+
 		return NULL;
 	}
 
@@ -404,10 +418,10 @@ abstract class Bank_Statement_File_Importer
 			$association = new Member_Model(Member_Model::ASSOCIATION);
 			$user_id = $association->get_main_user();
 		}
-		
+
 		return $user_id;
 	}
-	
+
 	/**
 	 * Gets bank account for which the importer is evaulating imports.
 	 * 
@@ -417,7 +431,7 @@ abstract class Bank_Statement_File_Importer
 	{
 		return $this->bank_account;
 	}
-		
+
 	/**
 	 * Sets bank statement file data (content of a file)
 	 * 
@@ -427,7 +441,7 @@ abstract class Bank_Statement_File_Importer
 	{
 		$this->file_data = $fd;
 	}
-		
+
 	/**
 	 * Gets bank statement file data (content of a file)
 	 * 
@@ -437,7 +451,7 @@ abstract class Bank_Statement_File_Importer
 	{
 		return $this->file_data;
 	}
-	
+
 	/**
 	 * Adds given error to the start of the error stack.
 	 * 
@@ -446,12 +460,11 @@ abstract class Bank_Statement_File_Importer
 	 */
 	protected function add_error($error, $translate = TRUE)
 	{
-		$this->errors = array
-		(
+		$this->errors = array(
 			$translate ? __($error) : $error
-		) + $this->errors; 
+		) + $this->errors;
 	}
-	
+
 	/**
 	 * Add given exception as error to the start of the error stack.
 	 * 
@@ -460,13 +473,12 @@ abstract class Bank_Statement_File_Importer
 	 */
 	protected function add_exception_error(Exception $e, $translate = TRUE)
 	{
-		$this->errors = array
-		(
-			($translate ? __($e->getMessage()) : $e->getMessage()) . 
-			': ' . nl2br($e->getTraceAsString())
+		$this->errors = array(
+			($translate ? __($e->getMessage()) : $e->getMessage()) .
+				': ' . nl2br($e->getTraceAsString())
 		) + $this->errors;
 	}
-	
+
 	/**
 	 * Adds member as affected by this parsed statement. Later if statement is
 	 * successfully parsed and saved these members are inform by notification.
@@ -477,15 +489,14 @@ abstract class Bank_Statement_File_Importer
 	protected function add_affected_member($member_id, $details)
 	{
 		$member_id = intval($member_id);
-		
-		if (!array_key_exists($member_id, $this->affected_members))
-		{
+
+		if (!array_key_exists($member_id, $this->affected_members)) {
 			$this->affected_members[$member_id] = array();
 		}
 
 		$this->affected_members[$member_id][] = $details;
 	}
-	
+
 	/**
 	 * Gets error trace
 	 * 
@@ -495,7 +506,7 @@ abstract class Bank_Statement_File_Importer
 	{
 		return $this->errors;
 	}
-	
+
 	/**
 	 * Finds member ID by variable method. If given variable symbol is not
 	 * founded in the database and a variable key generator is active and
@@ -510,35 +521,28 @@ abstract class Bank_Statement_File_Importer
 	protected function find_member_by_vs($variable_symbol, $error_correction = TRUE)
 	{
 		static $vk_model = NULL;
-		
-		if (!$vk_model)
-		{
+
+		if (!$vk_model) {
 			$vk_model = new Variable_Symbol_Model();
 		}
-		
+
 		// locate in database
 		$member_id = $vk_model->get_member_id($variable_symbol);
-		
+
 		// located
-		if ($member_id)
-		{
+		if ($member_id) {
 			return $member_id;
 		}
 		// not located try to detect error if a variable generator is used
-		else if ($error_correction)
-		{
+		else if ($error_correction) {
 			$vkg = Variable_Key_Generator::factory();
-			
-			if ($vkg)
-			{
-				if ($vkg->errorCheckAvailable())
-				{
-					if ($vkg->errorCorrectionAvailable())
-					{
+
+			if ($vkg) {
+				if ($vkg->errorCheckAvailable()) {
+					if ($vkg->errorCorrectionAvailable()) {
 						$corrected = $vkg->errorCorrection($variable_symbol);
-						
-						if ($corrected['status'])
-						{
+
+						if ($corrected['status']) {
 							$cvs = $corrected['corrected_variable_key'];
 							// try to locate and if it is not located
 							// then do not any futher error correction
@@ -548,10 +552,10 @@ abstract class Bank_Statement_File_Importer
 				}
 			}
 		}
-		
+
 		return NULL;
 	}
-	
+
 	/**
 	 * This method may be implemented in order to do some action before
 	 * downloading of a bank statement.
@@ -563,9 +567,10 @@ abstract class Bank_Statement_File_Importer
 	 * @return boolean Successfully run?
 	 * @throws Exception On any error
 	 */
-	protected function before_download(Bank_account_Model $bank_account,
-			Bank_Account_Settings $settings)
-	{
+	protected function before_download(
+		Bank_account_Model $bank_account,
+		Bank_Account_Settings $settings
+	) {
 		return TRUE;
 	}
 
@@ -579,9 +584,11 @@ abstract class Bank_Statement_File_Importer
 	 * @param string $url Prepare download URL
 	 * @return string Content of downloaded file or FALSE on error
 	 */
-	protected function do_download(Bank_account_Model $bank_account,
-			Bank_Account_Settings $settings, $url)
-	{
+	protected function do_download(
+		Bank_account_Model $bank_account,
+		Bank_Account_Settings $settings,
+		$url
+	) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ch, CURLOPT_URL, $url);
@@ -591,17 +598,16 @@ abstract class Bank_Statement_File_Importer
 		$response_http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 
-		if ($response == FALSE || $response_http_code >= 300)
-		{
+		if ($response == FALSE || $response_http_code >= 300) {
 			$m = __('Cannot download statement from ') . ' "' . $url . '": '
-					. 'E' . $response_http_code . ' ' . $response_error;
+				. 'E' . $response_http_code . ' ' . $response_error;
 			$this->add_error($m);
 			return FALSE;
 		}
 
 		return $response;
 	}
-	
+
 	/**
 	 * Checks whether the file content that is stored into a fileData property
 	 * has valid format. This method checks only a format (syntax), semantic
@@ -613,7 +619,7 @@ abstract class Bank_Statement_File_Importer
 	 * @return boolean TRUE if format is corrrent, FALSE otherwise
 	 */
 	protected abstract function check_file_data_format();
-	
+
 	/**
 	 * Gets header data of file data format. This method is used for checking
 	 * if the bank statement correspondes to bank account in the database.
@@ -630,7 +636,7 @@ abstract class Bank_Statement_File_Importer
 	 * @return Header_Data|boolean|null
 	 */
 	protected abstract function get_header_data();
-	
+
 	/**
 	 * Parses a file data into a semantic interpretation of its content.
 	 * This interpretation must be defined by implementing class.
@@ -641,7 +647,7 @@ abstract class Bank_Statement_File_Importer
 	 * @return boolean TRUE if file data were succesfully parsed, FALSE otherwise
 	 */
 	protected abstract function parse_file_data();
-	
+
 	/**
 	 * Stores data that are obtain via parse_file_data method (stored internally
 	 * - so it is in hand of the implemented file importer).
@@ -660,84 +666,121 @@ abstract class Bank_Statement_File_Importer
 	 * @throws Duplicity_Exception On transfers that were already imported
 	 */
 	protected abstract function store(&$stats = array());
-	
+
 	/**
-	 * Informs affected members by email or SMS according to setting variables 
+	 * Informs affected members by email or SMS according to setting variables
 	 * inform_affected_member_by_email and inform_affected_member_by_sms.
-	 * 
+	 *
+	 * Rozšíření:
+	 * - contribution účet: původní special_notice (doklad o zaplacení)
+	 * - services účet: vystavit fakturu + PDF + email queue
+	 *
 	 * @return boolean TRUE if all affected members were notified, FALSE otherwise
 	 */
 	protected function notify_affected_members()
 	{
-		if (!module::e('notification'))
-		{
+		if (!module::e('notification')) {
 			return FALSE;
 		}
-		
-		try
-		{
+
+		try {
 			$send_email = Notifications_Controller::ACTIVATE;
 			$send_sms = Notifications_Controller::ACTIVATE;
-			
-			if (!$this->inform_affected_member_by_email)
-			{
+
+			if (!$this->inform_affected_member_by_email) {
 				$send_email = Notifications_Controller::KEEP;
 			}
-			
-			if (!$this->inform_affected_member_by_sms)
-			{
+
+			if (!$this->inform_affected_member_by_sms) {
 				$send_sms = Notifications_Controller::KEEP;
 			}
 
 			$payment_vat = floatval(Settings::get('payment_vat'));
-			if ($payment_vat <= 0 || $payment_vat > 100)
-			{
+			if ($payment_vat <= 0 || $payment_vat > 100) {
 				$payment_vat = 0;
 			}
-			
-			foreach ($this->affected_members as $member_id => $details)
-			{
+
+			$ba = $this->get_bank_account();
+
+			// 0 = contribution, 1 = services
+			$purpose = 0;
+			if ($ba && isset($ba->payment_purpose)) {
+				$purpose = (int)$ba->payment_purpose;
+			}
+
+			$account_nr_str = '';
+			if ($ba && isset($ba->account_nr) && isset($ba->bank_nr)) {
+				$account_nr_str = $ba->account_nr . '/' . $ba->bank_nr;
+			}
+
+
+
+
+			foreach ($this->affected_members as $member_id => $details) {
 				$total_amount = 0;
 				$ids = array();
-				foreach ($details as $detail)
-				{
-					if (array_key_exists('bank_transfer_id', $detail))
-					{
+
+				foreach ($details as $detail) {
+					if (array_key_exists('bank_transfer_id', $detail)) {
 						$ids[] = $detail['bank_transfer_id'];
 					}
-					if (array_key_exists('amount', $detail))
-					{
+					if (array_key_exists('amount', $detail)) {
 						$total_amount += floatval($detail['amount']);
 					}
 				}
+
 				$total_novat = $total_amount / (1 + $payment_vat / 100);
 
-				Message_Model::activate_special_notice(
+				// contribution => zachovat původní doklad o platbě
+				if ($purpose === 0) {
+					Message_Model::activate_special_notice(
 						Message_Model::RECEIVED_PAYMENT_NOTICE_MESSAGE,
-						$member_id, $this->get_user_id(), $send_email, $send_sms, array
-						(
+						$member_id,
+						$this->get_user_id(),
+						$send_email,
+						$send_sms,
+						array(
 							'payment_id' => implode(', ', $ids),
 							'payment_amount' => round($total_amount, 2),
 							'payment_amount_novat' => round($total_novat, 2),
 							'payment_vat' => round($total_amount - $total_novat, 2),
 							'payment_date' => date('Y-m-d')
 						)
-				);
+					);
+
+					continue;
+				}
+
+				// services => vystavit fakturu + PDF + email queue
+				if ($purpose === 1) {
+					$period_tag = date('Y-m'); // účetní měsíc podle data importu
+					Log_queue_Model::info("BANK IMPORT OK");
+					try {
+						// nový model
+						require_once APPPATH . 'models/bank_import_services_invoices.php';
+
+						Bank_import_services_invoices_Model::create_invoice_and_enqueue_pdf(
+							(int)$member_id,
+							(float)$total_amount,
+							$ids,
+							(string)$account_nr_str,
+							(string)$period_tag
+						);
+					} catch (Exception $e) {
+
+						Log_queue_Model::error('BANK IMPORT SERVICES ERROR: ' . $e->getMessage(), $e);
+					}
+				}
 			}
-			
-			// status ok
+
 			return TRUE;
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$m = 'Error during notifying of affected members of a bank import';
 			Log::add_exception($e);
 			Log_queue_Model::error($m, $e);
-			// failed
 			return FALSE;
 		}
 	}
-
 }
 
 /**
@@ -751,21 +794,21 @@ class Header_Data
 	 * @var integer
 	 */
 	private $account_id;
-	
+
 	/**
 	 * Bank ID
 	 *
 	 * @var integer
 	 */
 	private $bank_id;
-	
+
 	/**
 	 * Other properties
 	 *
 	 * @var array
 	 */
 	private $properties = array();
-	
+
 	/**
 	 * Creates new Header_Data
 	 * 
@@ -777,7 +820,7 @@ class Header_Data
 		$this->account_id = $account_id;
 		$this->bank_id = $bank_id;
 	}
-	
+
 	/**
 	 * Gets bank account ID
 	 * 
@@ -797,7 +840,7 @@ class Header_Data
 	{
 		return $this->bank_id;
 	}
-	
+
 	/**
 	 * String representation of header data
 	 * 
@@ -807,7 +850,7 @@ class Header_Data
 	{
 		return $this->account_id . '/' . $this->bank_id;
 	}
-	
+
 	/**
 	 * Gets another property
 	 * 
@@ -815,11 +858,10 @@ class Header_Data
 	 */
 	public function __get($name)
 	{
-		if (isset($this->properties[$name]))
-		{
+		if (isset($this->properties[$name])) {
 			return $this->properties[$name];
 		}
-		
+
 		throw new InvalidArgumentException('Unknown property: ' . $name);
 	}
 
@@ -833,6 +875,4 @@ class Header_Data
 	{
 		$this->properties[$name] = $value;
 	}
-
-
 }
