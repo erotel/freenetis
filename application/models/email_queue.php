@@ -52,10 +52,11 @@ class Email_queue_Model	extends ORM
 	public function get_current_queue($count = 10)
 	{
 		return $this->where('state <> ', self::STATE_OK)
-			->orderby('access_time')
+			->orderby('id', 'ASC')
 			->limit($count, 0)
 			->find_all();
 	}
+
 
 	/**
 	 * Returns all sent e-mails
@@ -344,49 +345,38 @@ class Email_queue_Model	extends ORM
 	 */
 	public function push($from, $to, $subject, $body, array $attachments = [])
 	{
-		// vložení mailu "na začátek fronty"
 		$this->db->query("
-        INSERT INTO email_queues
-        SELECT
-            NULL, ?, ?, ?, ?, ?,
-            FROM_UNIXTIME(
-                UNIX_TIMESTAMP(COALESCE(MIN(access_time), NOW())) - 1
-            )
-        FROM email_queues
-    ", array(
+        INSERT INTO email_queues (`from`, `to`, `subject`, `body`, `state`)
+        VALUES (?, ?, ?, ?, ?)
+    ", [
 			$from,
 			$to,
 			$subject,
 			$body,
 			self::STATE_NEW
-		));
+		]);
 
-		// ID vloženého mailu
-		$emailId = $this->db->query("SELECT LAST_INSERT_ID() AS id")
-			->current()
-			->id;
+		$emailId = $this->db->query("SELECT LAST_INSERT_ID() AS id")->current()->id;
 
-		// uložení příloh
 		foreach ($attachments as $a) {
-			if (empty($a['path'])) {
-				continue;
-			}
+			if (empty($a['path'])) continue;
 
 			$this->db->query("
             INSERT INTO email_queue_attachments
                 (email_queue_id, path, name, mime, created_at)
             VALUES
                 (?, ?, ?, ?, NOW())
-        ", array(
+        ", [
 				$emailId,
 				$a['path'],
 				$a['name'] ?? null,
 				$a['mime'] ?? null
-			));
+			]);
 		}
 
 		return $emailId;
 	}
+
 
 	public function get_attachments($email_queue_id)
 	{
