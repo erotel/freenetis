@@ -1010,25 +1010,20 @@ class Scheduler_Controller extends Controller
 		}
 	}
 
-	/**
-	 * Sent e-mails from queue
-	 *
-	 * @author Michal Kliment
-	 */
 	private function send_quened_emails()
 	{
 		$email_queue_model = new Email_queue_Model();
 		$email_queue = $email_queue_model->get_current_queue();
 
 		if (!count($email_queue)) {
-			return; // do not connect to SMTP server for no reason (fixes #336)
+			return;
 		}
 
 		$swift = email::connect();
 
 		foreach ($email_queue as $email) {
 			try {
-				// Build recipient lists
+				// Recipients
 				$recipients = new Swift_RecipientList;
 				$recipients->addTo($email->to);
 
@@ -1049,45 +1044,44 @@ class Scheduler_Controller extends Controller
 					$recipients->addBcc('rada@pvfree.net');
 				}
 
-				// Build message (Swift 3.3.2)
+				// Message
 				$message = new Swift_Message($email->subject);
 
-				$bodyHtml = (string)($email->body ?? '');
+				$bodyHtml = (string)$email->body;
 				$bodyText = trim(strip_tags($bodyHtml));
 				if ($bodyText === '') {
 					$bodyText = ' ';
 				}
 
-				// Swift 3: primary body = text, HTML is alternative part (child)
+				// Swift 3: TEXT primary, HTML alternative
 				$message->setBody($bodyText, 'text/plain', 'utf-8');
 				$message->addChild(new Swift_Message_Part($bodyHtml, 'text/html', 'utf-8'));
 
-				// === ATTACHMENTS ===
+				// Attachments
 				$atts = $email_queue_model->get_attachments($email->id);
 
 				foreach ($atts as $a) {
-					$path = (string)$a->path;
-
-					// bezpečnost: povolit jen z /data (uprav dle reality)
+					$real = realpath($a->path);
 					$base = realpath(APPPATH . '../data');
-					$real = realpath($path);
 
-					if ($real === FALSE || $base === FALSE || strpos($real, $base . DIRECTORY_SEPARATOR) !== 0) {
-						throw new Exception('Attachment path not allowed: ' . $path);
+					if ($real === FALSE || strpos($real, $base . DIRECTORY_SEPARATOR) !== 0) {
+						throw new Exception('Attachment path not allowed: ' . $a->path);
 					}
 
-					if (!is_file($real) || !is_readable($real)) {
+					if (!is_readable($real)) {
 						throw new Exception('Attachment not readable: ' . $real);
 					}
 
-					$name = !empty($a->name) ? (string)$a->name : basename($real);
-					$mime = !empty($a->mime) ? (string)$a->mime : 'application/octet-stream';
+					$name = $a->name ?: basename($real);
+					$mime = $a->mime ?: 'application/octet-stream';
 
-					// Swift 3: stream file (lepší než file_get_contents)
-					$att = new Swift_File($real);
-					$att->setFilename($name);
-					$att->setContentType($mime);
-					$message->attach($att);
+					$message->attach(
+						new Swift_Message_Attachment(
+							file_get_contents($real),
+							$name,
+							$mime
+						)
+					);
 				}
 
 				// Send
@@ -1097,13 +1091,10 @@ class Scheduler_Controller extends Controller
 					$email->state = Email_queue_Model::STATE_FAIL;
 				}
 			} catch (Exception $e) {
-				// Jeden mail selže -> nezastavuj celou frontu
 				$email->state = Email_queue_Model::STATE_FAIL;
 				Log::add('error', 'Email queue id ' . $email->id . ': ' . $e->getMessage());
 			}
 
-			// access_time ti DB stejně aktualizuje (ON UPDATE current_timestamp),
-			// ale necháme save() kvůli state změně
 			$email->save();
 		}
 
