@@ -40,7 +40,7 @@ class Swift_File
    * @var boolean
    */
   protected $magic_quotes = false;
-  
+
   /**
    * Constructor
    * @param string The path the the file
@@ -49,7 +49,7 @@ class Swift_File
   public function __construct($path)
   {
     $this->setPath($path);
-    $this->magic_quotes = get_magic_quotes_runtime();
+    //$this->magic_quotes = get_magic_quotes_runtime();
   }
   /**
    * Set the path to the file
@@ -58,9 +58,8 @@ class Swift_File
    */
   public function setPath($path)
   {
-    if (!file_exists($path))
-    {
-      throw new Swift_FileException("No such file '" . $path ."'");
+    if (!file_exists($path)) {
+      throw new Swift_FileException("No such file '" . $path . "'");
     }
     $this->handle = null;
     $this->path = $path;
@@ -81,12 +80,9 @@ class Swift_File
    */
   public function getFileName()
   {
-    if ($this->name !== null)
-    {
+    if ($this->name !== null) {
       return $this->name;
-    }
-    else
-    {
+    } else {
       return basename($this->getPath());
     }
   }
@@ -96,10 +92,8 @@ class Swift_File
    */
   protected function createHandle()
   {
-    if ($this->handle === null)
-    {
-      if (!$this->handle = fopen($this->path, "rb"))
-      {
+    if ($this->handle === null) {
+      if (!$this->handle = fopen($this->path, "rb")) {
         throw new Swift_FileException("Unable to open file '" . $this->path . " for reading.  Check the file permissions.");
       }
     }
@@ -135,14 +129,12 @@ class Swift_File
   {
     set_magic_quotes_runtime(0);
     $this->createHandle();
-    if (!$this->EOF())
-    {
+    if (!$this->EOF()) {
       $ret = fgets($this->handle);
-    }
-    else $ret = false;
-    
+    } else $ret = false;
+
     set_magic_quotes_runtime($this->magic_quotes);
-    
+
     return $ret;
   }
   /**
@@ -164,18 +156,16 @@ class Swift_File
    * @return string
    * @throws Swift_FileException If the file cannot be read
    */
-  public function read($bytes, $unquote=true)
+  public function read($bytes, $unquote = true)
   {
     if ($unquote) set_magic_quotes_runtime(0);
     $this->createHandle();
-    if (!$this->EOF())
-    {
+    if (!$this->EOF()) {
       $ret = fread($this->handle, $bytes);
-    }
-    else $ret = false;
-    
+    } else $ret = false;
+
     if ($unquote) set_magic_quotes_runtime($this->magic_quotes);
-    
+
     return $ret;
   }
   /**
