@@ -1012,105 +1012,104 @@ class Scheduler_Controller extends Controller
 
 	/**
 	 * Sent e-mails from queue
-	 * 
+	 *
 	 * @author Michal Kliment
 	 */
 	private function send_quened_emails()
 	{
 		$email_queue_model = new Email_queue_Model();
-
 		$email_queue = $email_queue_model->get_current_queue();
 
-		if (!count($email_queue))
+		if (!count($email_queue)) {
 			return; // do not connect to SMTP server for no reason (fixes #336)
+		}
 
 		$swift = email::connect();
 
 		foreach ($email_queue as $email) {
-			// Build recipient lists
-			$recipients = new Swift_RecipientList;
-			$recipients->addTo($email->to);
+			try {
+				// Build recipient lists
+				$recipients = new Swift_RecipientList;
+				$recipients->addTo($email->to);
 
-			if (strpos($email->subject, 'Oznámení o přijaté platbě') !== FALSE) {
-				$recipients->addBcc('ucdokl@pvfree.net');
-			}
-			if (strpos($email->subject, 'Ukončení členství s přeplatkem') !== FALSE) {
-				$recipients->addBcc('rada@pvfree.net');
-				$recipients->addBcc('pokladnik@pvfree.net');
-			}
-
-			if (strpos($email->subject, 'Ukončení členství podle Stanov') !== FALSE) {
-				$recipients->addBcc('rada@pvfree.net');
-			}
-
-			if (strpos($email->subject, 'Ukončení členství na vlastní žádost') !== FALSE) {
-				$recipients->addBcc('rada@pvfree.net');
-			}
-
-			if (strpos($email->subject, 'Oznámení o započetí přerušení členství') !== FALSE) {
-				$recipients->addBcc('rada@pvfree.net');
-			}
-
-			// Build the HTML message
-			$message = new Swift_Message($email->subject);
-
-			// HTML body
-			$bodyHtml = (string)($email->body ?? '');
-
-			$message->setBody($bodyHtml, 'text/html', 'utf-8');
-
-			// TEXT alternativa – starý Swift
-			$bodyText = trim(strip_tags($bodyHtml));
-			if ($bodyText !== '') {
-				$message->addPart($bodyText, 'text/plain', 'utf-8');
-			}
-
-
-			// === ATTACHMENTS ===
-			$atts = $email_queue_model->get_attachments($email->id);
-
-			foreach ($atts as $a) {
-				$path = (string)$a->path;
-
-				// bezpečnost: povolit jen z /data (uprav dle reality)
-				$base = realpath(APPPATH . '../data');
-				$real = realpath($path);
-
-				if ($real === FALSE || strpos($real, $base . DIRECTORY_SEPARATOR) !== 0)
-					throw new Exception('Attachment path not allowed: ' . $path);
-
-				if (!is_file($real) || !is_readable($real))
-					throw new Exception('Attachment not readable: ' . $real);
-
-				$name = !empty($a->name) ? (string)$a->name : basename($real);
-				$mime = !empty($a->mime) ? (string)$a->mime : 'application/octet-stream';
-
-				$data = file_get_contents($real);
-				if ($data === FALSE) {
-					throw new Exception('Attachment read failed: ' . $real);
+				if (strpos($email->subject, 'Oznámení o přijaté platbě') !== FALSE) {
+					$recipients->addBcc('ucdokl@pvfree.net');
+				}
+				if (strpos($email->subject, 'Ukončení členství s přeplatkem') !== FALSE) {
+					$recipients->addBcc('rada@pvfree.net');
+					$recipients->addBcc('pokladnik@pvfree.net');
+				}
+				if (strpos($email->subject, 'Ukončení členství podle Stanov') !== FALSE) {
+					$recipients->addBcc('rada@pvfree.net');
+				}
+				if (strpos($email->subject, 'Ukončení členství na vlastní žádost') !== FALSE) {
+					$recipients->addBcc('rada@pvfree.net');
+				}
+				if (strpos($email->subject, 'Oznámení o započetí přerušení členství') !== FALSE) {
+					$recipients->addBcc('rada@pvfree.net');
 				}
 
-				// Starý Swift: Swift_Message_Attachment(data, filename, mime)
-				$message->attach(new Swift_Message_Attachment($data, $name, $mime));
-			}
+				// Build message (Swift 3.3.2)
+				$message = new Swift_Message($email->subject);
 
+				$bodyHtml = (string)($email->body ?? '');
+				$bodyText = trim(strip_tags($bodyHtml));
+				if ($bodyText === '') {
+					$bodyText = ' ';
+				}
 
-			// Send
-			if (
-				Config::get('unit_tester') ||
-				$swift->send($message, $recipients, $email->from)
-			) {
-				$email->state = Email_queue_Model::STATE_OK;
-			} else {
+				// Swift 3: primary body = text, HTML is alternative part (child)
+				$message->setBody($bodyText, 'text/plain', 'utf-8');
+				$message->addChild(new Swift_Message_Part($bodyHtml, 'text/html', 'utf-8'));
+
+				// === ATTACHMENTS ===
+				$atts = $email_queue_model->get_attachments($email->id);
+
+				foreach ($atts as $a) {
+					$path = (string)$a->path;
+
+					// bezpečnost: povolit jen z /data (uprav dle reality)
+					$base = realpath(APPPATH . '../data');
+					$real = realpath($path);
+
+					if ($real === FALSE || $base === FALSE || strpos($real, $base . DIRECTORY_SEPARATOR) !== 0) {
+						throw new Exception('Attachment path not allowed: ' . $path);
+					}
+
+					if (!is_file($real) || !is_readable($real)) {
+						throw new Exception('Attachment not readable: ' . $real);
+					}
+
+					$name = !empty($a->name) ? (string)$a->name : basename($real);
+					$mime = !empty($a->mime) ? (string)$a->mime : 'application/octet-stream';
+
+					// Swift 3: stream file (lepší než file_get_contents)
+					$att = new Swift_File($real);
+					$att->setFilename($name);
+					$att->setContentType($mime);
+					$message->attach($att);
+				}
+
+				// Send
+				if (Config::get('unit_tester') || $swift->send($message, $recipients, $email->from)) {
+					$email->state = Email_queue_Model::STATE_OK;
+				} else {
+					$email->state = Email_queue_Model::STATE_FAIL;
+				}
+			} catch (Exception $e) {
+				// Jeden mail selže -> nezastavuj celou frontu
 				$email->state = Email_queue_Model::STATE_FAIL;
+				Log::add('error', 'Email queue id ' . $email->id . ': ' . $e->getMessage());
 			}
 
-			$email->access_time = date('Y-m-d H:i:s');
+			// access_time ti DB stejně aktualizuje (ON UPDATE current_timestamp),
+			// ale necháme save() kvůli state změně
 			$email->save();
 		}
 
 		$swift->disconnect();
 	}
+
 
 	/**
 	 * Updates local subnets from web
