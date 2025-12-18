@@ -20,3 +20,18 @@ apt install composer
 cd /usr/share/freenetis/application/vendors/
 
 composer require mpdf/mpdf
+
+cd /var/www/html/freenetis
+
+composer config platform.php 7.4.33
+
+rm -rf vendor
+
+composer require mpdf/mpdf:"8.1.6"
+
+
+mkdir -p /var/www/html/freenetis/application/vendors/vendor/mpdf/mpdf/tmp/mpdf
+
+chown -R www-data:www-data /var/www/html/freenetis/application/vendors/vendor/mpdf/mpdf/tmp
+
+chmod -R 770 /var/www/html/freenetis/application/vendors/vendor/mpdf/mpdf/tmp
