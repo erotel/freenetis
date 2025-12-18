@@ -41,17 +41,59 @@ class Invoice_Pdf
 
         $items = $items_res->as_array();
 
-        // spočítat celkovou částku (součet položek)
-        $total = 0.0;
+        $currency = $inv->currency ? $inv->currency : 'CZK';
+
+        $format_money = function ($value) use ($currency) {
+            return number_format((float)$value, 2, ',', ' ') . ' ' . htmlspecialchars($currency);
+        };
+
+        $format_date = function ($value) {
+            if (empty($value)) {
+                return '';
+            }
+
+            $timestamp = strtotime($value);
+
+            return $timestamp ? date('d.m.Y', $timestamp) : '';
+        };
+
+        // spočítat částky dle sazeb DPH
+        $items_calculated = array();
+        $vat_totals       = array();
+        $total_net        = 0.0;
+        $total_vat        = 0.0;
+
         foreach ($items as $it) {
-            $qty   = (float)$it->quantity;
-            $price = (float)$it->price;
-            $total += $qty * $price;
+            $qty     = (float)$it->quantity;
+            $price   = (float)$it->price;
+            $vatRate = max(0.0, (float)$it->vat);
+
+            $line_net   = $qty * $price;
+            $line_vat   = $line_net * $vatRate;
+            $line_total = $line_net + $line_vat;
+
+            $items_calculated[] = array(
+                'name'       => $it->name,
+                'net'        => $line_net,
+                'vat_rate'   => $vatRate,
+                'vat_value'  => $line_vat,
+                'total'      => $line_total,
+            );
+
+            $total_net += $line_net;
+            $total_vat += $line_vat;
+
+            if (! isset($vat_totals[$vatRate])) {
+                $vat_totals[$vatRate] = array('base' => 0.0, 'vat' => 0.0);
+            }
+
+            $vat_totals[$vatRate]['base'] += $line_net;
+            $vat_totals[$vatRate]['vat']  += $line_vat;
         }
 
         // údaje organizace z configu (můžeš doladit podle toho, co máš v Settings)
         $org = array(
-            'name'   => Settings::get('association_name'),
+            'name'   => Settings::get('association_name') ?: 'FreenetIS',
             'street' => Settings::get('association_street'),
             'city'   => Settings::get('association_city'),
             'zip'    => Settings::get('association_zip'),
@@ -60,12 +102,11 @@ class Invoice_Pdf
         );
 
         // proměnné z faktury
-        $date_inv = date('d.m.Y', strtotime($inv->date_inv));
-        $date_due = date('d.m.Y', strtotime($inv->date_due));
-        $date_vat = date('d.m.Y', strtotime($inv->date_vat));
+        $date_inv = $format_date($inv->date_inv);
+        $date_due = $format_date($inv->date_due);
+        $date_vat = $format_date($inv->date_vat);
         $vs       = $inv->var_sym;
         $acc      = $inv->account_nr;
-        $currency = $inv->currency ? $inv->currency : 'CZK';
 
         // HTML šablona (jednodušší „Pohoda-like“)
         ob_start();
@@ -352,14 +393,28 @@ class Invoice_Pdf
                     <table class="top-row">
                         <tr>
                             <td style="width:55%;">
-                                <div class="supplier-name">PVfree.net z.s.</div>
-                                <div>Daliborka 3<br>796 01 Prostějov</div>
+                                <div class="supplier-name"><?= htmlspecialchars($org['name']) ?></div>
+                                <div>
+                                    <?php if ($org['street']): ?>
+                                        <?= htmlspecialchars($org['street']) ?><br>
+                                    <?php endif; ?>
+                                    <?php if ($org['zip'] || $org['city']): ?>
+                                        <?= htmlspecialchars(trim(($org['zip'] ? $org['zip'] . ' ' : '') . $org['city'])) ?>
+                                    <?php endif; ?>
+                                </div>
                                 <br>
-                                <div>IČ: 26656787</div>
-                                <div>DIČ: CZ26656787</div>
-                                <div>Telefon: 588 207 234</div>
-                                <div>E-mail: rada@pvfree.net</div>
-                                <div>www.pvfree.net</div>
+                                <?php if ($org['ico']): ?>
+                                    <div>IČ: <?= htmlspecialchars($org['ico']) ?></div>
+                                <?php endif; ?>
+                                <?php if ($org['dic']): ?>
+                                    <div>DIČ: <?= htmlspecialchars($org['dic']) ?></div>
+                                <?php endif; ?>
+                                <?php if ($inv->phone_number): ?>
+                                    <div>Telefon: <?= htmlspecialchars($inv->phone_number) ?></div>
+                                <?php endif; ?>
+                                <?php if ($inv->email): ?>
+                                    <div>E-mail: <?= htmlspecialchars($inv->email) ?></div>
+                                <?php endif; ?>
                             </td>
                             <td style="width:45%; text-align:right;">
                                 <div class="invoice-title">FAKTURA - DAŇOVÝ DOKLAD </div>
@@ -378,20 +433,20 @@ class Invoice_Pdf
                                     <div class="box-inner">
                                         <h4>Odběratel:</h4>
                                         <p><?= htmlspecialchars($inv->partner_name) ?></p>
-                                        <div><?php if ($inv->partner_street): ?>
-                                                <p> <?= htmlspecialchars($inv->partner_street) ?>
-                                                <?php endif; ?>
-                                                <?php if ($inv->partner_street_number): ?>
-                                                    <?= htmlspecialchars($inv->partner_street_number) ?></p>
+                                        <div>
+                                            <?php if ($inv->partner_street || $inv->partner_street_number): ?>
+                                                <p>
+                                                    <?= htmlspecialchars(trim($inv->partner_street . ' ' . $inv->partner_street_number)) ?>
+                                                </p>
                                             <?php endif; ?>
                                             <?php if ($inv->partner_zip_code || $inv->partner_town): ?>
-                                                <p> <?= htmlspecialchars(trim($inv->partner_zip_code . ' ' . $inv->partner_town)) ?></p>
+                                                <p><?= htmlspecialchars(trim($inv->partner_zip_code . ' ' . $inv->partner_town)) ?></p>
                                             <?php endif; ?>
                                             <?php if ($inv->organization_identifier): ?>
-                                                <p> IČO: <?= htmlspecialchars($inv->organization_identifier) ?></p>
+                                                <p>IČO: <?= htmlspecialchars($inv->organization_identifier) ?></p>
                                             <?php endif; ?>
                                             <?php if ($inv->vat_organization_identifier): ?>
-                                                <p> DIČ: <?= htmlspecialchars($inv->vat_organization_identifier) ?></p>
+                                                <p>DIČ: <?= htmlspecialchars($inv->vat_organization_identifier) ?></p>
                                             <?php endif; ?>
                                         </div>
 
@@ -439,31 +494,28 @@ class Invoice_Pdf
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Platba za Připojení k síti Internet za období 01/2026</td>
-                                <td class="num">264,46</td>
-                                <td class="num">21%</td>
-                                <td class="num">55,54</td>
-                                <td class="num">320,00</td>
-                            </tr>
-                            <tr>
-                                <td colspan="4" class="num">Zaokrouhlení</td>
-                                <td class="num">0,00</td>
-                            </tr>
-                            <tr>
-                                <td colspan="4" class="num">Zaplaceno na zalohách</td>
-                                <td class="num">-320,00</td>
-                            </tr>
+                            <?php if (empty($items_calculated)): ?>
+                                <tr>
+                                    <td colspan="5" style="text-align:center;">Faktura neobsahuje žádné položky.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($items_calculated as $item): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($item['name']) ?></td>
+                                        <td class="num"><?= $format_money($item['net']) ?></td>
+                                        <td class="num"><?= number_format($item['vat_rate'] * 100, 0) ?>%</td>
+                                        <td class="num"><?= $format_money($item['vat_value']) ?></td>
+                                        <td class="num"><?= $format_money($item['total']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
 
-                            </tbodyt>
+                            </tbody>
                     </table>
 
                     <!-- Celkem k úhradě -->
                     <div class="total-box">
-                        CELKEM K ÚHRADĚ: &nbsp; 0,00 Kč
-                    </div>
-                    <div class="total-box">
-                        NEPLAŤTE ZAPLACENO ZÁLOHOU !
+                        CELKEM K ÚHRADĚ: &nbsp; <?= $format_money($total_net + $total_vat) ?>
                     </div>
 
 
@@ -473,7 +525,9 @@ class Invoice_Pdf
 
                     <!-- Text pod tabulkou -->
                     <div class="middle-note">
-                        Spolek PVfree.net, z.s., založen 12.3.2004, zapsán pod značkou L 10341/KSBR Krajským soudem v Brně.<br>
+                        <?php if ($inv->note): ?>
+                            <?= nl2br(htmlspecialchars($inv->note)) ?>
+                        <?php endif; ?>
 
                     </div>
 
@@ -495,12 +549,20 @@ class Invoice_Pdf
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td class="num">264,46</td>
-                                            <td class="num">21%</td>
-                                            <td class="num">55,54</td>
-                                            <td class="num">320,00</td>
-                                        </tr>
+                                        <?php if (empty($vat_totals)): ?>
+                                            <tr>
+                                                <td colspan="4" style="text-align:center;">Bez DPH.</td>
+                                            </tr>
+                                        <?php else: ?>
+                                            <?php foreach ($vat_totals as $rate => $values): ?>
+                                                <tr>
+                                                    <td class="num"><?= $format_money($values['base']) ?></td>
+                                                    <td class="num"><?= number_format($rate * 100, 0) ?>%</td>
+                                                    <td class="num"><?= $format_money($values['vat']) ?></td>
+                                                    <td class="num"><?= $format_money($values['base'] + $values['vat']) ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </tbody>
                                 </table>
                             </td>
