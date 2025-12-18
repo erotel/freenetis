@@ -754,7 +754,7 @@ abstract class Bank_Statement_File_Importer
 				// services => vystavit fakturu + PDF + email queue
 				if ($purpose === 1) {
 					$period_tag = date('Y-m'); // účetní měsíc podle data importu
-					Log_queue_Model::info("BANK IMPORT OK");
+					
 					try {
 						// nový model
 						require_once APPPATH . 'models/bank_import_services_invoices.php';
