@@ -31,7 +31,7 @@ class Scheduler_Controller extends Controller
 	/** Activation Minute for device fees (not oftenly used) */
 	const AM_DEVICE_FEES			= '06';
 	/** Activation Minute for bank statements downloading (long action) */
-	const AM_BANK_STATEMENTS		= '07';
+	const AM_BANK_STATEMENTS		= '55';
 	/** Activation Minute for connection test (daily action) */
 	const AM_CONNECTION_TEST	= '09';
 	/** Activation Minute for former member message */
