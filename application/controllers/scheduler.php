@@ -1062,7 +1062,7 @@ class Scheduler_Controller extends Controller
 			// TEXT alternativa – starý Swift
 			$bodyText = trim(strip_tags($bodyHtml));
 			if ($bodyText !== '') {
-				$message->attach(new Swift_Message_Part($bodyText, 'text/plain', 'utf-8'));
+				$message->addPart($bodyText, 'text/plain', 'utf-8');
 			}
 
 

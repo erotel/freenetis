@@ -259,7 +259,6 @@ WHERE a.member_id = ? LIMIT 1",
       "Dobrý den,<br>\n<br>\nV příloze zasíláme fakturu na přijatou platbu.<br>\n"
         . "ID Platby: %s<br>\n"
         . "Částka: %s Kč<br>\n<br>\nPVfree.net, z.s.<br>\n",
-      htmlspecialchars($period_tag),
       htmlspecialchars(implode(', ', $bank_transfer_ids)),
       number_format($total_amount, 2, ',', ' ')
     );
