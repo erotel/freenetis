@@ -1044,6 +1044,11 @@ class Scheduler_Controller extends Controller
 					$recipients->addBcc('rada@pvfree.net');
 				}
 
+				if (strpos($email->subject, 'Faktura ') === 0) {
+					$recipients->addBcc('slezi2@pvfree.net');
+				}
+
+
 				// Message
 				$message = new Swift_Message($email->subject);
 
