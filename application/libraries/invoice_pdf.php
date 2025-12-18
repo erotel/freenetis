@@ -393,41 +393,23 @@ class Invoice_Pdf
                     <table class="top-row">
                         <tr>
                             <td style="width:55%;">
-                                <div class="supplier-name"><?= htmlspecialchars($org['name']) ?></div>
-                                <div>
-                                    <?php if ($org['street']): ?>
-                                        <?= htmlspecialchars($org['street']) ?><br>
-                                    <?php endif; ?>
-                                    <?php if ($org['zip'] || $org['city']): ?>
-                                        <?= htmlspecialchars(trim(($org['zip'] ? $org['zip'] . ' ' : '') . $org['city'])) ?>
-                                    <?php endif; ?>
-                                </div>
+                                <div class="supplier-name">PVfree.net z.s.</div>
+                                <div>Daliborka 3<br>796 01 Prostějov</div>
                                 <br>
-                                <?php if ($org['ico']): ?>
-                                    <div>IČ: <?= htmlspecialchars($org['ico']) ?></div>
-                                <?php endif; ?>
-                                <?php if ($org['dic']): ?>
-                                    <div>DIČ: <?= htmlspecialchars($org['dic']) ?></div>
-                                <?php endif; ?>
-                                <?php if ($inv->phone_number): ?>
-                                    <div>Telefon: <?= htmlspecialchars($inv->phone_number) ?></div>
-                                <?php endif; ?>
-                                <?php if ($inv->email): ?>
-                                    <div>E-mail: <?= htmlspecialchars($inv->email) ?></div>
-                                <?php endif; ?>
+                                <div>IČ: 26656787</div>
+                                <div>DIČ: CZ26656787</div>
+                                <div>Telefon: 588 207 234</div>
+                                <div>E-mail: rada@pvfree.net</div>
+                                <div>www.pvfree.net</div>
                             </td>
                             <td style="width:45%; text-align:right;">
                                 <div class="invoice-title">FAKTURA - DAŇOVÝ DOKLAD </div>
                                 <div class="invoice-title">č. <?= htmlspecialchars($inv->invoice_nr) ?></div>
 
-                                <div class="box" style="margin-top:10px;text-align:right;">
-                                    <table class="inline-table">
-                                        <tr>
-                                            <td>Variabilní symbol:</td>
-                                            <td style="text-align:left;"><?= htmlspecialchars($vs) ?></td>
-                                        </tr>
-                                    </table>
+                                <div class="box" style="margin-top:10px; text-align:right;">
+                                    Variabilní symbol: <span style="display:inline-block; min-width:70px; text-align:left;"><?= htmlspecialchars($vs) ?></span>
                                 </div>
+
 
                                 <div class="box">
                                     <div class="box-inner">
@@ -510,12 +492,12 @@ class Invoice_Pdf
                                 <?php endforeach; ?>
                             <?php endif; ?>
 
-                            </tbody>
+                        </tbody>
                     </table>
 
                     <!-- Celkem k úhradě -->
                     <div class="total-box">
-                        CELKEM K ÚHRADĚ: &nbsp; <?= $format_money($total_net + $total_vat) ?>
+                        CELKEM K ZAPLACENO: &nbsp; <?= $format_money($total_net + $total_vat) ?>
                     </div>
 
 
@@ -525,9 +507,7 @@ class Invoice_Pdf
 
                     <!-- Text pod tabulkou -->
                     <div class="middle-note">
-                        <?php if ($inv->note): ?>
-                            <?= nl2br(htmlspecialchars($inv->note)) ?>
-                        <?php endif; ?>
+                        Spolek PVfree.net, z.s., založen 12.3.2004, zapsán pod značkou L 10341/KSBR Krajským soudem v Brně.<br>
 
                     </div>
 
@@ -557,7 +537,7 @@ class Invoice_Pdf
                                             <?php foreach ($vat_totals as $rate => $values): ?>
                                                 <tr>
                                                     <td class="num"><?= $format_money($values['base']) ?></td>
-                                                    <td class="num"><?= number_format($rate * 100, 0) ?>%</td>
+                                                    <td class="num"><?= number_format($item['vat_rate'] * 100, 0) ?>%</td>
                                                     <td class="num"><?= $format_money($values['vat']) ?></td>
                                                     <td class="num"><?= $format_money($values['base'] + $values['vat']) ?></td>
                                                 </tr>
@@ -618,14 +598,14 @@ class Invoice_Pdf
         // uložení PDF
         $mpdf->Output($path, 'F');
 
-         // uložení cesty do DB
+        // uložení cesty do DB
         $db->query("
             UPDATE invoices
             SET pdf_filename = ?
             WHERE id = ?
             LIMIT 1
         ", array($path, $invoice_id));
-        
+
         return $path;
     }
 }

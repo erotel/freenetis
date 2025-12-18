@@ -45,20 +45,29 @@ class Bank_import_services_invoices_Model
     // --- data člena (stejně jako auto_credit_invoices, jen minimum) ---
     $row = $db->query(
       "SELECT
-                m.id AS member_id,
-                m.name AS member_name,
-                ap.street_number AS street_number,
-                s.street AS street_name,
-                t.town AS town_name,
-                t.zip_code AS zip_code,
-                m.organization_identifier AS ico,
-                m.vat_organization_identifier AS dic
-             FROM members m
-             LEFT JOIN address_points ap ON ap.id = m.address_point_id
-             LEFT JOIN streets s ON s.id = ap.street_id
-             LEFT JOIN towns t ON t.id = ap.town_id
-             WHERE m.id = ?
-             LIMIT 1",
+    a.id                       AS account_id,
+    a.member_id                AS member_id,
+    a.balance                  AS balance,
+    m.name                     AS member_name,
+    vs.variable_symbol         AS variable_symbol,
+    s.street                   AS street_name,
+    ap.street_number           AS street_number,
+    t.town                     AS town_name,
+    t.zip_code                 AS zip_code,
+    m.organization_identifier      AS ico,
+    m.vat_organization_identifier  AS dic
+FROM accounts a
+JOIN members m
+    ON m.id = a.member_id
+LEFT JOIN variable_symbols vs
+    ON vs.account_id = a.id
+LEFT JOIN address_points ap
+    ON ap.id = m.address_point_id
+LEFT JOIN streets s
+    ON s.id = ap.street_id
+LEFT JOIN towns t
+    ON t.id = ap.town_id
+WHERE a.member_id = ? LIMIT 1",
       array($member_id)
     )->current();
 
@@ -76,6 +85,12 @@ class Bank_import_services_invoices_Model
 
     // VS = member_id
     $var_sym = (float)$member_id;
+
+    // pokud existuje variable_symbol na kreditním účtu, použijeme ten
+    if ($row->variable_symbol !== NULL && $row->variable_symbol !== '') {
+      // invoices.var_sym je double, ale MariaDB si poradí i s číselným stringem
+      $var_sym = (float)$row->variable_symbol;
+    }
 
     // === SERVICES FAKTURY: VŽDY 21 % DPH ===
     $vat_rate = 0.21;   // 21 %
@@ -168,7 +183,7 @@ class Bank_import_services_invoices_Model
     $invoice_id = (int)$res->insert_id();
 
     // --- invoice_items ---
-    $item_name = sprintf('Platba za internet (%s)', $period_tag);
+    $item_name = sprintf('Platba za připojení k síti Internet', $period_tag);
     $item_code = sprintf('BANK-%s', $period_tag);
 
     // cena bez DPH (vždy 21 %)
