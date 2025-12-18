@@ -3,17 +3,15 @@
 FreenetIS is an open source information system for managing community-based networks.
 It provides features like payment management, user and device management, services management etc.
 
-* [Home page](http://www.freenetis.org)
-* [Documentation (CZE)](http://wiki.freenetis.org)
-* [Installation instruction (CZE)](http://wiki.freenetis.org/index.php/Instalace)
-* [Developer page](https://dev.freenetis.org/projects/freenetis)
-* [DEB repository](http://repository.freenetis.org)
-
+- [Home page](http://www.freenetis.org)
+- [Documentation (CZE)](http://wiki.freenetis.org)
+- [Installation instruction (CZE)](http://wiki.freenetis.org/index.php/Instalace)
+- [Developer page](https://dev.freenetis.org/projects/freenetis)
+- [DEB repository](http://repository.freenetis.org)
 
 úpravy pro Pvfree.net
 
 pokud používáte výstup přihlášky do pdf, je nutno nainstalovat mpdf
-
 
 apt install composer
 
@@ -29,9 +27,8 @@ rm -rf vendor
 
 composer require mpdf/mpdf:"8.1.6"
 
+mkdir -p /usr/share/freenetis/application/cache/mpdf
 
-mkdir -p /var/www/html/freenetis/application/vendors/vendor/mpdf/mpdf/tmp/mpdf
+chown -R www-data:www-data /usr/share/freenetis/application/cache/mpdf
 
-chown -R www-data:www-data /var/www/html/freenetis/application/vendors/vendor/mpdf/mpdf/tmp
-
-chmod -R 770 /var/www/html/freenetis/application/vendors/vendor/mpdf/mpdf/tmp
+chmod 2775 /usr/share/freenetis/application/cache/mpdf

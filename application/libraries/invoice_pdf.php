@@ -563,8 +563,14 @@ class Invoice_Pdf
 <?php
         $html = ob_get_clean();
 
+        $tmp = APPPATH . 'cache/mpdf';
+        if (!is_dir($tmp)) {
+            @mkdir($tmp, 0775, true);
+        }
+
         // vytvoření mPDF
         $mpdf = new \Mpdf\Mpdf([
+            'tempDir'            => $tmp,
             'format'           => 'A4',
             'margin_left'      => 10,
             'margin_right'     => 10,
