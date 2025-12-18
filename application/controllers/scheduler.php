@@ -237,18 +237,17 @@ class Scheduler_Controller extends Controller
 		if (Settings::get('finance_enabled')) {
 			$this->fee_deduction();
 
-			// automatické faktury z kreditu
-			try {
-				Auto_credit_invoices_Model::run($this->t);
-			} catch (Exception $e) {
-				self::log_error('auto_credit_invoices', $e, FALSE);
-				Log_queue_Model::error('Error during auto_credit_invoices', $e);
-			}
+
 
 			//synchronize with vtiger CRM
 			$this->vtiger_sync();
 		}
 
+
+		// export pohoda mounthly
+		if ((int)date('j') === 1) {
+			$this->export_pohoda_monthly((int)date('Y'), (int)date('n'));
+		}
 
 		// set state of module (last activation time)
 		Settings::set('cron_state', date('Y-m-d H:i:s'));
@@ -309,9 +308,7 @@ class Scheduler_Controller extends Controller
 				$a_email = $a_email && Settings::get('email_enabled');
 				$a_sms = $a_sms && Settings::get('sms_enabled');
 
-				$activate = TRUE;
-				$a_email = TRUE;
-				$a_sms = FALSE;
+
 				// any rule?
 				if (!$activate) {
 					continue;
@@ -1267,5 +1264,28 @@ class Scheduler_Controller extends Controller
 				self::log_error('vtiger_synchronization', $e);
 			}
 		}
+	}
+
+	private function export_pohoda_monthly()
+	{
+		$dt = new DateTime('first day of last month');
+		$year  = (int)$dt->format('Y');
+		$month = (int)$dt->format('m');
+
+		$m = new Pohoda_export_Model();
+		$invoices = $m->get_invoices_for_month($year, $month);
+		if (!count($invoices)) return;
+
+		$xml = $m->build_xml($invoices);
+		$file = $m->save_xml($year, $month, $xml);
+
+		$eq = new Email_queue_Model();
+		$eq->push(
+			'noreply@pvfree.net',
+			'svacinova@aldekon.cz',
+			"Export POHODA {$month}/{$year}",
+			"V příloze je XML export vystavených faktur za {$month}/{$year}.",
+			[['path' => $file, 'name' => basename($file), 'mime' => 'application/xml']]
+		);
 	}
 }
