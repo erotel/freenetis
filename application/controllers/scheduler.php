@@ -1045,7 +1045,7 @@ class Scheduler_Controller extends Controller
 				}
 
 				if (strpos($email->subject, 'Faktura ') === 0) {
-					$recipients->addBcc('slezi2@pvfree.net');
+					$recipients->addBcc('ucdokl@pvfree.net');
 				}
 
 
