@@ -90,13 +90,22 @@ class Invoices_Controller extends Controller
 
 		$invoice_model = new Invoice_Model();
 
-		$total_invoices = $invoice_model->count_all_invoices($filter_form->as_sql());
+		$total_invoices = (int)$invoice_model->count_all_invoices($filter_form->as_sql());
 
-		$sql_offset = ((int)$page - 1) * (int)$limit_results;
+		$page = max(1, (int)$page);
+		$limit_results = max(1, (int)$limit_results);
 
-		if ($sql_offset > (int)$total_invoices) {
-			$sql_offset = 0;
+		$sql_offset = ($page - 1) * $limit_results;
+
+		// správný poslední offset
+		$max_offset = ($total_invoices > 0)
+			? ((int)floor(($total_invoices - 1) / $limit_results) * $limit_results)
+			: 0;
+
+		if ($sql_offset > $max_offset) {
+			$sql_offset = $max_offset; // vezmi poslední stránku, ne první
 		}
+
 
 
 		$invoices = $invoice_model->get_all_invoices(
@@ -107,10 +116,9 @@ class Invoices_Controller extends Controller
 			$filter_form->as_sql()
 		);
 
-		// path to form
+		// base_url bez page!
 		$path = Config::get('lang') . '/invoices/show_all/' . $limit_results . '/'
-			. $order_by . '/' . $order_by_direction . '/'
-			. $page_word . '/' . $page;
+			. $order_by . '/' . $order_by_direction;
 
 		// create grid
 		$grid = new Grid('invoices', '', array(

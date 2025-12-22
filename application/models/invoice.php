@@ -50,14 +50,13 @@ class Invoice_Model extends ORM
 	const TYPE_ISSUED = 0;
 	/** Type of member: received */
 	const TYPE_RECEIVED = 1;
-	
+
 	/**
-	* Types of invoice
-	* 
-	* @var array
-	*/
-	private static $types = array
-	(
+	 * Types of invoice
+	 * 
+	 * @var array
+	 */
+	private static $types = array(
 		self::TYPE_ISSUED		=> 'Issued',
 		self::TYPE_RECEIVED		=> 'Received'
 	);
@@ -72,14 +71,14 @@ class Invoice_Model extends ORM
 	 * @param integer|string $type
 	 * @return string 
 	 */
-	public static function get_type ($type)
+	public static function get_type($type)
 	{
 		if (isset(self::$types[$type]))
 			return __(self::$types[$type]);
 		else
 			return $type;
 	}
-	
+
 	/**
 	 * Return translated invoice type array
 	 *
@@ -88,13 +87,12 @@ class Invoice_Model extends ORM
 	 */
 	public static function types()
 	{
-		return array
-		(
+		return array(
 			self::TYPE_ISSUED => __('Issued'),
 			self::TYPE_RECEIVED => __('Received')
 		);
 	}
-	
+
 	/**
 	 * Returns ORM_Iterator of all invoices
 	 * 
@@ -106,30 +104,30 @@ class Invoice_Model extends ORM
 	 * @return Mysql_Result
 	 */
 	public function get_all_invoices(
-			$limit_from = 0, $limit_results = 50,
-			$order_by = 'id', $order_by_direction = 'ASC', 
-			$filter_sql = '')
-	{
+		$limit_from = 0,
+		$limit_results = 50,
+		$order_by = 'id',
+		$order_by_direction = 'ASC',
+		$filter_sql = ''
+	) {
 		// order by direction check
-		if (strtolower($order_by_direction) != 'desc')
-		{
+		if (strtolower($order_by_direction) != 'desc') {
 			$order_by_direction = 'asc';
 		}
-		
+
 		$where = '';
 
 		if ($filter_sql != '')
 			$where = "WHERE $filter_sql";
-		
+
 		$join_phone = '';
 		$select_phone = '';
-		
+
 		$join_email = '';
 		$select_email = '';
-		
+
 		//HACK FOR IMPROVING PERFORMANCE
-		if (strpos($filter_sql, '`iv`.`phone` LIKE '))
-		{
+		if (strpos($filter_sql, '`iv`.`phone` LIKE ')) {
 			$join_phone = "
 					LEFT JOIN
 					(
@@ -147,9 +145,8 @@ class Invoice_Model extends ORM
 					";
 			$select_phone = ", IF(iv.member_id IS NULL,iv.phone_number, cp.phone) AS phone";
 		}
-		
-		if (strpos($filter_sql, '`iv`.`email` LIKE '))
-		{
+
+		if (strpos($filter_sql, '`iv`.`email` LIKE ')) {
 			$join_email = "
 					LEFT JOIN
 					(
@@ -167,7 +164,7 @@ class Invoice_Model extends ORM
 					";
 			$select_email = ",IF(iv.member_id IS NULL,iv.email, cm.email) AS email";
 		}
-		
+
 		// query
 		return $this->db->query("
 				SELECT * 
@@ -226,12 +223,13 @@ class Invoice_Model extends ORM
 					GROUP BY iv.id
 				) iv $where
 				ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
+				LIMIT " . (int)$limit_results . " OFFSET " . (int)$limit_from . "
 			", array(
-					Contact_Model::TYPE_EMAIL,
-					Contact_Model::TYPE_PHONE
-			));
+			Contact_Model::TYPE_EMAIL,
+			Contact_Model::TYPE_PHONE
+		));
 	}
-	
+
 	/**
 	 * Returns ORM_Iterator of all invoices
 	 * 
@@ -248,7 +246,7 @@ class Invoice_Model extends ORM
 
 		if ($filter_sql != '')
 			$where = "WHERE $filter_sql";
-		
+
 		// query
 		return $this->db->query("
 				SELECT * 
@@ -332,11 +330,11 @@ class Invoice_Model extends ORM
 				) iv $where
 				ORDER BY iv.id
 			", array(
-					Contact_Model::TYPE_EMAIL,
-					Contact_Model::TYPE_PHONE
-			));
+			Contact_Model::TYPE_EMAIL,
+			Contact_Model::TYPE_PHONE
+		));
 	}
-	
+
 	/**
 	 * Function counts all invoices.
 	 * 
@@ -352,24 +350,20 @@ class Invoice_Model extends ORM
 	public function count_all_invoices($filter_sql = "")
 	{
 		// optimalization
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$where = "WHERE $filter_sql";
-		}
-		else
-		{
+		} else {
 			return $this->count_all();
 		}
-		
+
 		$join_phone = '';
 		$select_phone = '';
-		
+
 		$join_email = '';
 		$select_email = '';
-		
+
 		//HACK FOR IMPROVING PERFORMANCE
-		if (strpos($filter_sql, '`iv`.`phone` LIKE '))
-		{
+		if (strpos($filter_sql, '`iv`.`phone` LIKE ')) {
 			$join_phone = "
 					LEFT JOIN
 					(
@@ -387,9 +381,8 @@ class Invoice_Model extends ORM
 					";
 			$select_phone = ", IF(iv.member_id IS NULL,iv.phone_number, cp.phone) AS phone";
 		}
-		
-		if (strpos($filter_sql, '`iv`.`email` LIKE '))
-		{
+
+		if (strpos($filter_sql, '`iv`.`email` LIKE ')) {
 			$join_email = "
 					LEFT JOIN
 					(
@@ -407,7 +400,7 @@ class Invoice_Model extends ORM
 					";
 			$select_email = ",IF(iv.member_id IS NULL,iv.email, cm.email) AS email";
 		}
-		
+
 		// query
 		return $this->db->query("
 				SELECT COUNT(*) AS total 
@@ -464,11 +457,11 @@ class Invoice_Model extends ORM
 					GROUP BY iv.id
 				) iv $where
 			", array(
-					Contact_Model::TYPE_EMAIL,
-					Contact_Model::TYPE_PHONE
-			))->current()->total;
+			Contact_Model::TYPE_EMAIL,
+			Contact_Model::TYPE_PHONE
+		))->current()->total;
 	}
-	
+
 	/**
 	 * Returns all partner names by given like
 	 * 
@@ -476,7 +469,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_names ($like)
+	public function get_all_names($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT partner FROM 
@@ -489,9 +482,9 @@ class Invoice_Model extends ORM
 					FROM members
 				) m ON m.id = i.member_id
 			) i
-			WHERE partner LIKE ".$this->db->escape("%$like%"));
+			WHERE partner LIKE " . $this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all streets by given like
 	 * 
@@ -499,7 +492,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_streets ($like)
+	public function get_all_streets($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT street FROM 
@@ -522,9 +515,9 @@ class Invoice_Model extends ORM
 					) ap ON ap.id = m.address_point_id
 				) m ON m.id = i.member_id
 			) i
-			WHERE street IS NOT NULL AND street LIKE ".$this->db->escape("%$like%"));
+			WHERE street IS NOT NULL AND street LIKE " . $this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all towns by given like
 	 * 
@@ -532,7 +525,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_towns ($like)
+	public function get_all_towns($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT town FROM 
@@ -555,9 +548,9 @@ class Invoice_Model extends ORM
 					) ap ON ap.id = m.address_point_id
 				) m ON m.id = i.member_id
 			) i
-			WHERE town IS NOT NULL AND town LIKE ".$this->db->escape("%$like%"));
+			WHERE town IS NOT NULL AND town LIKE " . $this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all zip codes by given like
 	 * 
@@ -565,7 +558,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_zip_codes ($like)
+	public function get_all_zip_codes($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT zip_code FROM 
@@ -589,9 +582,9 @@ class Invoice_Model extends ORM
 					) ap ON ap.id = m.address_point_id
 				) m ON m.id = i.member_id
 			) i
-			WHERE zip_code IS NOT NULL AND zip_code LIKE ".$this->db->escape("%$like%"));
+			WHERE zip_code IS NOT NULL AND zip_code LIKE " . $this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all street numbers by given like
 	 * 
@@ -599,7 +592,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_street_numbers ($like)
+	public function get_all_street_numbers($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT street_number FROM 
@@ -618,9 +611,9 @@ class Invoice_Model extends ORM
 					) ap ON ap.id = m.address_point_id
 				) m ON m.id = i.member_id
 			) i
-			WHERE street_number IS NOT NULL AND street_number LIKE ".$this->db->escape("%$like%"));
+			WHERE street_number IS NOT NULL AND street_number LIKE " . $this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all countries by given like
 	 * 
@@ -628,7 +621,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_countries ($like)
+	public function get_all_countries($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT country FROM 
@@ -652,9 +645,9 @@ class Invoice_Model extends ORM
 					) ap ON ap.id = m.address_point_id
 				) m ON m.id = i.member_id
 			) i
-			WHERE country IS NOT NULL AND country LIKE ".$this->db->escape("%$like%"));
+			WHERE country IS NOT NULL AND country LIKE " . $this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all organization ids by given like
 	 * 
@@ -662,7 +655,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_organization_ids ($like)
+	public function get_all_organization_ids($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT organization_identifier FROM 
@@ -677,10 +670,10 @@ class Invoice_Model extends ORM
 					FROM members m
 				) m ON m.id = i.member_id
 			) i
-			WHERE organization_identifier IS NOT NULL AND organization_identifier LIKE " . 
-				$this->db->escape("%$like%"));
+			WHERE organization_identifier IS NOT NULL AND organization_identifier LIKE " .
+			$this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all VAT organization ids by given like
 	 * 
@@ -688,7 +681,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_vat_organization_ids ($like)
+	public function get_all_vat_organization_ids($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT vat_organization_identifier FROM 
@@ -703,10 +696,10 @@ class Invoice_Model extends ORM
 					FROM members m
 				) m ON m.id = i.member_id
 			) i
-			WHERE vat_organization_identifier IS NOT NULL AND vat_organization_identifier LIKE " . 
-				$this->db->escape("%$like%"));
+			WHERE vat_organization_identifier IS NOT NULL AND vat_organization_identifier LIKE " .
+			$this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all account numbers by given like
 	 * 
@@ -714,7 +707,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_account_nrs ($like)
+	public function get_all_account_nrs($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT account_nr FROM 
@@ -736,10 +729,10 @@ class Invoice_Model extends ORM
 					) ba ON ba.member_id = m.id
 				) m ON m.id = i.member_id
 			) i
-			WHERE account_nr IS NOT NULL AND account_nr LIKE " . 
-				$this->db->escape("%$like%"));
+			WHERE account_nr IS NOT NULL AND account_nr LIKE " .
+			$this->db->escape("%$like%"));
 	}
-	
+
 	/**
 	 * Returns all emails by given like
 	 * 
@@ -747,9 +740,10 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_emails ($like)
+	public function get_all_emails($like)
 	{
-		return $this->db->query("
+		return $this->db->query(
+			"
 			SELECT DISTINCT email FROM 
 			(
 				SELECT 
@@ -779,11 +773,12 @@ class Invoice_Model extends ORM
 					) cm ON m.id = cm.member_id
 				) m ON m.id = i.member_id
 			) i
-			WHERE email IS NOT NULL AND email LIKE " . 
+			WHERE email IS NOT NULL AND email LIKE " .
 				$this->db->escape("%$like%"),
-				array(Contact_Model::TYPE_EMAIL));
+			array(Contact_Model::TYPE_EMAIL)
+		);
 	}
-	
+
 	/**
 	 * Returns all phone numbers by given like
 	 * 
@@ -791,9 +786,10 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_phone_numbers ($like)
+	public function get_all_phone_numbers($like)
 	{
-		return $this->db->query("
+		return $this->db->query(
+			"
 			SELECT DISTINCT phone_number FROM 
 			(
 				SELECT 
@@ -823,11 +819,12 @@ class Invoice_Model extends ORM
 					) cm ON m.id = cm.member_id
 				) m ON m.id = i.member_id
 			) i
-			WHERE phone_number IS NOT NULL AND phone_number LIKE " . 
+			WHERE phone_number IS NOT NULL AND phone_number LIKE " .
 				$this->db->escape("%$like%"),
-				array(Contact_Model::TYPE_PHONE));
+			array(Contact_Model::TYPE_PHONE)
+		);
 	}
-	
+
 	/**
 	 * Returns all companies by given like
 	 * 
@@ -835,7 +832,7 @@ class Invoice_Model extends ORM
 	 * @param string $like
 	 * @return MySQL_Result 
 	 */
-	public function get_all_companies ($like)
+	public function get_all_companies($like)
 	{
 		return $this->db->query("
 			SELECT DISTINCT company FROM 
@@ -844,6 +841,6 @@ class Invoice_Model extends ORM
 				FROM invoices
 				WHERE partner_company IS NOT NULL
 			) i
-			WHERE company LIKE ".$this->db->escape("%$like%"));
+			WHERE company LIKE " . $this->db->escape("%$like%"));
 	}
 }
