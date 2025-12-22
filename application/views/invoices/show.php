@@ -2,6 +2,12 @@
 <?php echo html::anchor('invoices/edit/' . $invoice->id, __('Edit')) ?>
 &nbsp;
 <?php echo html::anchor('invoices/export_single/' . $invoice->id, __('Export')) ?>
+&nbsp;
+<?php echo html::anchor(
+	'invoices/pdf/' . $invoice->id,
+	__('PDF'),
+	array('class' => 'button')
+) ?>
 <br /><br />
 
 <table class="extended" cellspacing="0" style="float:left; width:360px;">
@@ -14,12 +20,12 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Partner') ?></th>
-		<td><?php	if (!empty($partner))
-						echo html::anchor('members/show/' . $partner->id, $partner->name);
-					elseif (!empty($invoice->partner_company))
-						echo $invoice->partner_company;
-					else
-						echo $invoice->partner_name; ?></td>
+		<td><?php if (!empty($partner))
+					echo html::anchor('members/show/' . $partner->id, $partner->name);
+				elseif (!empty($invoice->partner_company))
+					echo $invoice->partner_company;
+				else
+					echo $invoice->partner_name; ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Invoice number') ?></th>
@@ -73,32 +79,29 @@
 	</tr>
 </table>
 
-<?php if (empty($partner)) 
-	{?>
+<?php if (empty($partner)) { ?>
 	<table class="extended" cellspacing="0" style="float:left; margin-left:10px; width:360px;">
 		<tr>
 			<th colspan="2"><?php echo  __('Contact information') ?></th>
 		</tr>
-		<?php 
-		if (!empty($invoice->partner_company))
-		{ ?>
-		<tr>
-			<th><?php echo __('Company') ?></th>
-			<td><?php echo ($invoice->partner_company) ?></td>
-		</tr>
-	<?php
+		<?php
+		if (!empty($invoice->partner_company)) { ?>
+			<tr>
+				<th><?php echo __('Company') ?></th>
+				<td><?php echo ($invoice->partner_company) ?></td>
+			</tr>
+		<?php
 		}
-	?>
-	<?php 
-		if (!empty($invoice->partner_name))
-		{ ?>
-		<tr>
-			<th><?php echo __('Name') ?></th>
-			<td><?php echo ($invoice->partner_name) ?></td>
-		</tr>
-	<?php
+		?>
+		<?php
+		if (!empty($invoice->partner_name)) { ?>
+			<tr>
+				<th><?php echo __('Name') ?></th>
+				<td><?php echo ($invoice->partner_name) ?></td>
+			</tr>
+		<?php
 		}
-	?>	
+		?>
 		<tr>
 			<th><?php echo __('Street') ?></th>
 			<td><?php echo ($invoice->partner_street) ?></td>
@@ -132,7 +135,7 @@
 			<td><?php echo ($invoice->email) ?></td>
 		</tr>
 	</table><br />
-	<?php	} ?>
+<?php	} ?>
 
 <div class="clear"></div>
 

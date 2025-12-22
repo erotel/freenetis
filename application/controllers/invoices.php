@@ -13,6 +13,7 @@
 
 require_once APPPATH . "libraries/dbase/Dbase_Table.php";
 require_once APPPATH . "libraries/dbase/Dbase_Column.php";
+require_once(APPPATH . 'libraries/invoice_pdf.php');
 
 /**
  * Controller performs actions over invoices.
@@ -1546,6 +1547,41 @@ class Invoices_Controller extends Controller
 
 		if ($this->input->post('member_id') == 0 && $input->value == '') {
 			$input->add_error('required', __('This information is required.'));
+		}
+	}
+	/**
+	 * Generate & download invoice PDF
+	 */
+	public function pdf($invoice_id = NULL)
+	{
+		if (!$this->acl_check_view('Accounts_Controller', 'invoices')) {
+			Controller::Error(ACCESS);
+		}
+
+		if (!$invoice_id || !is_numeric($invoice_id)) {
+			Controller::Error(PARAMETER);
+		}
+
+		try {
+			// pokud už PDF existuje, použij ho
+			$invoice = new Invoice_Model($invoice_id);
+
+			if ($invoice->pdf_filename && file_exists($invoice->pdf_filename)) {
+				$path = $invoice->pdf_filename;
+			} else {
+				// jinak vygeneruj
+				$path = Invoice_Pdf::generate($invoice_id);
+			}
+
+			header('Content-Type: application/pdf');
+			header('Content-Disposition: attachment; filename="' . basename($path) . '"');
+			header('Content-Length: ' . filesize($path));
+
+			readfile($path);
+			exit;
+		} catch (Exception $e) {
+			status::error('Chyba při generování PDF: ' . $e->getMessage());
+			url::redirect('invoices/show/' . $invoice_id);
 		}
 	}
 }
