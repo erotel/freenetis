@@ -4267,7 +4267,7 @@ class Members_Controller extends Controller
 
 		if (file_exists($logo)) {
 			$page .= '<div style="float:left; width: 50%">' .
-				 '<img src="' . url_lang::base() . 'export/logo" width=274 height=101>' .
+				'<img src="' . url_lang::base() . 'export/logo" width=274 height=101>' .
 				'</div>';
 		} else	//if logo doesn't exist, insert only blank div
 		{
@@ -4785,7 +4785,13 @@ class Members_Controller extends Controller
 
 		// transform it to PDF
 		$filename = url::title(__('registration') . '-' . $member->name) . '.pdf';
-		$mpdf = new \Mpdf\Mpdf();
+		$tmp = APPPATH . 'cache/mpdf';
+		if (!is_dir($tmp)) {
+			mkdir($tmp, 0775, true);
+		}
+		$mpdf = new \Mpdf\Mpdf([
+			'tempDir' => $tmp,
+		]);
 		$mpdf->WriteHTML($html_logo_correct);
 		$mpdf->Output($filename, 'I');
 	}
@@ -4817,8 +4823,14 @@ class Members_Controller extends Controller
 		);
 
 		// transform it to PDF
-		$filename = url::title(__('Ukončení') . '-' . $member->name) . '.pdf';
-		$mpdf = new \Mpdf\Mpdf();
+		$filename = url::title(__('registration') . '-' . $member->name) . '.pdf';
+		$tmp = APPPATH . 'cache/mpdf';
+		if (!is_dir($tmp)) {
+			mkdir($tmp, 0775, true);
+		}
+		$mpdf = new \Mpdf\Mpdf([
+			'tempDir' => $tmp,
+		]);
 		$mpdf->WriteHTML($html_logo_correct);
 		$mpdf->Output($filename, 'I');
 	}
