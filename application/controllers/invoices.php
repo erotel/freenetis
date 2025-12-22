@@ -92,8 +92,12 @@ class Invoices_Controller extends Controller
 
 		$total_invoices = $invoice_model->count_all_invoices($filter_form->as_sql());
 
-		if (($sql_offset = ($page - 1) * $limit_results) > $total_invoices)
+		$sql_offset = ((int)$page - 1) * (int)$limit_results;
+
+		if ($sql_offset > (int)$total_invoices) {
 			$sql_offset = 0;
+		}
+
 
 		$invoices = $invoice_model->get_all_invoices(
 			$sql_offset,
