@@ -774,7 +774,7 @@ class Web_interface_Controller extends Controller
 			die();
 		}
 
-		
+
 
 		header('Content-Type: application/json; charset=utf-8');
 
@@ -791,10 +791,10 @@ class Web_interface_Controller extends Controller
 				"id"            => (int)$sc->id,
 				"name"          => (string)$sc->name,
 				// ve FreenetIS jsou u_rate/u_ceil/d_rate/d_ceil v B/s (podle tvého kódu se dělí 1024)
-				"up_kbit"       => (int) round(($sc->u_rate * 8) / 1000),
-				"down_kbit"     => (int) round(($sc->d_rate * 8) / 1000),
-				"up_ceil_kbit"  => (int) round(($sc->u_ceil * 8) / 1000),
-				"down_ceil_kbit" => (int) round(($sc->d_ceil * 8) / 1000),
+				"up_kbit"       => (int)($sc->u_rate / 1024),
+				"down_kbit"     => (int)($sc->d_rate / 1024),
+				"up_ceil_kbit"  => (int)($sc->u_ceil / 1024),
+				"down_ceil_kbit" => (int)($sc->d_ceil / 1024),
 			);
 
 
