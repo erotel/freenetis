@@ -31,7 +31,7 @@ class Web_interface_Controller extends Controller
 	const MEMBERS_QOS_PRIORITY_HIGH		=	0;
 	// QoS protocol
 	const MEMBERS_QOS_PROTOCOL_ALL		=	'all';
-	
+
 	/**
 	 * Preprocesor not useful here.
 	 * 
@@ -41,7 +41,7 @@ class Web_interface_Controller extends Controller
 	{
 		return FALSE;
 	}
-	
+
 	/**
 	 * Index prints about message
 	 */
@@ -60,24 +60,24 @@ class Web_interface_Controller extends Controller
 	{
 		// if gateway set uped - anly allow to access this page from it
 		// also if redirection is not enabled
-		if (!module::e('redirection') || 
-			!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (
+			!module::e('redirection') ||
+			!network::ip_address_in_ranges(server::remote_addr())
+		) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		$ranges = ORM::factory('subnet')->get_redirected_ranges();
-		
+
 		$items = array();
-		
-		foreach ($ranges as $range)
-		{
+
+		foreach ($ranges as $range) {
 			$items[] = $range->subnet_range;
 		}
-		
-		echo implode("\n", $items)."\n";
-		
+
+		echo implode("\n", $items) . "\n";
+
 		// set state of module (last activation time)
 		Settings::set('redirection_state', date('Y-m-d H:i:s'));
 	}
@@ -94,28 +94,28 @@ class Web_interface_Controller extends Controller
 	{
 		// if gateway set uped - anly allow to access this page from it
 		// also if redirection is not enabled
-		if (!module::e('redirection') || 
-			!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (
+			!module::e('redirection') ||
+			!network::ip_address_in_ranges(server::remote_addr())
+		) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		$ip_adresses = ORM::factory('ip_address')->get_allowed_ip_addresses();
-		
+
 		$items = array();
-		
-		foreach ($ip_adresses as $ip_adress)
-		{
+
+		foreach ($ip_adresses as $ip_adress) {
 			$items[] = $ip_adress->ip_address;
 		}
-		
-		echo implode("\n", $items)."\n";
-		
+
+		echo implode("\n", $items) . "\n";
+
 		// set state of module (last activation time)
 		Settings::set('redirection_state', date('Y-m-d H:i:s'));
 	}
-	
+
 	/**
 	 * Prints all unallowed ip addresses, otherwise same as previous method
 	 *
@@ -128,33 +128,30 @@ class Web_interface_Controller extends Controller
 	{
 		// if gateway set uped - anly allow to access this page from it
 		// also if redirection is not enabled
-		if (!module::e('redirection') || 
-			!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (
+			!module::e('redirection') ||
+			!network::ip_address_in_ranges(server::remote_addr())
+		) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
 
 		$ipm = new Ip_address_Model();
 		$mt_num = intval($message_type);
-		if ($message_type != NULL && $mt_num >= 0)
-		{
+		if ($message_type != NULL && $mt_num >= 0) {
 			$ip_adresses = $ipm->get_unallowed_ip_addresses_by_type($mt_num);
-		}
-		else
-		{
+		} else {
 			$ip_adresses = $ipm->get_unallowed_ip_addresses();
 		}
-		
+
 		$items = array();
-		
-		foreach ($ip_adresses as $ip_adress)
-		{
+
+		foreach ($ip_adresses as $ip_adress) {
 			$items[] = $ip_adress->ip_address;
 		}
-		
-		echo implode("\n", $items)."\n";
-		
+
+		echo implode("\n", $items) . "\n";
+
 		// set state of module (last activation time)
 		Settings::set('redirection_state', date('Y-m-d H:i:s'));
 	}
@@ -165,32 +162,32 @@ class Web_interface_Controller extends Controller
 	 * 
 	 * @author Michal Kliment
 	 */
-    public function self_cancelable_ip_addresses()
-    {
+	public function self_cancelable_ip_addresses()
+	{
 		// if gateway set uped - anly allow to access this page from it
 		// also if redirection is not enabled
-		if (!module::e('redirection') || 
-			!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (
+			!module::e('redirection') ||
+			!network::ip_address_in_ranges(server::remote_addr())
+		) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
-        $ip_adresses = ORM::factory('ip_address')->get_ip_addresses_with_self_cancel();
+
+		$ip_adresses = ORM::factory('ip_address')->get_ip_addresses_with_self_cancel();
 
 		$items = array();
-		
-		foreach ($ip_adresses as $ip_adress)
-		{
+
+		foreach ($ip_adresses as $ip_adress) {
 			$items[] = $ip_adress->ip_address;
 		}
-		
-		echo implode("\n", $items)."\n";
-		
+
+		echo implode("\n", $items) . "\n";
+
 		// set state of module (last activation time)
 		Settings::set('redirection_state', date('Y-m-d H:i:s'));
-    }
-	
+	}
+
 	/**
 	 * Prints all local subnets
 	 * 
@@ -200,22 +197,20 @@ class Web_interface_Controller extends Controller
 	{
 		// only enabled if IP address that requested for this page is from
 		// one of allowed ranges in the FreenetIS
-		if (!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		$local_subnets = ORM::factory('local_subnet')->get_all_local_subnets();
-		
+
 		$items = array();
-		
-		foreach ($local_subnets as $local_subnet)
-		{
+
+		foreach ($local_subnets as $local_subnet) {
 			$items[] = $local_subnet->address;
 		}
-		
-		echo implode("\n", $items)."\n";
+
+		echo implode("\n", $items) . "\n";
 	}
 
 	/**
@@ -230,56 +225,56 @@ class Web_interface_Controller extends Controller
 	{
 		// only enabled if IP address that requested for this page is from
 		// one of allowed ranges in the FreenetIS
-		if (!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		// VoIP is not enabled, quit
 		if (!Settings::get('voip_enabled'))
-		    return;
-	    
-		if ($user == null || $pass == null || $number == null)
-		{
+			return;
+
+		if ($user == null || $pass == null || $number == null) {
 			die('No input data');
 		}
 
-		if (!valid::digit($user) || !valid::digit($number))
-		{
+		if (!valid::digit($user) || !valid::digit($number)) {
 			die('Not valid input data');
 		}
 
 		$voip = ORM::factory('voip_sip')->get_voip_sip_by_name($user);
 
-		if (count($voip) == 0 || $voip->current()->secret != $pass)
-		{
+		if (count($voip) == 0 || $voip->current()->secret != $pass) {
 			die('Bad user or password');
-		}
-		else
-		{
+		} else {
 			$asm = new AsteriskManager();
 
 			$ahostname = Settings::get('voip_asterisk_hostname');
 			$auser = Settings::get('voip_asterisk_user');
 			$apass = Settings::get('voip_asterisk_pass');
 
-			if (empty($ahostname) || empty($auser) || empty($apass))
-			{
+			if (empty($ahostname) || empty($auser) || empty($apass)) {
 				die('Error. Check FreenetIS settings.');
 			}
 
-			if ($asm->connect($ahostname, $auser, $apass))
-			{
+			if ($asm->connect($ahostname, $auser, $apass)) {
 				$asm->Originate(
-						'SIP/' . $user, $number, 'internal', 1,
-						NULL, NULL, 30000, $user, NULL, NULL, 'Async', NULL
+					'SIP/' . $user,
+					$number,
+					'internal',
+					1,
+					NULL,
+					NULL,
+					30000,
+					$user,
+					NULL,
+					NULL,
+					'Async',
+					NULL
 				);
 				$asm->disconnect();
 				echo 'Success';
-			}
-			else
-			{
+			} else {
 				die('Error. Could not connect to server.');
 			}
 		}
@@ -296,36 +291,32 @@ class Web_interface_Controller extends Controller
 	{
 		// only enabled if IP address that requested for this page is from
 		// one of allowed ranges in the FreenetIS
-		if (!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		// device_id is set
-		if ($device_id && is_numeric($device_id))
-		{
+		if ($device_id && is_numeric($device_id)) {
 			// device load
 			$d = new Device_Model($device_id);
 
 			// finds all keys by device
-			if ($d->id)
-			{
+			if ($d->id) {
 				$keys = ORM::factory('users_key')->get_keys_by_device($d->id);
-				
+
 				echo "#\n";
 				echo "# Generated by FreenetIS at " . date("Y-m-d H:i:s") . "\n";
 				echo "#\n";
 
-				foreach ($keys as $key)
-				{
+				foreach ($keys as $key) {
 					echo "$key->key\n";
 				}
-				
+
 				die();
 			}
 		}
-		
+
 		// not founded
 		@header('HTTP/1.0 404 Not Found');
 		die();
@@ -342,42 +333,38 @@ class Web_interface_Controller extends Controller
 	{
 		// only enabled if IP address that requested for this page is from
 		// one of allowed ranges in the FreenetIS
-		if (!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		// bad parameter
-		if ($user_id || is_numeric($user_id))
-		{
+		if ($user_id || is_numeric($user_id)) {
 			// device load
 			$u = new User_Model($user_id);
 
 			// finds all keys by device
-			if ($u->id)
-			{
+			if ($u->id) {
 				// finds all keys by user
 				$keys = ORM::factory('users_key')->where('user_id', $u->id)->find_all();
-			
+
 				echo "#\n";
 				echo "# Generated by FreenetIS at " . date("Y-m-d H:i:s") . "\n";
 				echo "#\n";
 
-				foreach ($keys as $key)
-				{
+				foreach ($keys as $key) {
 					echo "$key->key\n";
 				}
-				
+
 				die();
 			}
 		}
-		
+
 		// not founded
 		@header('HTTP/1.0 404 Not Found');
 		die();
 	}
-	
+
 	/**
 	 * Prints members QoS's data in columns
 	 * 
@@ -388,124 +375,116 @@ class Web_interface_Controller extends Controller
 	{
 		// only enabled if IP address that requested for this page is from
 		// one of allowed ranges in the FreenetIS
-		if (!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		// qos is not enabled, we ends
 		if (!Settings::get('qos_enabled'))
 			return;
-	
+
 		// finds total qos speed
 		$total = network::speed_size(Settings::get('qos_total_speed'), "M");
-		
+
 		$members_upload_rate = $total['upload'];
 		$members_download_rate = $total['download'];
-		
+
 		// ulogd is enabled
-		if (Settings::get('ulogd_enabled'))
-		{
+		if (Settings::get('ulogd_enabled')) {
 			// finds qos speed for active members
 			$active = network::speed_size(Settings::get('qos_active_speed'), "M");
-		
+
 			$members_upload_rate -= $active['upload'];
 			$members_download_rate -= $active['download'];
 		}
-		
+
 		$i = self::MEMBERS_QOS_MEMBERS;
 		$total_upload_rate = 0;
 		$total_download_rate = 0;
-		
+
 		$data = array();
 		$members_data = array();
-		
+
 		// finds all members with guaranteed speed
 		$members = ORM::factory('member')->get_members_qos_ceil_rate();
-		
-		foreach ($members as $member)
-		{
+
+		foreach ($members as $member) {
 			$ceil = network::speed($member->u_ceil) . '/'
-					. network::speed($member->d_ceil);
+				. network::speed($member->d_ceil);
 			$rate = network::speed($member->u_rate) . '/'
-					. network::speed($member->d_rate);
-			
-			$qos_ceil = network::speed_size($ceil,"M");
-			$qos_rate = network::speed_size($rate,"M");
-			
+				. network::speed($member->d_rate);
+
+			$qos_ceil = network::speed_size($ceil, "M");
+			$qos_rate = network::speed_size($rate, "M");
+
 			$total_upload_rate += $qos_rate['upload'];
 			$total_download_rate += $qos_rate['download'];
-			
-			$members_data[$i] = array
-			(
+
+			$members_data[$i] = array(
 				"id"			=> $i,
-				"upload_ceil"	=> num::decimal_point($qos_ceil['upload'])."M",
-				"download_ceil"	=> num::decimal_point($qos_ceil['download'])."M",
-				"upload_rate"	=> num::decimal_point($qos_rate['upload'])."M",
-				"download_rate"	=> num::decimal_point($qos_rate['download'])."M",
+				"upload_ceil"	=> num::decimal_point($qos_ceil['upload']) . "M",
+				"download_ceil"	=> num::decimal_point($qos_ceil['download']) . "M",
+				"upload_rate"	=> num::decimal_point($qos_rate['upload']) . "M",
+				"download_rate"	=> num::decimal_point($qos_rate['download']) . "M",
 				"parent"		=> self::MEMBERS_QOS_PARENT,
-				"ipset"			=> "member_".($i-self::MEMBERS_QOS_MEMBERS+1),
+				"ipset"			=> "member_" . ($i - self::MEMBERS_QOS_MEMBERS + 1),
 				"priority"		=> self::MEMBERS_QOS_PRIORITY_NORMAL,
 				"protocol"		=> self::MEMBERS_QOS_PROTOCOL_ALL
 			);
-			
+
 			$i++;
 		}
-		
+
 		// deducts qos rate of member with guaranteed speed from total qos rate
-		if ($members_upload_rate > $total_upload_rate
-			&& $members_download_rate > $total_download_rate)
-		{
+		if (
+			$members_upload_rate > $total_upload_rate
+			&& $members_download_rate > $total_download_rate
+		) {
 			$members_upload_rate -= $total_upload_rate;
 			$members_download_rate -= $total_download_rate;
 		}
-		
+
 		// adds line for parent (total qos rate)
-		$data[self::MEMBERS_QOS_PARENT] = array
-		(
+		$data[self::MEMBERS_QOS_PARENT] = array(
 			"id"			=> self::MEMBERS_QOS_PARENT,
-			"upload_ceil"	=> $total['upload']."M",
-			"download_ceil"	=> $total['download']."M",
-			"upload_rate"	=> $total['upload']."M",
-			"download_rate"	=> $total['download']."M",
+			"upload_ceil"	=> $total['upload'] . "M",
+			"download_ceil"	=> $total['download'] . "M",
+			"upload_rate"	=> $total['upload'] . "M",
+			"download_rate"	=> $total['download'] . "M",
 			"priority"		=> self::MEMBERS_QOS_PRIORITY_NORMAL,
 			"protocol"		=> self::MEMBERS_QOS_PROTOCOL_ALL
 		);
-		
+
 		// adds line for ordinary members
-		$data[self::MEMBERS_QOS_ORDINARY] = array
-		(
+		$data[self::MEMBERS_QOS_ORDINARY] = array(
 			"id"			=> self::MEMBERS_QOS_ORDINARY,
 			"upload_ceil"	=> "0M",
 			"download_ceil"	=> "0M",
-			"upload_rate"	=> num::decimal_point($members_upload_rate)."M",
-			"download_rate"	=> num::decimal_point($members_download_rate)."M",
+			"upload_rate"	=> num::decimal_point($members_upload_rate) . "M",
+			"download_rate"	=> num::decimal_point($members_download_rate) . "M",
 			"parent"		=> self::MEMBERS_QOS_PARENT,
 			"priority"		=> self::MEMBERS_QOS_PRIORITY_NORMAL,
 			"protocol"		=> self::MEMBERS_QOS_PROTOCOL_ALL
 		);
-		
+
 		// ulogd is enabled
-		if (Settings::get('ulogd_enabled'))
-		{
+		if (Settings::get('ulogd_enabled')) {
 			// adds line for active members
-			$data[self::MEMBERS_QOS_ACTIVE] = array
-			(
+			$data[self::MEMBERS_QOS_ACTIVE] = array(
 				"id"			=> self::MEMBERS_QOS_ACTIVE,
 				"upload_ceil"	=> "0M",
 				"download_ceil"	=> "0M",
-				"upload_rate"	=> $active['upload']."M",
-				"download_rate"	=> $active['download']."M",
+				"upload_rate"	=> $active['upload'] . "M",
+				"download_rate"	=> $active['download'] . "M",
 				"parent"		=> self::MEMBERS_QOS_PARENT,
 				"ipset"			=> "active",
 				"priority"		=> self::MEMBERS_QOS_PRIORITY_NORMAL,
 				"protocol"		=> self::MEMBERS_QOS_PROTOCOL_ALL
 			);
 		}
-		
-		$data[self::MEMBERS_QOS_HIGH_PRIORITY] = array
-		(
+
+		$data[self::MEMBERS_QOS_HIGH_PRIORITY] = array(
 			"id"			=> self::MEMBERS_QOS_HIGH_PRIORITY,
 			"upload_ceil"	=> "0M",
 			"download_ceil"	=> "0M",
@@ -516,13 +495,12 @@ class Web_interface_Controller extends Controller
 			"protocol"		=> self::MEMBERS_QOS_PROTOCOL_ALL,
 			"ipset"			=> "priority"
 		);
-		
+
 		// adds lines with qos rates of member with guaranteed speed
 		$data = arr::merge($data, $members_data);
-		
+
 		// definition of columns
-		$columns = array
-		(
+		$columns = array(
 			"id",
 			"upload_ceil",
 			"download_ceil",
@@ -533,13 +511,13 @@ class Web_interface_Controller extends Controller
 			"parent",
 			"ipset"
 		);
-		
+
 		echo text::print_in_columns($data, $columns);
-		
+
 		// set state of module (last activation time)
 		Settings::set('qos_state', date('Y-m-d H:i:s'));
 	}
-	
+
 	/**
 	 * Prints ip addresses of members with guaranteed speed
 	 * 
@@ -550,71 +528,64 @@ class Web_interface_Controller extends Controller
 	{
 		// only enabled if IP address that requested for this page is from
 		// one of allowed ranges in the FreenetIS
-		if (!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		// qos is not enabled, we ends
 		if (!Settings::get('qos_enabled'))
 			return;
-		
+
 		$data = array();
-		
-		if (Settings::get('ulogd_enabled'))
-		{
+
+		if (Settings::get('ulogd_enabled')) {
 			$ips = ORM::factory('member')->get_active_traffic_members_ip_addresses(date('Y-m-d'));
 
-			foreach ($ips as $ip)
-			{
-				$data[] = array
-				(
+			foreach ($ips as $ip) {
+				$data[] = array(
 					"id"			=> self::MEMBERS_QOS_ACTIVE,
 					"ip_address"	=> $ip->ip_address
 				);
 			}
 		}
-		
-		foreach (explode(",", Settings::get('qos_high_priority_ip_addresses'))
-			as $qos_high_priority_ip_address)
-		{
-			$data[] = array
-			(
+
+		foreach (
+			explode(",", Settings::get('qos_high_priority_ip_addresses'))
+			as $qos_high_priority_ip_address
+		) {
+			$data[] = array(
 				"id"			=> self::MEMBERS_QOS_HIGH_PRIORITY,
 				"ip_address"	=> $qos_high_priority_ip_address
 			);
 		}
-		
+
 		$ip_addresses = ORM::factory('ip_address')->get_ip_addresses_qos_ceil_rate();
-		
-		$i = self::MEMBERS_QOS_MEMBERS-1;
+
+		$i = self::MEMBERS_QOS_MEMBERS - 1;
 		$member_id = 0;
-		
-		foreach ($ip_addresses as $ip_address)
-		{
-			if ($ip_address->member_id != $member_id)
-			{
+
+		foreach ($ip_addresses as $ip_address) {
+			if ($ip_address->member_id != $member_id) {
 				$i++;
 				$member_id = $ip_address->member_id;
 			}
-			
-			$data[] = array
-			(
+
+			$data[] = array(
 				"id"			=> $i,
 				"ip_address"	=> $ip_address->ip_address
 			);
 		}
-		
+
 		// definition of columns
-		$columns = array ("id", "ip_address");
-		
+		$columns = array("id", "ip_address");
+
 		echo text::print_in_columns($data, $columns);
-		
+
 		// set state of module (last activation time)
 		Settings::set('qos_state', date('Y-m-d H:i:s'));
 	}
-	
+
 	/**
 	 * Prints all IP addresses of hosts to monitored 
 	 * 
@@ -623,26 +594,26 @@ class Web_interface_Controller extends Controller
 	 */
 	public function monitoring_hosts($priority = NULL)
 	{
-		if (!Settings::get('monitoring_enabled') ||
-			(server::remote_addr() != Settings::get('monitoring_server_ip_address')))
-		{
+		if (
+			!Settings::get('monitoring_enabled') ||
+			(server::remote_addr() != Settings::get('monitoring_server_ip_address'))
+		) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		$monitor_host_model = new Monitor_host_Model();
-		
+
 		$hosts = $monitor_host_model->get_all_monitored_hosts($priority);
-		
-		foreach ($hosts as $host)
-		{
-			echo $host->ip_address."\n";
+
+		foreach ($hosts as $host) {
+			echo $host->ip_address . "\n";
 		}
-		
+
 		// set state of module (last activation time)
 		Settings::set('monitoring_state', date('Y-m-d H:i:s'));
 	}
-	
+
 	/**
 	 * Sets states of monitored hosts
 	 * 
@@ -651,32 +622,31 @@ class Web_interface_Controller extends Controller
 	 */
 	public function monitoring_states()
 	{
-		if (!Settings::get('monitoring_enabled') ||
-			(server::remote_addr() != Settings::get('monitoring_server_ip_address')))
-		{
+		if (
+			!Settings::get('monitoring_enabled') ||
+			(server::remote_addr() != Settings::get('monitoring_server_ip_address'))
+		) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		$ips	= $this->input->post('ip');
 		$states = $this->input->post('state');
 		$lats	= $this->input->post('lat');
-		
+
 		$monitor_host_model = new Monitor_host_Model();
-		
-		if (is_array($ips) && is_array($states) && is_array($lats))
-		{
-			foreach ($ips as $i => $ip)
-			{			
+
+		if (is_array($ips) && is_array($states) && is_array($lats)) {
+			foreach ($ips as $i => $ip) {
 				if (isset($states[$i]) && isset($lats[$i]))
-				$monitor_host_model->update_host($ip, Monitor_host_Model::get_state($states[$i]), $lats[$i]);
+					$monitor_host_model->update_host($ip, Monitor_host_Model::get_state($states[$i]), $lats[$i]);
 			}
 
 			// set state of module (last activation time)
 			Settings::set('monitoring_state', date('Y-m-d H:i:s'));
 		}
 	}
-	
+
 	/**
 	 * Configuration for Prometheus QoS utility.
 	 * This configuration does not includes handlind of upload values of speed,
@@ -689,74 +659,66 @@ class Web_interface_Controller extends Controller
 	{
 		// only enabled if IP address that requested for this page is from
 		// one of allowed ranges in the FreenetIS
-		if (!network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-		
+
 		$speed_class_model = new Speed_class_Model();
-		
+
 		echo "# Prometheus QoS configuration\n";
 		echo "# generated on " . date('Y-m-d H:i:s') . "\n";
 		echo "# FreenetIS " . Version::get_version() . "\n\n";
 
 		$speed_classes = $speed_class_model->orderby('d_ceil', 'DESC')->find_all();
-		
-		foreach ($speed_classes as $speed_class)
-		{
+
+		foreach ($speed_classes as $speed_class) {
 			echo "\n######## $speed_class->name ################################\n";
-			
+
 			$ips = $speed_class_model->get_ip_addresses_to_class($speed_class->id);
 			$last_member_id = NULL;
 			$last_id = NULL;
-			
-			foreach ($ips as $ip)
-			{				
+
+			foreach ($ips as $ip) {
 				// last two parts of IP address
 				$ip_end = mb_substr($ip->ip_address, mb_strpos(
-								$ip->ip_address, '.',
-								mb_strpos($ip->ip_address, '.') + 1
+					$ip->ip_address,
+					'.',
+					mb_strpos($ip->ip_address, '.') + 1
 				) + 1);
-				
+
 				// first row
-				if ($last_id === NULL)
-				{
+				if ($last_id === NULL) {
 					$last_id = "$ip->user_login.$ip_end";
 				}
-				
+
 				echo "$ip->ip_address\t$ip->user_login.$ip_end\t\t";
-				
+
 				// group same member by comments
-				if ($last_member_id != $ip->member_id)
-				{
+				if ($last_member_id != $ip->member_id) {
 					$min = intval($speed_class->d_rate / 1024); // convert B => kB
 					$max = intval($speed_class->d_ceil / 1024); // convert B => kB
 					echo "#via-prometheus-$min-$max\n";
 					// change member values
 					$last_member_id = $ip->member_id;
 					$last_id = "$ip->user_login.$ip_end";
-				}
-				else
-				{
+				} else {
 					echo "#sharing-$last_id\n";
 				}
 			}
 		}
 	}
-	
+
 	public function ipv6_radius()
 	{
 		$ip6_address = new Ip6_address_Model();
 		$ip6_addresses = $ip6_address->get_ipv6_mac_all();
 
-		foreach ($ip6_addresses as $ip6)
-		{
-			echo $ip6->ip_address.",".$ip6->ifaces."\n";
+		foreach ($ip6_addresses as $ip6) {
+			echo $ip6->ip_address . "," . $ip6->ifaces . "\n";
 		}
-
 	}
-	
+
 
 
 	public function ipv6_qos()
@@ -766,13 +728,11 @@ class Web_interface_Controller extends Controller
 		$speed_classes = $speed_class_model->orderby('d_ceil', 'DESC')->find_all();
 
 
-		foreach ($speed_classes as $speed_class)
-		{
+		foreach ($speed_classes as $speed_class) {
 
 			$ips = $ip6_class_model->get_ip6_addresses_to_class($speed_class->id);
 
-			foreach ($ips as $ip)
-			{
+			foreach ($ips as $ip) {
 				$min = intval($speed_class->d_rate / 1024); // convert B => kB
 				$max = intval($speed_class->d_ceil / 1024); // convert B => kB
 				echo "$ip->ip_address\t";
@@ -785,34 +745,105 @@ class Web_interface_Controller extends Controller
 	{
 		// if gateway set uped - anly allow to access this page from it
 		// also if redirection is not enabled
-		if (!module::e('redirection') || !network::ip_address_in_ranges(server::remote_addr()))
-		{
+		if (!module::e('redirection') || !network::ip_address_in_ranges(server::remote_addr())) {
 			@header('HTTP/1.0 403 Forbidden');
 			die();
 		}
-	
+
 		$ip_adresses = ORM::factory('ip_address')->get_allowed_ip_addresses();
 		$ip6_address = new Ip6_addresses_Controller();
 		$items = array();
-	
-		foreach ($ip_adresses as $ip_adress)
-		{
+
+		foreach ($ip_adresses as $ip_adress) {
 			$ip6_add = $ip6_address->calc_ip6_address($ip_adress->ip_address);
 			$items[] = $ip6_add;
 		}
-	
-		echo implode("\n", $items)."\n";
-	
+
+		echo implode("\n", $items) . "\n";
+
 		// set state of module (last activation time)
 		//Settings::set('redirection_state', date('Y-m-d H:i:s'));
-    }
+	}
 
 
+	public function qos_json()
+	{
+		// povolit jen z trusted rozsahů
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
+			@header('HTTP/1.0 403 Forbidden');
+			die();
+		}
 
+		if (!Settings::get('qos_enabled'))
+			return;
 
+		header('Content-Type: application/json; charset=utf-8');
 
+		$speed_class_model = new Speed_class_Model();
+		$ip6_class_model   = new Ip6_address_Model();
 
+		$speed_classes = $speed_class_model->orderby('d_ceil', 'DESC')->find_all();
 
+		$profiles = array();
+		$members  = array(); // member_id => ["member_id"=>..,"profile_id"=>..,"ipv4"=>[],"ipv6"=>[]]
 
+		foreach ($speed_classes as $sc) {
+			$profiles[] = array(
+				"id"            => (int)$sc->id,
+				"name"          => (string)$sc->name,
+				// ve FreenetIS jsou u_rate/u_ceil/d_rate/d_ceil v B/s (podle tvého kódu se dělí 1024)
+				"up_kbit"       => (int)($sc->u_rate / 1024),
+				"down_kbit"     => (int)($sc->d_rate / 1024),
+				"up_ceil_kbit"  => (int)($sc->u_ceil / 1024),
+				"down_ceil_kbit" => (int)($sc->d_ceil / 1024),
+			);
 
+			// IPv4
+			$ips4 = $speed_class_model->get_ip_addresses_to_class($sc->id);
+			foreach ($ips4 as $ip) {
+				$mid = (int)$ip->member_id;
+				if (!isset($members[$mid])) {
+					$members[$mid] = array(
+						"member_id"   => $mid,
+						"profile_id"  => (int)$sc->id,
+						"ipv4"        => array(),
+						"ipv6"        => array(),
+					);
+				}
+				// pokud by teoreticky měl member víc tříd, bereme “nejvyšší” dle pořadí d_ceil DESC
+				// (tj. první výskyt vyhrává)
+				if ($members[$mid]["profile_id"] === (int)$sc->id) {
+					$members[$mid]["ipv4"][] = (string)$ip->ip_address;
+				}
+			}
+
+			// IPv6
+			$ips6 = $ip6_class_model->get_ip6_addresses_to_class($sc->id);
+			foreach ($ips6 as $ip) {
+				// v get_ip6_addresses_to_class by měl být member_id; pokud není, doplníme model
+				$mid = (int)$ip->member_id;
+				if (!isset($members[$mid])) {
+					$members[$mid] = array(
+						"member_id"   => $mid,
+						"profile_id"  => (int)$sc->id,
+						"ipv4"        => array(),
+						"ipv6"        => array(),
+					);
+				}
+				if ($members[$mid]["profile_id"] === (int)$sc->id) {
+					$members[$mid]["ipv6"][] = (string)$ip->ip_address;
+				}
+			}
+		}
+
+		// převod mapy na list
+		$members_list = array_values($members);
+
+		echo json_encode(array(
+			"generated_at" => gmdate('c'),
+			"profiles"     => $profiles,
+			"members"      => $members_list,
+			"version"      => Version::get_version(),
+		), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+	}
 }
