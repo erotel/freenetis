@@ -774,8 +774,7 @@ class Web_interface_Controller extends Controller
 			die();
 		}
 
-		if (!Settings::get('qos_enabled'))
-			return;
+		
 
 		header('Content-Type: application/json; charset=utf-8');
 
