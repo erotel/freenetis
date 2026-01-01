@@ -1267,11 +1267,19 @@ class Scheduler_Controller extends Controller
 		$year  = (int)$dt->format('Y');
 		$month = (int)$dt->format('m');
 
+		$periodKey = sprintf('%04d-%02d', $year, $month);
+
+		// ✅ pojistka: už bylo odesláno?
+		$lastSent = (string) Settings::get('pohoda_export_last_sent');
+		if ($lastSent === $periodKey) {
+			return;
+		}
+
 		$m = new Pohoda_export_Model();
 		$invoices = $m->get_invoices_for_month($year, $month);
 		if (!count($invoices)) return;
 
-		$xml = $m->build_xml($invoices);
+		$xml  = $m->build_xml($invoices);
 		$file = $m->save_xml($year, $month, $xml);
 
 		$eq = new Email_queue_Model();
@@ -1282,5 +1290,8 @@ class Scheduler_Controller extends Controller
 			"V příloze je XML export vystavených faktur za {$month}/{$year}.",
 			[['path' => $file, 'name' => basename($file), 'mime' => 'application/xml']]
 		);
+
+		// ✅ označit jako odeslané
+		Settings::set('pohoda_export_last_sent', $periodKey);
 	}
 }
