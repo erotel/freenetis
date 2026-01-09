@@ -170,11 +170,25 @@ class Pohoda_export_Model extends Model
       $pi = $h->addChild('inv:partnerIdentity', null, $ns_inv);
       $addr = $pi->addChild('typ:address', null, $ns_typ);
 
-      $addr->addChild('typ:company', '', $ns_typ);
+      // === FIX: firma/osoba podle IČO ===
+      $partner_text = trim((string)($invRow['partner_name'] ?? ''));
+      if ($partner_text === '') $partner_text = ' '; // některé XSD jsou háklivé
 
-      $name = (string)($invRow['partner_name'] ?? '');
-      if ($name === '') $name = ' '; // ať tam něco je (některé XSD jsou háklivé)
-      $addr->addChild('typ:name', htmlspecialchars($name, ENT_QUOTES, 'UTF-8'), $ns_typ);
+      $ico_partner = trim((string)($invRow['organization_identifier'] ?? ''));
+
+      if ($ico_partner !== '') {
+        // FIRMA: dlouhý název patří do typ:company
+        $addr->addChild('typ:company', htmlspecialchars($partner_text, ENT_QUOTES, 'UTF-8'), $ns_typ);
+        $addr->addChild('typ:name', '', $ns_typ);
+      } else {
+        // OSOBA: typ:name má maxLength 32 -> jistící ořez
+        $addr->addChild('typ:company', '', $ns_typ);
+        $addr->addChild(
+          'typ:name',
+          htmlspecialchars(mb_substr($partner_text, 0, 32, 'UTF-8'), ENT_QUOTES, 'UTF-8'),
+          $ns_typ
+        );
+      }
 
       $city = (string)($invRow['partner_town'] ?? '');
       $addr->addChild('typ:city', htmlspecialchars($city, ENT_QUOTES, 'UTF-8'), $ns_typ);
@@ -185,12 +199,12 @@ class Pohoda_export_Model extends Model
       $zip = (string)($invRow['partner_zip_code'] ?? '');
       $addr->addChild('typ:zip', htmlspecialchars($zip, ENT_QUOTES, 'UTF-8'), $ns_typ);
 
-      $ico_partner = (string)($invRow['organization_identifier'] ?? '');
+      // IČO (POHODA)
       $addr->addChild('typ:ico', htmlspecialchars($ico_partner, ENT_QUOTES, 'UTF-8'), $ns_typ);
 
       // === NOVĚ: DIC hned za ICO ===
       $dic_partner = (string)($invRow['vat_organization_identifier'] ?? '');
-      if ($dic_partner !== '') {
+      if (trim($dic_partner) !== '') {
         $addr->addChild('typ:dic', htmlspecialchars($dic_partner, ENT_QUOTES, 'UTF-8'), $ns_typ);
       }
 
@@ -236,7 +250,7 @@ class Pohoda_export_Model extends Model
         // ceny jako ve vzoru
         $base = round($unitPrice * $qty, 2);
         $vat  = round($base * ($vatRate / 100.0), 2);
-        $sum  = round($base + $vat, 0); // ve vzoru 320 bez desetinných
+        $sumItem  = round($base + $vat, 0); // ve vzoru 320 bez desetinných
 
         if ($rateVatTag === 'high') {
           $sumHighBase += $base;
@@ -253,7 +267,7 @@ class Pohoda_export_Model extends Model
         $hc->addChild('typ:unitPrice', $fmt($unitPrice), $ns_typ);
         $hc->addChild('typ:price', $fmt($base), $ns_typ);
         $hc->addChild('typ:priceVAT', $fmt($vat), $ns_typ);
-        $hc->addChild('typ:priceSum', $fmt($sum), $ns_typ);
+        $hc->addChild('typ:priceSum', $fmt($sumItem), $ns_typ);
 
         $code = (string)($it['code'] ?? '');
         $item->addChild('inv:code', htmlspecialchars($code, ENT_QUOTES, 'UTF-8'), $ns_inv);
@@ -285,6 +299,7 @@ class Pohoda_export_Model extends Model
 
     return $xml->asXML();
   }
+
 
 
 
