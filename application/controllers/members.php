@@ -3040,7 +3040,7 @@ class Members_Controller extends Controller
 		if ($this->acl_check_edit(get_class($this), 'name', $member->id)) {
 			$form->input('membername')
 				->label('Member name')
-				->rules('required|length[1,100]')
+				->rules('required|length[1,200]')
 				->value($member->name);
 		}
 
