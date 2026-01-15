@@ -1050,17 +1050,14 @@ class Scheduler_Controller extends Controller
 
 
 				// Message
+				// Message
 				$message = new Swift_Message($email->subject);
 
-				$bodyHtml = (string)$email->body;
-				$bodyText = trim(strip_tags($bodyHtml));
-				if ($bodyText === '') {
-					$bodyText = ' ';
-				}
+				// posílej jen HTML (ať Thunderbird nerenderuje tagy jako text)
+				$message->setContentType('text/html');
+				$message->setCharset('utf-8');
+				$message->setBody((string) $email->body);
 
-				// Swift 3: TEXT primary, HTML alternative
-				$message->setBody($bodyText, 'text/plain', 'utf-8');
-				$message->addChild(new Swift_Message_Part($bodyHtml, 'text/html', 'utf-8'));
 
 				// Attachments
 				$atts = $email_queue_model->get_attachments($email->id);
