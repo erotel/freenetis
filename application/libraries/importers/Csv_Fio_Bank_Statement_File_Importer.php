@@ -41,9 +41,8 @@ class Csv_Fio_Bank_Statement_File_Importer extends Fio_Bank_Statement_File_Impor
 		// reset
 		$this->data = NULL;
 		// parse (we have no function for checking)
-		try
-		{
-						$parser_api = new FioApiCsvParser;
+		try {
+			/*	$parser_api = new FioApiCsvParser;
             if ($parser_api->accept_file($this->get_file_data()))
 						{
                 $this->data = $parser_api->parse($this->get_file_data());
@@ -57,69 +56,73 @@ class Csv_Fio_Bank_Statement_File_Importer extends Fio_Bank_Statement_File_Impor
             {
                 return FALSE;
             }
+			*/
+
+			$parser_api = new FioApiCsvParser;
+
+			// rovnou zkus parse() – když to neprojde, vyhodí Exception a ta se zobrazí v UI
+			$this->data = $parser_api->parse($this->get_file_data());
+
+			// correct data
+			foreach ($this->data['items'] as &$row) {
+				$this->correct_new_listing_row($row);
+			}
 
 			// ok
 			return TRUE;
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$this->data = NULL;
 			$this->add_exception_error($e, FALSE);
 			return FALSE;
 		}
 	}
 
-    /**
-     * Correct passed listing row from old parser for application needs.
-     *
-     * @param array $row listing row passed by reference
-     * @throws Exception on error in data
-     */
-    private function correct_new_listing_row(&$row)
-    {
-        if ($row['mena'] != 'CZK')
-        {
-            throw new Exception(__('Unknown currency %s!', $row['mena']));
-        }
-        // only transfer from Fio to Fio have 'nazev_protiuctu'
-        // for accounts in other banks we have to derive account name
-        if (!$row['nazev_protiuctu'] && $row['identifikace'])
-        {
-            $row['nazev_protiuctu'] = $row['identifikace'];
-        }
-    }
+	/**
+	 * Correct passed listing row from old parser for application needs.
+	 *
+	 * @param array $row listing row passed by reference
+	 * @throws Exception on error in data
+	 */
+	private function correct_new_listing_row(&$row)
+	{
+		if ($row['mena'] != 'CZK') {
+			throw new Exception(__('Unknown currency %s!', $row['mena']));
+		}
+		// only transfer from Fio to Fio have 'nazev_protiuctu'
+		// for accounts in other banks we have to derive account name
+		if (!$row['nazev_protiuctu'] && $row['identifikace']) {
+			$row['nazev_protiuctu'] = $row['identifikace'];
+		}
+	}
 
-    /**
-     * Correct passed listing row from old parser for application needs.
-     *
-     * @param array $row listing row passed by reference
-     * @throws Exception on error in data
-     */
-    private function correct_old_listing_row(&$row)
-    {
-        if ($row['mena'] != 'CZK')
-        {
-            throw new Exception(__('Unknown currency %s!', $row['mena']));
-        }
+	/**
+	 * Correct passed listing row from old parser for application needs.
+	 *
+	 * @param array $row listing row passed by reference
+	 * @throws Exception on error in data
+	 */
+	private function correct_old_listing_row(&$row)
+	{
+		if ($row['mena'] != 'CZK') {
+			throw new Exception(__('Unknown currency %s!', $row['mena']));
+		}
 
-        // convert date
-        if (preg_match('/^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}\.$/', $row['datum']) !== FALSE)
-        {
-            $date_arr = explode('.', $row['datum']);
-            $timestamp = mktime(0, 0, 0, $date_arr[1], $date_arr[0], $date_arr[2]);
-            $row['datum'] = date('Y-m-d', $timestamp);
-        }
+		// convert date
+		if (preg_match('/^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}\.$/', $row['datum']) !== FALSE) {
+			$date_arr = explode('.', $row['datum']);
+			$timestamp = mktime(0, 0, 0, $date_arr[1], $date_arr[0], $date_arr[2]);
+			$row['datum'] = date('Y-m-d', $timestamp);
+		}
 
-        // only transfer from Fio to Fio have 'nazev_protiuctu'
-        // for accounts in other banks we have to derive account name
-        if (!$row['nazev_protiuctu'] && $row['identifikace'])
-        {
-            $row['nazev_protiuctu'] = $row['identifikace'];
-        }
+		// only transfer from Fio to Fio have 'nazev_protiuctu'
+		// for accounts in other banks we have to derive account name
+		if (!$row['nazev_protiuctu'] && $row['identifikace']) {
+			$row['nazev_protiuctu'] = $row['identifikace'];
+		}
 
-        // convert from cents
-        $row['castka'] /= 100;
-    }
+		// convert from cents
+		$row['castka'] /= 100;
+	}
 
 	/*
 	 * @Override
@@ -128,9 +131,9 @@ class Csv_Fio_Bank_Statement_File_Importer extends Fio_Bank_Statement_File_Impor
 	{
 		if (empty($this->data))
 			throw new InvalidArgumentException('Check CSV first');
-		
+
 		$fio_ph = $this->data['header'];
-		
+
 		$hd = new Header_Data($fio_ph['accountId'], $fio_ph['bankId']);
 
 		$hd->currency = $fio_ph['currency'];
@@ -158,5 +161,4 @@ class Csv_Fio_Bank_Statement_File_Importer extends Fio_Bank_Statement_File_Impor
 	{
 		return $this->data['items'];
 	}
-
 }

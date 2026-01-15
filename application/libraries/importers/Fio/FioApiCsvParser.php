@@ -45,7 +45,7 @@ class FioApiCsvParser
      * CSV column separator.
      */
     const CSV_COL_DELIM = ';';
-    
+
     /**
      * CSV column value wrapper.
      */
@@ -55,14 +55,13 @@ class FioApiCsvParser
      * Default CSV file encoding.
      */
     const DEFAULT_CHARSET = 'UTF-8';
-    
+
     /**
      * Mandatory header fields.
      *
      * @var array[string]
      */
-    private static $header_fields = array
-    (
+    private static $header_fields = array(
         'accountId',
         'bankId',
         'currency',
@@ -81,8 +80,7 @@ class FioApiCsvParser
      *
      * @var array[string]
      */
-    private static $fields = array
-    (
+    private static $fields = array(
         'id_pohybu' => 'ID operace',
         'datum' => 'Datum',
         'castka' => 'Objem',
@@ -130,13 +128,12 @@ class FioApiCsvParser
         $keys = array_keys(self::$fields);
         $lines = self::transformFileToLineArray($csv, $charset);
         $result = array();
-        
+
         $header = $this->parseHeader($lines);
         $i = $header['read_index'];
-    
+
         // check each line of CSV
-        while ($i < count($lines))
-        {
+        while ($i < count($lines)) {
             $line = trim($lines[$i++]);
             if (empty($line)) // empty last line?
             {
@@ -148,16 +145,15 @@ class FioApiCsvParser
             $sum += $cols['castka'];
             $result[] = $cols;
         }
-        
+
         $this->checkIntegrity($header['header'], $sum);
-        
-        return array
-        (
+
+        return array(
             'header' => $header['header'],
             'items' => $result,
         );
     }
-    
+
     /**
      * Check whether parser accept given CSV file.
      * 
@@ -168,17 +164,14 @@ class FioApiCsvParser
     public function accept_file($csv, $charset = self::DEFAULT_CHARSET)
     {
         $lines = self::transformFileToLineArray($csv, $charset);
-        try
-        {
+        try {
             $this->parseHeader($lines);
             return TRUE;
-        }
-        catch (Exception $ex)
-        {
+        } catch (Exception $ex) {
             return FALSE;
         }
     }
-    
+
     /**
      * Parse bank statement header.
      *
@@ -190,89 +183,116 @@ class FioApiCsvParser
     {
         $header = array();
         $i = 0;
-        
-        if (count(self::$header_fields) + 2 >= count($lines))
-        {
+
+        if (count(self::$header_fields) + 2 >= count($lines)) {
             throw new Exception('Výpis neobsahuje hlavičku.');
         }
-        
-        foreach (self::$header_fields as $header_field)
-        {
+
+        foreach (self::$header_fields as $header_field) {
             $line = trim($lines[$i++]);
             // first column has issue with some UTF-8 characters
-            if ($i == 1)
-            {
+            if ($i == 1) {
                 $line = preg_replace('/^[\x00-\x1F\x80-\xFF]+/', '', $line);
             }
-            
+
             $cols = str_getcsv($line, self::CSV_COL_DELIM, self::CSV_COL_WRAPPER);
-            
-            if (count($cols) != 2)
-            {
+
+            if (count($cols) != 2) {
                 throw new Exception('Hlavička neobsahuje dva sloupce.');
             }
-            if ($cols[0] != $header_field)
-            {
+            if ($cols[0] != $header_field) {
                 throw new Exception('Hlavička obsahuje neočekávaný sloupec.');
             }
-            
+
             $header[$header_field] = $cols[1];
         }
-        
-        if (trim($lines[$i++]) != '')
-        {
+
+        if (trim($lines[$i++]) != '') {
             throw new Exception('Chybí oddělovač hlaviček.');
         }
-        
+
         $this->checkHeaders($lines[$i++]);
-        
-        return array
-        (
+
+        return array(
             'read_index' => $i,
             'header' => self::convertToHeaderData($header),
         );
     }
-    
+
     private static function convertToHeaderData($header)
     {
-    		$header['openingBalance'] = self::parseAmount($header['openingBalance']);
-    		$header['closingBalance'] = self::parseAmount($header['closingBalance']);
-    		$header['dateStart'] = self::parseDate($header['dateStart']);
-    		$header['dateEnd'] = self::parseDate($header['dateEnd']);
+        $header['openingBalance'] = self::parseAmount($header['openingBalance']);
+        $header['closingBalance'] = self::parseAmount($header['closingBalance']);
+        $header['dateStart'] = self::parseDate($header['dateStart']);
+        $header['dateEnd'] = self::parseDate($header['dateEnd']);
         return $header;
     }
-    
-    /**
-     * Checks headers that start data part of statement.
-     *
-     * @param integer $header_line header line
-     * @throws Exception
-     */
+
     private function checkHeaders($header_line)
     {
         $expected_header_cols = array_values(self::$fields);
-        // extract header
-        $header_cols = str_getcsv($header_line, self::CSV_COL_DELIM,
-                self::CSV_COL_WRAPPER);
-        // check if extracted
-        if (empty($header_cols))
-        {
+        $header_cols = str_getcsv($header_line, self::CSV_COL_DELIM, self::CSV_COL_WRAPPER);
+
+        if (empty($header_cols)) {
             throw new Exception('Hlavička výpisu je prázdná.');
         }
-        // check if count match
-        if (count($header_cols) != count($expected_header_cols))
-        {
+
+        if (count($header_cols) != count($expected_header_cols)) {
             throw new Exception('Počet položek hlavičky výpisu neodpovídá.');
         }
-        // check each column
-        for ($i = count($header_cols) - 1; $i >= 0; $i--)
-        {
-            if ($header_cols[$i] != $expected_header_cols[$i])
-            {
-                throw new Exception('Hlavičky výpisu neopovídají.');
+
+        for ($i = 0; $i < count($header_cols); $i++) {
+            $expected = $expected_header_cols[$i];
+            $real = $header_cols[$i];
+
+            // ✅ Fio varianty názvů sloupců (kompatibilita)
+            if ($expected === 'ID operace' && $real === 'ID pohybu') {
+                continue;
+            }
+            if ($expected === 'Poznámka' && $real === 'Uživatelská identifikace') {
+                continue;
+            }
+
+            // pokud by se někdy vrátila opačná očekávání (kdybys změnil fields),
+            // tak tohle udrží kompatibilitu i naopak:
+            if ($expected === 'ID pohybu' && $real === 'ID operace') {
+                continue;
+            }
+            if ($expected === 'Uživatelská identifikace' && $real === 'Poznámka') {
+                continue;
+            }
+            // ✅ Fio varianty názvů sloupců (kompatibilita)
+
+            // ID operace ↔ ID pohybu
+            if ($expected === 'ID operace' && $real === 'ID pohybu') {
+                continue;
+            }
+            if ($expected === 'ID pohybu' && $real === 'ID operace') {
+                continue;
+            }
+
+            // Poznámka ↔ Uživatelská identifikace ↔ Komentář
+            if ($expected === 'Poznámka' && ($real === 'Uživatelská identifikace' || $real === 'Komentář')) {
+                continue;
+            }
+            if ($expected === 'Uživatelská identifikace' && ($real === 'Poznámka' || $real === 'Komentář')) {
+                continue;
+            }
+            if ($expected === 'Komentář' && ($real === 'Poznámka' || $real === 'Uživatelská identifikace')) {
+                continue;
+            }
+
+            if ($real !== $expected) {
+                // lepší debug – ať hned vidíš, co přesně nesedí
+                throw new Exception(
+                    'Hlavičky výpisu neodpovídají (sloupec #' . ($i + 1) .
+                        ': "' . $real . '" ≠ "' . $expected . '").'
+                );
             }
         }
     }
+
+
 
     /**
      * Parse line of dump
@@ -287,8 +307,7 @@ class FioApiCsvParser
     {
         $cols = str_getcsv($line, self::CSV_COL_DELIM, self::CSV_COL_WRAPPER);
 
-        if (count($cols) != count($keys))
-        {
+        if (count($cols) != count($keys)) {
             throw new Exception('Chybný počet políček v položce výpisu.');
         }
 
@@ -296,8 +315,7 @@ class FioApiCsvParser
         $assoc_cols = array_combine($keys, $cols);
 
         // Convert date
-        if ($parse_date)
-        {
+        if ($parse_date) {
             $assoc_cols['datum'] = self::parseDate($assoc_cols['datum']);
         }
 
@@ -306,7 +324,7 @@ class FioApiCsvParser
 
         // Trim leading zeros from VS
         $assoc_cols['vs'] = ltrim($assoc_cols['vs'], '0');
-        
+
         // column prevod N/A
         $assoc_cols['prevod'] = NULL;
 
@@ -322,16 +340,15 @@ class FioApiCsvParser
      */
     private function checkIntegrity($header, $calculated_sum)
     {
-        $sum = self::parseAmount($header['closingBalance']) 
+        $sum = self::parseAmount($header['closingBalance'])
             - self::parseAmount($header['openingBalance']);
-      
-        if (abs($sum - $calculated_sum) > 0.0001)
-        {
+
+        if (abs($sum - $calculated_sum) > 0.0001) {
             throw new Exception("Chybný kontrolní součet částky "
-                    . "('$calculated_sum' != '$sum').");
+                . "('$calculated_sum' != '$sum').");
         }
     }
-    
+
     /**
      * Normalize string amount to double value.
      *
@@ -344,8 +361,7 @@ class FioApiCsvParser
     {
         $amount_no_ws = preg_replace('/\s+/u', '', $amount);
         $norm_amount = str_replace(',', '.', $amount_no_ws);
-        if (!is_numeric($norm_amount))
-        {
+        if (!is_numeric($norm_amount)) {
             $m = __('Invalid amount format') . ': ' . $amount;
             throw new InvalidArgumentException($m);
         }
@@ -362,8 +378,7 @@ class FioApiCsvParser
     private static function parseDate($date)
     {
         $matches = NULL;
-        if (!preg_match("/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/", $date, $matches))
-        {
+        if (!preg_match("/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/", $date, $matches)) {
             $m = __('Invalid date format') . ': ' . $date;
             throw new InvalidArgumentException($m);
         }
@@ -385,16 +400,12 @@ class FioApiCsvParser
         $internal_charset = 'UTF-8';
         $fc_utf8 = NULL;
         // transform to UTF-8
-        if (strtolower($charset) != strtolower($internal_charset))
-        {
+        if (strtolower($charset) != strtolower($internal_charset)) {
             $fc_utf8 = iconv($charset, $internal_charset, $file_content);
-        }
-        else
-        {
+        } else {
             $fc_utf8 = $file_content;
         }
         // eplode lines
         return preg_split("/\r\n|\n|\r/", $fc_utf8);
     }
-
 }
