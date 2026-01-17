@@ -452,7 +452,7 @@ class Invoice_Pdf
                             </td>
                             <td class="col">
                                 <span class="label">Datum splatnosti:</span><br>
-                                <?= htmlspecialchars($date_due) ?>
+                                <?= htmlspecialchars($date_inv) ?>
                             </td>
                             <td class="col">
                                 <span class="label">Datum uskutečnění plnění:</span><br>
@@ -460,7 +460,7 @@ class Invoice_Pdf
                             </td>
                             <td class="col">
                                 <span class="label">Forma úhrady:</span><br>
-                                Příkazem
+                                Zaplaceno
                             </td>
                         </tr>
                     </table>
@@ -497,7 +497,7 @@ class Invoice_Pdf
 
                     <!-- Celkem k úhradě -->
                     <div class="total-box">
-                        CELKEM K ZAPLACENO: &nbsp; <?= $format_money($total_net + $total_vat) ?>
+                        CELKEM ZAPLACENO: &nbsp; <?= $format_money($total_net + $total_vat) ?>
                     </div>
 
 
