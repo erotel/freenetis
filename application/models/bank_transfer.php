@@ -34,11 +34,11 @@
  */
 class Bank_transfer_Model extends ORM
 {
-	protected $belons_to = array
-	(
+	protected $belons_to = array(
 		'origin_id' => 'bank_account',
 		'destination_id' => 'bank_account',
-		'transfer', 'bank_statement'
+		'transfer',
+		'bank_statement'
 	);
 
 
@@ -53,7 +53,7 @@ class Bank_transfer_Model extends ORM
 		// disable action log
 		$this->set_logger(FALSE);
 	}
-	
+
 	/**
 	 * It gets all bank transfers of given bank account.
 	 * 
@@ -66,27 +66,26 @@ class Bank_transfer_Model extends ORM
 	 * @return Mysql_Result
 	 */
 	public function get_bank_transfers(
-			$ba_id = null, $limit_from = 0, $limit_results = 20, $order_by = 'id',
-			$order_by_direction = 'DESC', $filter_sql = '')
-	{
+		$ba_id = null,
+		$limit_from = 0,
+		$limit_results = 20,
+		$order_by = 'id',
+		$order_by_direction = 'DESC',
+		$filter_sql = ''
+	) {
 		$where = '';
 		// order by check
-		if ($order_by == 'amount')
-		{
-			$order_by = 'IF(bt.destination_id = '.intval($ba_id).', amount, amount*-1 )';
-		}
-		else if (!$this->has_column($order_by))
-		{
+		if ($order_by == 'amount') {
+			$order_by = 'IF(bt.destination_id = ' . intval($ba_id) . ', amount, amount*-1 )';
+		} else if (!$this->has_column($order_by)) {
 			$order_by = 'id';
 		}
 		// order by direction check
-		if (strtolower($order_by_direction) != 'desc')
-		{
+		if (strtolower($order_by_direction) != 'desc') {
 			$order_by_direction = 'asc';
 		}
 		// filter
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$where = "AND $filter_sql";
 		}
 		// query
@@ -114,8 +113,7 @@ class Bank_transfer_Model extends ORM
 	public function count_bank_transfers($ba_id, $filter_sql = '')
 	{
 		$where = '';
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$where = "AND $filter_sql";
 		}
 		// query
@@ -126,9 +124,9 @@ class Bank_transfer_Model extends ORM
 				LEFT JOIN transfers t ON t.id = bt.transfer_id
 				WHERE (bt.origin_id = ? OR bt.destination_id = ?)
 				$where						
-		", array($ba_id, $ba_id, $ba_id))->current()->total;		
+		", array($ba_id, $ba_id, $ba_id))->current()->total;
 	}
-	
+
 	/**
 	 * Gets bank transfers by bank statement.
 	 * 
@@ -142,12 +140,15 @@ class Bank_transfer_Model extends ORM
 	 * @return Mysql_Result
 	 */
 	public function get_bank_transfers_by_statement(
-			$bs_id = null, $limit_from = 0, $limit_results = 20, $order_by = 'id',
-			$order_by_direction = 'DESC', $filter_values = array())
-	{
+		$bs_id = null,
+		$limit_from = 0,
+		$limit_results = 20,
+		$order_by = 'id',
+		$order_by_direction = 'DESC',
+		$filter_values = array()
+	) {
 		// order by direction check
-		if (strtolower($order_by_direction) != 'desc')
-		{
+		if (strtolower($order_by_direction) != 'desc') {
 			$order_by_direction = 'asc';
 		}
 		// query
@@ -167,11 +168,11 @@ class Bank_transfer_Model extends ORM
 					WHERE id = ?
 				), bt.destination_id, bt.origin_id)
 				WHERE bt.bank_statement_id = ?
-				ORDER BY ".$this->db->escape_column($order_by)." $order_by_direction
+				ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
 				LIMIT " . intval($limit_from) . ", " . intval($limit_results) . "
 		", array($bs_id, $bs_id, $bs_id));
 	}
-	
+
 	/**
 	 * It counts all bank transfers of given bank account.
 	 * 
@@ -181,8 +182,7 @@ class Bank_transfer_Model extends ORM
 	 */
 	public function count_bank_transfers_by_statement($bs_id, $filter_values = array())
 	{
-		return $this->db->count_records('bank_transfers', array
-		(
+		return $this->db->count_records('bank_transfers', array(
 			'bank_statement_id' => $bs_id
 		));
 	}
@@ -204,7 +204,7 @@ class Bank_transfer_Model extends ORM
 				WHERE a.account_attribute_id = ? AND bt.bank_statement_id = ?
 		", array(Account_attribute_Model::MEMBER_FEES, $bs_id))->current()->member_fees;
 	}
-	
+
 	/**
 	 *
 	 * @param unknown_type $bs_id
@@ -219,7 +219,7 @@ class Bank_transfer_Model extends ORM
 			JOIN accounts a ON a.id = t.origin_id
 			WHERE a.account_attribute_id = ? AND bt.bank_statement_id = ?
 		", array(Account_attribute_Model::BANK_INTERESTS, $bs_id))->current()->interests;
-	}	
+	}
 
 	/**
 	 *
@@ -235,8 +235,8 @@ class Bank_transfer_Model extends ORM
 			JOIN accounts a ON a.id = t.destination_id
 			WHERE a.account_attribute_id = ? AND bt.bank_statement_id = ?
 		", array(Account_attribute_Model::BANK, $bs_id))->current()->inbound;
-	}	
-		
+	}
+
 	/**
 	 *
 	 * @param unknown_type $bs_id
@@ -252,7 +252,7 @@ class Bank_transfer_Model extends ORM
 			WHERE a.account_attribute_id = ? AND bt.bank_statement_id = ?
 		", array(Account_attribute_Model::BANK_FEES, $bs_id))->current()->bank_fees;
 	}
-	
+
 	/**
 	 *
 	 * @param unknown_type $bs_id
@@ -266,10 +266,10 @@ class Bank_transfer_Model extends ORM
 			JOIN bank_transfers bt ON bt.transfer_id = t.id
 			JOIN accounts a ON a.id = t.destination_id
 			WHERE a.account_attribute_id = ? AND bt.bank_statement_id = ?
-		", array(Account_attribute_Model::SUPPLIERS, $bs_id))->current()->suppliers;		
+		", array(Account_attribute_Model::SUPPLIERS, $bs_id))->current()->suppliers;
 	}
-	
-	
+
+
 	/**
 	 *
 	 * @param unknown_type $bs_id
@@ -284,9 +284,9 @@ class Bank_transfer_Model extends ORM
 			JOIN accounts a ON a.id = t.origin_id
 			WHERE a.account_attribute_id = ? AND bt.bank_statement_id = ?
 		", array(Account_attribute_Model::BANK, $bs_id))->current()->outbound;
-	}	
-	
-	
+	}
+
+
 	/**
 	 * It gets unidentified member fees transfers from db. 
 	 * Unidentified transfer is that with member_id=0. 
@@ -302,25 +302,26 @@ class Bank_transfer_Model extends ORM
 	 * @return Mysql_Result
 	 */
 	public function get_unidentified_transfers(
-			$limit_from = 0, $limit_results = 500, $order_by = 'id',
-			$order_by_direction = 'asc', $filter_sql = "")
-	{
+		$limit_from = 0,
+		$limit_results = 500,
+		$order_by = 'id',
+		$order_by_direction = 'asc',
+		$filter_sql = ""
+	) {
 		$where = '';
 		// order by direction check
-		if (strtolower($order_by_direction) != 'desc')
-		{
+		if (strtolower($order_by_direction) != 'desc') {
 			$order_by_direction = 'asc';
 		}
 		// filter
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$where = "WHERE $filter_sql";
 		}
-		
+
 		// srct contains all source transactions, asst contains all transfers assigned to credit accounts
 		return $this->db->query("
 				SELECT srct.id, srct.datetime, srct.amount, srct.text,
-					bt.variable_symbol, ba.account_nr, ba.bank_nr, ba.name
+					bt.variable_symbol,bt.comment, ba.account_nr, ba.bank_nr, ba.name
 				FROM transfers srct
 				JOIN accounts a ON a.id = srct.origin_id
 					AND (srct.member_id = 0 OR srct.member_id IS NULL) 
@@ -328,12 +329,11 @@ class Bank_transfer_Model extends ORM
 				JOIN bank_transfers bt ON bt.transfer_id = srct.id
 				LEFT JOIN bank_accounts ba ON ba.id = bt.origin_id
 				$where
-				ORDER BY ".$this->db->escape_column($order_by)." $order_by_direction
-				LIMIT ". intval($limit_from).", ".intval($limit_results) . "
+				ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
+				LIMIT " . intval($limit_from) . ", " . intval($limit_results) . "
 		", array(Account_attribute_Model::MEMBER_FEES));
-
 	}
-	
+
 	/**
 	 * Function gets count of unidentified transfers
 	 * 
@@ -342,15 +342,14 @@ class Bank_transfer_Model extends ORM
 	public function count_unidentified_transfers($filter_sql = "")
 	{
 		$where = '';
-		
+
 		// filter
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$where = "WHERE $filter_sql";
 		}
-		
+
 		// filter
-	    return $this->db->query("
+		return $this->db->query("
 				SELECT COUNT(srct.id) as total
 				FROM transfers srct
 				JOIN accounts a ON a.id = srct.origin_id
@@ -361,7 +360,7 @@ class Bank_transfer_Model extends ORM
 				$where
 		", array(Account_attribute_Model::MEMBER_FEES))->current()->total;
 	}
-	
+
 	/**
 	 * It gets transfer including bank transfer information. Assigned bank transfer must exist.
 	 * 
@@ -415,24 +414,21 @@ class Bank_transfer_Model extends ORM
 	 */
 	public function get_duplicities($data)
 	{
-		if (!is_object($data))
-		{
+		if (!is_object($data)) {
 			return false;
 		}
-		
+
 		$cond_number = '';
 		$cond_vs = 'IS NULL';
-		
-		if (!empty($data->variable_symbol))
-		{
+
+		if (!empty($data->variable_symbol)) {
 			$cond_vs = '=' . $this->db->escape_str($data->variable_symbol);
 		}
-		
-		if (!empty($data->number))
-		{
+
+		if (!empty($data->number)) {
 			$cond_number = 'AND bt.number=' . $this->db->escape($data->number);
 		}
-		
+
 		return $this->db->query("
 				SELECT t.datetime, t.creation_datetime, t.text, bt.*  
 				FROM bank_transfers AS bt
@@ -459,13 +455,12 @@ class Bank_transfer_Model extends ORM
 	 */
 	public function get_transaction_code_duplicities($transaction_codes, $bank_account_id)
 	{
-		if (!is_array($transaction_codes) || !count($transaction_codes))
-		{
+		if (!is_array($transaction_codes) || !count($transaction_codes)) {
 			return array();
 		}
-		
+
 		$codes = implode(',', array_map('intval', $transaction_codes));
-		
+
 		$duplicities = $this->db->query("
 				SELECT bt.transaction_code
 				FROM bank_transfers bt
@@ -474,14 +469,13 @@ class Bank_transfer_Model extends ORM
 				WHERE bt.transaction_code IN (" . $codes . ")
 					AND ba.id = ?
 		", $bank_account_id);
-		
+
 		$duplicate_transaction_codes = array();
-		
-		foreach ($duplicities as $duplicity)
-		{
+
+		foreach ($duplicities as $duplicity) {
 			$duplicate_transaction_codes[] = $duplicity->transaction_code;
 		}
-		
+
 		return $duplicate_transaction_codes;
 	}
 
@@ -509,18 +503,17 @@ class Bank_transfer_Model extends ORM
 
 		$dupl_array = array();
 
-		foreach ($duplicities as $duplicity)
-		{
+		foreach ($duplicities as $duplicity) {
 			$dupl_array[] =
 				$duplicity->datetime . ", " .
-				$duplicity->amount. " " . Settings::get('currency') . ", " .
+				$duplicity->amount . " " . Settings::get('currency') . ", " .
 				__('Origin bank account: ') .
 				$duplicity->bank_account;
 		}
 
 		return $dupl_array;
 	}
-	
+
 	/**
 	 * Gets last transaction code of the given bank account.
 	 * 
@@ -536,12 +529,11 @@ class Bank_transfer_Model extends ORM
 				JOIN bank_statements bs ON bt.bank_statement_id = bs.id
 				WHERE bs.bank_account_id = ?
 		", $bank_account_id);
-		
-		if ($result->count())
-		{
+
+		if ($result->count()) {
 			return $result->current()->last_tc;
 		}
-		
+
 		return NULL;
 	}
 
@@ -573,5 +565,4 @@ class Bank_transfer_Model extends ORM
 				WHERE transfers.member_id = ?
 		", intval($member_id));
 	}
-
 }
