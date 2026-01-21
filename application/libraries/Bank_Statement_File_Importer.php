@@ -720,43 +720,17 @@ abstract class Bank_Statement_File_Importer
     $total_amount = 0.0;
     $ids = array();
 
-    // deduplikace bank_transfer_id v rámci jednoho importu
-    $seen_transfer_ids = array();
+    	$total_amount = 0;
+				$ids = array();
 
-    foreach ($details as $detail) {
-        if (!array_key_exists('bank_transfer_id', $detail)) {
-            continue;
-        }
-
-        $tid = (int)$detail['bank_transfer_id'];
-        if ($tid <= 0) {
-            continue;
-        }
-
-        // pokud už jsme tento transfer viděli, přeskoč (duplicitní záznam)
-        if (isset($seen_transfer_ids[$tid])) {
-            continue;
-        }
-        $seen_transfer_ids[$tid] = TRUE;
-
-        $ids[] = $tid;
-
-        if (array_key_exists('amount', $detail)) {
-            $total_amount += (float)$detail['amount'];
-        }
-    }
-
-    // sjednocení indexů
-    $ids = array_values($ids);
-
-    // (volitelně) pokud po dedupu nic nezbylo, přeskoč člena
-    if (!$ids || $total_amount <= 0) {
-        continue;
-    }
-
-    $total_novat = $total_amount / (1 + $payment_vat / 100);
-
-    // ... zbytek beze změn (purpose 0/1)
+				foreach ($details as $detail) {
+					if (array_key_exists('bank_transfer_id', $detail)) {
+						$ids[] = $detail['bank_transfer_id'];
+					}
+					if (array_key_exists('amount', $detail)) {
+						$total_amount += floatval($detail['amount']);
+					}
+				}
 }
 
 
