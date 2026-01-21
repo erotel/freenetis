@@ -678,113 +678,112 @@ abstract class Bank_Statement_File_Importer
 	 * @return boolean TRUE if all affected members were notified, FALSE otherwise
 	 */
 	protected function notify_affected_members()
-{
-	if (!module::e('notification')) {
-		return FALSE;
-	}
-
-	try {
-		$send_email = Notifications_Controller::ACTIVATE;
-		$send_sms   = Notifications_Controller::ACTIVATE;
-
-		if (!$this->inform_affected_member_by_email) {
-			$send_email = Notifications_Controller::KEEP;
+	{
+		if (!module::e('notification')) {
+			return FALSE;
 		}
 
-		if (!$this->inform_affected_member_by_sms) {
-			$send_sms = Notifications_Controller::KEEP;
-		}
+		try {
+			$send_email = Notifications_Controller::ACTIVATE;
+			$send_sms   = Notifications_Controller::ACTIVATE;
 
-		$payment_vat = floatval(Settings::get('payment_vat'));
-		if ($payment_vat <= 0 || $payment_vat > 100) {
-			$payment_vat = 0;
-		}
+			if (!$this->inform_affected_member_by_email) {
+				$send_email = Notifications_Controller::KEEP;
+			}
 
-		$ba = $this->get_bank_account();
+			if (!$this->inform_affected_member_by_sms) {
+				$send_sms = Notifications_Controller::KEEP;
+			}
 
-		// 0 = contribution, 1 = services
-		$purpose = 0;
-		if ($ba && isset($ba->payment_purpose)) {
-			$purpose = (int)$ba->payment_purpose;
-		}
+			$payment_vat = floatval(Settings::get('payment_vat'));
+			if ($payment_vat <= 0 || $payment_vat > 100) {
+				$payment_vat = 0;
+			}
 
-		$account_nr_str = '';
-		if ($ba && isset($ba->account_nr) && isset($ba->bank_nr)) {
-			$account_nr_str = $ba->account_nr . '/' . $ba->bank_nr;
-		}
+			$ba = $this->get_bank_account();
 
-		foreach ($this->affected_members as $member_id => $details) {
+			// 0 = contribution, 1 = services
+			$purpose = 0;
+			if ($ba && isset($ba->payment_purpose)) {
+				$purpose = (int)$ba->payment_purpose;
+			}
 
-			$total_amount = 0.0;
-			$ids = array();
+			$account_nr_str = '';
+			if ($ba && isset($ba->account_nr) && isset($ba->bank_nr)) {
+				$account_nr_str = $ba->account_nr . '/' . $ba->bank_nr;
+			}
 
-			foreach ($details as $detail) {
-				if (array_key_exists('bank_transfer_id', $detail)) {
-					$ids[] = $detail['bank_transfer_id'];
+			foreach ($this->affected_members as $member_id => $details) {
+
+				$total_amount = 0.0;
+				$ids = array();
+
+				foreach ($details as $detail) {
+					if (array_key_exists('bank_transfer_id', $detail)) {
+						$ids[] = $detail['bank_transfer_id'];
+					}
+					if (array_key_exists('amount', $detail)) {
+						$total_amount += (float)$detail['amount'];
+					}
 				}
-				if (array_key_exists('amount', $detail)) {
-					$total_amount += (float)$detail['amount'];
+
+				if (!$ids || $total_amount <= 0) {
+					continue;
 				}
-			}
 
-			if (!$ids || $total_amount <= 0) {
-				continue;
-			}
+				$total_novat = $total_amount / (1 + $payment_vat / 100);
 
-			$total_novat = $total_amount / (1 + $payment_vat / 100);
-
-			// contribution => původní doklad o platbě
-			if ($purpose === 0) {
-				Message_Model::activate_special_notice(
-					Message_Model::RECEIVED_PAYMENT_NOTICE_MESSAGE,
-					$member_id,
-					$this->get_user_id(),
-					$send_email,
-					$send_sms,
-					array(
-						'payment_id' => implode(', ', $ids),
-						'payment_amount' => round($total_amount, 2),
-						'payment_amount_novat' => round($total_novat, 2),
-						'payment_vat' => round($total_amount - $total_novat, 2),
-						'payment_date' => date('Y-m-d')
-					)
-				);
-				continue;
-			}
-
-			// services => faktura + PDF + email
-			if ($purpose === 1) {
-				$period_tag = date('Y-m');
-
-				try {
-					require_once APPPATH . 'models/bank_import_services_invoices.php';
-
-					Bank_import_services_invoices_Model::create_invoice_and_enqueue_pdf(
-						(int)$member_id,
-						(float)$total_amount,
-						$ids,
-						(string)$account_nr_str,
-						(string)$period_tag
+				// contribution => původní doklad o platbě
+				if ($purpose === 0) {
+					Message_Model::activate_special_notice(
+						Message_Model::RECEIVED_PAYMENT_NOTICE_MESSAGE,
+						$member_id,
+						$this->get_user_id(),
+						$send_email,
+						$send_sms,
+						array(
+							'payment_id' => implode(', ', $ids),
+							'payment_amount' => round($total_amount, 2),
+							'payment_amount_novat' => round($total_novat, 2),
+							'payment_vat' => round($total_amount - $total_novat, 2),
+							'payment_date' => date('Y-m-d')
+						)
 					);
-				} catch (Exception $e) {
-					Log_queue_Model::error(
-						'BANK IMPORT SERVICES ERROR: ' . $e->getMessage(),
-						$e
-					);
+					continue;
+				}
+
+				// services => faktura + PDF + email
+				if ($purpose === 1) {
+					$period_tag = date('Y-m');
+
+					try {
+						require_once APPPATH . 'models/bank_import_services_invoices.php';
+
+						Bank_import_services_invoices_Model::create_invoice_and_enqueue_pdf(
+							(int)$member_id,
+							(float)$total_amount,
+							$ids,
+							(string)$account_nr_str,
+							(string)$period_tag
+						);
+					} catch (Exception $e) {
+						Log_queue_Model::error(
+							'BANK IMPORT SERVICES ERROR: ' . $e->getMessage(),
+							$e
+						);
+					}
 				}
 			}
+
+			return TRUE;
+		} catch (Exception $e) {
+			$m = 'Error during notifying of affected members of a bank import';
+			Log::add_exception($e);
+			Log_queue_Model::error($m, $e);
+			return FALSE;
 		}
-
-		return TRUE;
-
-	} catch (Exception $e) {
-		$m = 'Error during notifying of affected members of a bank import';
-		Log::add_exception($e);
-		Log_queue_Model::error($m, $e);
-		return FALSE;
 	}
 }
-
 /**
  * Class for storing of header data of file import.
  */
