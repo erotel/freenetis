@@ -29,18 +29,10 @@ class Bank_import_services_invoices_Model
     }
 
     $db = Database::instance();
+    $note = sprintf('AUTO PVFREE SERVICES %s', date('Y-m-d H:i'));
 
-    // --- anti-dup: 1x za měsíc a člena ---
-    $note = sprintf('AUTO PVFREE SERVICES %s', $period_tag);
 
-    $existing = $db->query(
-      "SELECT id FROM invoices WHERE member_id = ? AND note = ? LIMIT 1",
-      array($member_id, $note)
-    )->current();
 
-    if ($existing && isset($existing->id)) {
-      return (int)$existing->id;
-    }
 
     // --- data člena (stejně jako auto_credit_invoices, jen minimum) ---
     $row = $db->query(
