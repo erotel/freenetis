@@ -342,7 +342,9 @@ class Message_Model extends ORM
 		return (
 			$type == self::BIG_DEBTOR_MESSAGE ||
 			$type == self::DEBTOR_MESSAGE ||
-			$type == self::PAYMENT_NOTICE_MESSAGE
+			$type == self::PAYMENT_NOTICE_MESSAGE ||
+			$type == self::DEBTOR_MESSAGE_CLEN	||
+			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN
 		);
 	}
 
@@ -475,7 +477,9 @@ class Message_Model extends ORM
 		return (
 			$type == self::DEBTOR_MESSAGE ||
 			$type == self::BIG_DEBTOR_MESSAGE ||
-			$type == self::PAYMENT_NOTICE_MESSAGE
+			$type == self::PAYMENT_NOTICE_MESSAGE || 
+			$type == self::DEBTOR_MESSAGE_CLEN	||
+			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN
 		);
 	}
 
