@@ -76,17 +76,16 @@ class Member_Model extends ORM
 	const TYPE_FEE_FREE = 6;
 	/** Type of member: former */
 	const TYPE_FORMER = 15;
-	
+
 	/** Association member ID */
 	const ASSOCIATION = 1;
-	
+
 	/**
 	 * Types of member
 	 * 
 	 * @var array
 	 */
-	private static $types = array
-	(
+	private static $types = array(
 		self::TYPE_APPLICANT	=> 'Applicant',
 		self::TYPE_REGULAR		=> 'Regular member',
 		self::TYPE_HONORARY		=> 'Honorary member',
@@ -95,35 +94,41 @@ class Member_Model extends ORM
 		self::TYPE_FEE_FREE		=> 'Fee-free regular member',
 		self::TYPE_FORMER		=> 'Former member'
 	);
-	
-	protected $has_one = array
-	(
-		'allowed_subnets_count', 'members_traffic', 'members_domicile'
+
+	protected $has_one = array(
+		'allowed_subnets_count',
+		'members_traffic',
+		'members_domicile'
 	);
-	
-	protected $has_many = array
-	(
-		'allowed_subnets', 'invoices', 'users', 'accounts',
-		'transfers', 'bank_accounts', 'membership_interrupts',
-		'connection_requests', 'members_whitelists'
+
+	protected $has_many = array(
+		'allowed_subnets',
+		'invoices',
+		'users',
+		'accounts',
+		'transfers',
+		'bank_accounts',
+		'membership_interrupts',
+		'connection_requests',
+		'members_whitelists'
 	);
-	
+
 	protected $belongs_to = array('address_point', 'user', 'speed_class');
-	
+
 	/**
 	 * Returns type in string from integer
 	 * 
 	 * @param integer|string $type
 	 * @return string 
 	 */
-	public static function get_type ($type)
+	public static function get_type($type)
 	{
 		if (isset(self::$types[$type]))
 			return __(self::$types[$type]);
 		else
 			return $type;
 	}
-	
+
 	/**
 	 * Gets joined values of member for members fees
 	 *
@@ -132,23 +137,21 @@ class Member_Model extends ORM
 	 */
 	public function get_member_joined($member_id = NULL)
 	{
-		if (empty($member_id))
-		{
+		if (empty($member_id)) {
 			$member_id = $this->id;
 		}
-		
+
 		return $this->select(
-					'members.id, members.name as member_name, users.name as name,' .
-					'users.surname as surname, members.entrance_date,' .
-					'members.leaving_date'
-				)->join('users', array
-				(
-					'users.member_id' => 'members.id',
-					'users.type' => 1
-				))->where('members.id', $member_id)
-				->find();
+			'members.id, members.name as member_name, users.name as name,' .
+				'users.surname as surname, members.entrance_date,' .
+				'members.leaving_date'
+		)->join('users', array(
+			'users.member_id' => 'members.id',
+			'users.type' => 1
+		))->where('members.id', $member_id)
+			->find();
 	}
-	
+
 	/**
 	 * Gets joined values of members for members fees
 	 *
@@ -157,23 +160,21 @@ class Member_Model extends ORM
 	 */
 	public function get_members_joined($member_id = NULL)
 	{
-		if (empty($member_id))
-		{
+		if (empty($member_id)) {
 			$member_id = $this->id;
 		}
-		
+
 		return $this->select(
-					'members.id, members.name as member_name, users.name as name,' .
-					'users.surname as surname, members.entrance_date, ' .
-					'members.leaving_date'
-				)->join('users', array
-				(
-					'users.member_id' => 'members.id',
-					'users.type' => 1
-				))->orderby('surname')
-				->find_all();
+			'members.id, members.name as member_name, users.name as name,' .
+				'users.surname as surname, members.entrance_date, ' .
+				'members.leaving_date'
+		)->join('users', array(
+			'users.member_id' => 'members.id',
+			'users.type' => 1
+		))->orderby('surname')
+			->find_all();
 	}
-	
+
 	/**
 	 * Returns IP addresses of the most traffic-active members
 	 *
@@ -211,20 +212,23 @@ class Member_Model extends ORM
 	 * @param $filter_values used for filtering
 	 * @return Mysql_Result
 	 */
-	public function get_all_members($limit_from = 0, $limit_results = 50,
-			$order_by = 'id', $order_by_direction = 'asc', $filter_sql = '')
-	{
+	public function get_all_members(
+		$limit_from = 0,
+		$limit_results = 50,
+		$order_by = 'id',
+		$order_by_direction = 'asc',
+		$filter_sql = ''
+	) {
 		$where = '';
 
 		if ($filter_sql != '')
 			$where = "WHERE $filter_sql";
-		
+
 		$join_cloud = '';
 		$select_cloud = '';
-		
+
 		//HACK FOR IMPROVING PERFORMANCE
-		if (strpos($filter_sql, '`cl`.`cloud` LIKE '))
-		{
+		if (strpos($filter_sql, '`cl`.`cloud` LIKE ')) {
 			$join_cloud = "
 					LEFT JOIN
 					(
@@ -245,13 +249,12 @@ class Member_Model extends ORM
 		}
 
 		// order by direction check
-		if (strtolower($order_by_direction) != 'desc')
-		{
+		if (strtolower($order_by_direction) != 'desc') {
 			$order_by_direction = 'asc';
 		}
-		
+
 		$account_type_credit = Account_attribute_Model::CREDIT;
-		
+
 		// query
 		return $this->db->query("
 				SELECT id, id AS member_id, name AS member_name, registration, registrations,
@@ -354,8 +357,7 @@ class Member_Model extends ORM
 				GROUP BY q.id
 				ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
 				LIMIT " . intval($limit_from) . ", " . intval($limit_results) . "
-		", array
-		(
+		", array(
 			__('Yes'),
 			__('No'),
 			Config::get('lang'),
@@ -379,7 +381,7 @@ class Member_Model extends ORM
 			__('User message')
 		));
 	}
-	
+
 	/**
 	 * Function gets list of registered applicans.
 	 * 
@@ -390,20 +392,23 @@ class Member_Model extends ORM
 	 * @param string $filter_sql used for filtering
 	 * @return Mysql_Result
 	 */
-	public function get_registered_applicants($limit_from = 0, $limit_results = 50,
-			$order_by = 'id', $order_by_direction = 'asc', $filter_sql = '')
-	{
+	public function get_registered_applicants(
+		$limit_from = 0,
+		$limit_results = 50,
+		$order_by = 'id',
+		$order_by_direction = 'asc',
+		$filter_sql = ''
+	) {
 		$where = '';
 
 		if ($filter_sql != '')
 			$where = "WHERE $filter_sql";
 
 		// order by direction check
-		if (strtolower($order_by_direction) != 'desc')
-		{
+		if (strtolower($order_by_direction) != 'desc') {
 			$order_by_direction = 'asc';
 		}
-		
+
 		// query
 		return $this->db->query("
 				SELECT id, id AS member_id, registration, name, street, street_number,
@@ -457,20 +462,16 @@ class Member_Model extends ORM
 	public function count_all_members($filter_sql = "")
 	{
 		// optimalization
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$where = "WHERE $filter_sql";
-		}
-		else
-		{
+		} else {
 			return $this->count_all();
 		}
-		
+
 		$join_cloud = '';
-		
+
 		//HACK FOR IMPROVING PERFORMANCE
-		if (strpos($filter_sql, '`cl`.`cloud` LIKE '))
-		{
+		if (strpos($filter_sql, '`cl`.`cloud` LIKE ')) {
 			$join_cloud = "
 					LEFT JOIN
 					(
@@ -563,8 +564,7 @@ class Member_Model extends ORM
 					) AS q
 					GROUP BY id
 				) q2
-		", array
-		(
+		", array(
 			__('Yes'),
 			__('No'),
 			Config::get('lang'),
@@ -579,7 +579,7 @@ class Member_Model extends ORM
 			__('User message')
 		))->current()->total;
 	}
-	
+
 	/**
 	 * Function gets count of registered applicans.
 	 * 
@@ -592,7 +592,7 @@ class Member_Model extends ORM
 
 		if ($filter_sql != '')
 			$where = "WHERE $filter_sql";
-		
+
 		// query
 		return $this->db->query("
 				SELECT COUNT(id) AS total
@@ -625,7 +625,7 @@ class Member_Model extends ORM
 				) q2
 		", self::TYPE_APPLICANT)->current()->total;
 	}
-	
+
 	/**
 	 * Function gets all members to export.
 	 * 
@@ -643,8 +643,7 @@ class Member_Model extends ORM
 	public function get_all_members_to_export($filter_sql = '')
 	{
 		// where condition
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$filter_sql = "WHERE $filter_sql";
 		}
 		// query
@@ -736,12 +735,11 @@ class Member_Model extends ORM
 					GROUP BY q.id
 					ORDER BY q.id
 				) AS q
-		", array
-		(
+		", array(
 			User_Model::MAIN_USER
 		));
 	}
-	
+
 	/**
 	 * Function gets selected members.
 	 * 
@@ -755,14 +753,13 @@ class Member_Model extends ORM
 	{
 		$filter_sql = '';
 		// where condition
-		if (!empty($ids) || $in_set === false)
-		{
+		if (!empty($ids) || $in_set === false) {
 			if (!empty($ids))
 				if ($in_set === true)
 					$filter_sql = "WHERE m.id IN (" . implode(',', $ids) . ")";
 				else
 					$filter_sql = "WHERE m.id NOT IN (" . implode(',', $ids) . ")";
-				
+
 			// query
 			return $this->db->query("
 				SELECT m.id, name, type, organization_identifier, vat_organization_identifier,
@@ -826,14 +823,14 @@ class Member_Model extends ORM
 					) v ON v.member_id = m.id
 					$filter_sql
 			", array(
-						Contact_Model::TYPE_EMAIL,
-						User_Model::MAIN_USER,
-						Contact_Model::TYPE_PHONE,
-						User_Model::MAIN_USER
+				Contact_Model::TYPE_EMAIL,
+				User_Model::MAIN_USER,
+				Contact_Model::TYPE_PHONE,
+				User_Model::MAIN_USER
 			));
 		}
 	}
-	
+
 	/**
 	 * Returns all members sccording to the type of message.
 	 * This method does not handle whitelists. (members with witelists are
@@ -849,8 +846,27 @@ class Member_Model extends ORM
 	 */
 	public function get_members_to_messages($type)
 	{
-		switch ($type)
-		{
+
+		// --- rozlišení zákazník / člen ---
+		$member_type_filter = null;
+		$base_type = $type;
+
+		// zákazníci
+		if (in_array($type, [5, 6], true)) {
+			$member_type_filter = 2; // zákazník
+		}
+
+		// členové
+		if ($type === 25) {
+			$member_type_filter = 90; // člen
+			$base_type = 5;           // chová se jako dlužník
+		}
+		if ($type === 26) {
+			$member_type_filter = 90; // člen
+			$base_type = 6;           // chová se jako payment notice
+		}
+
+		switch ($base_type) {
 			case Message_Model::INTERRUPTED_MEMBERSHIP_MESSAGE:
 				$where = "AND mi.id IS NOT NULL";
 				$order_by = 'whitelisted ASC, interrupt DESC';
@@ -859,54 +875,57 @@ class Member_Model extends ORM
 			case Message_Model::BIG_DEBTOR_MESSAGE:
 				// without interrupted members, former members, applicants
 				$where = "AND mi.id IS NULL "
-						. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
-						. " AND m.type <> " . Member_Model::TYPE_FORMER
-						. " AND a.balance < ".intval(Settings::get('big_debtor_boundary'))
-						." AND DATEDIFF(CURDATE(), m.entrance_date) >= ".intval(Settings::get('initial_debtor_immunity'));
+					. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
+					. " AND m.type <> " . Member_Model::TYPE_FORMER
+					. " AND a.balance < " . intval(Settings::get('big_debtor_boundary'))
+					. " AND DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_debtor_immunity'));
 				$order_by = "whitelisted ASC, balance ASC, m.name ASC";
 				break;
-			
+
 			case Message_Model::DEBTOR_MESSAGE:
 				// without interrupted members, former members, applicants, big debtors (if enabled)
-				$where = "AND mi.id IS NULL " 
-						. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
-						. " AND m.type <> " . Member_Model::TYPE_FORMER;
-				if (is_numeric(Settings::get('big_debtor_boundary')))
-				{
-					$where .= " AND a.balance >= ".intval(Settings::get('big_debtor_boundary'));
+				$where = "AND mi.id IS NULL "
+					. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
+					. " AND m.type <> " . Member_Model::TYPE_FORMER;
+				if (is_numeric(Settings::get('big_debtor_boundary'))) {
+					$where .= " AND a.balance >= " . intval(Settings::get('big_debtor_boundary'));
 				}
-				$where .= " AND a.balance < ".intval(Settings::get('debtor_boundary'))
-						." AND DATEDIFF(CURDATE(), m.entrance_date) >= ".intval(Settings::get('initial_debtor_immunity'));
+				$where .= " AND a.balance < " . intval(Settings::get('debtor_boundary'))
+					. " AND DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_debtor_immunity'));
 				$order_by = "whitelisted ASC, balance ASC, m.name ASC";
 				break;
-			
+
 			case Message_Model::PAYMENT_NOTICE_MESSAGE:
 				// without interrupted members, former members, applicants, debtors
-				$where = "AND mi.id IS NULL " 
-						. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
-						. " AND m.type <> " . Member_Model::TYPE_FORMER
-						. " AND a.balance < ".intval(Settings::get('payment_notice_boundary'))."
+				$where = "AND mi.id IS NULL "
+					. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
+					. " AND m.type <> " . Member_Model::TYPE_FORMER
+					. " AND a.balance < " . intval(Settings::get('payment_notice_boundary')) . "
 							AND
 							(
-								DATEDIFF(CURDATE(), m.entrance_date) >= ".intval(Settings::get('initial_debtor_immunity'))."
-								AND a.balance >= ".intval(Settings::get('debtor_boundary'))."
-								OR DATEDIFF(CURDATE(), m.entrance_date) < ".intval(Settings::get('initial_debtor_immunity'))."
-								AND DATEDIFF(CURDATE(), m.entrance_date) >= ".intval(Settings::get('initial_immunity'))."
+								DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_debtor_immunity')) . "
+								AND a.balance >= " . intval(Settings::get('debtor_boundary')) . "
+								OR DATEDIFF(CURDATE(), m.entrance_date) < " . intval(Settings::get('initial_debtor_immunity')) . "
+								AND DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_immunity')) . "
 							)";
 				$order_by = "whitelisted ASC, balance ASC, m.id ASC";
 				break;
-			
+
 			case Message_Model::USER_MESSAGE:
 				// no former or interrupted members for user message
 				$where = "AND mi.id IS NULL "
-						. " AND m.type <> " . Member_Model::TYPE_FORMER;
+					. " AND m.type <> " . Member_Model::TYPE_FORMER;
 				$order_by = 'm.id';
 				break;
-			
+
 			default:
 				throw new InvalidArgumentException('Unexceptable mesage type: ' . $type);
 		}
-		
+
+		if ($member_type_filter !== null) {
+			$where .= " AND m.type = " . intval($member_type_filter);
+		}
+
 		return $this->db->query("
 			SELECT
 				m.*, m.id AS member_id, m.name AS member_name, 
@@ -1009,7 +1028,7 @@ class Member_Model extends ORM
 			ORDER BY $order_by
 		", $subnet_id, Account_attribute_Model::CREDIT, $subnet_id);
 	}
-	
+
 	/**
 	 * Gets all members  of cloud
 	 * 
@@ -1068,7 +1087,7 @@ class Member_Model extends ORM
 			ORDER BY $order_by
 		", $cloud_id, Account_attribute_Model::CREDIT, $cloud_id);
 	}
-	
+
 	/**
 	 * This function can be used for checking the validity of payment variable symbols
 	 * and finding the related member.
@@ -1081,12 +1100,11 @@ class Member_Model extends ORM
 	 */
 	public function get_member_by_crc_id($vs)
 	{
-		if (($vs_len = strlen($vs)) > 5)
-		{
+		if (($vs_len = strlen($vs)) > 5) {
 			$member_id = (int) substr($vs, 0, $vs_len - 5);
 			$crc = variable_symbol::crc16($member_id);
 			$vs_crc = (int) substr($vs, $vs_len - 5, 5);
-			
+
 			if ($crc == $vs_crc)
 				$member = $this->find($member_id);
 		}
@@ -1110,7 +1128,7 @@ class Member_Model extends ORM
 			JOIN contacts c ON users_contacts.contact_id = c.id
 			WHERE c.type = ? AND c.value = ?
 		", array(Contact_Model::TYPE_PHONE, $phone));
-		
+
 		return ($result && $result->count()) ? $result->current()->id : false;
 	}
 
@@ -1129,7 +1147,7 @@ class Member_Model extends ORM
 			JOIN contacts c ON users_contacts.contact_id = c.id
 			WHERE c.type = ? AND c.value = ?
 		", array(Contact_Model::TYPE_PHONE, $phone));
-		
+
 		return ($result && $result->count()) ? $result->current() : FALSE;
 	}
 
@@ -1164,7 +1182,7 @@ class Member_Model extends ORM
 	 * @author Michal Kliment
 	 * @return Mysql_Result object
 	 */
-	public function get_all_members_to_dropdown ()
+	public function get_all_members_to_dropdown()
 	{
 		return $this->db->query("
 				SELECT m.id,
@@ -1178,7 +1196,7 @@ class Member_Model extends ORM
 				ORDER BY name
 		", User_Model::MAIN_USER);
 	}
-	
+
 	/**
 	 * Gets array of members for selectbox
 	 * 
@@ -1187,36 +1205,33 @@ class Member_Model extends ORM
 	public function select_list_grouped($optgroup = TRUE)
 	{
 		$list = array();
-		
+
 		$assoc = ORM::factory('member', self::ASSOCIATION);
-		
+
 		if ($optgroup)
-			$list[__('Association')][self::ASSOCIATION] = $assoc->name . ' (ID '.self::ASSOCIATION.')';
+			$list[__('Association')][self::ASSOCIATION] = $assoc->name . ' (ID ' . self::ASSOCIATION . ')';
 		else
-			$list[self::ASSOCIATION] = $assoc->name . ' (ID '.self::ASSOCIATION.')';
-		
+			$list[self::ASSOCIATION] = $assoc->name . ' (ID ' . self::ASSOCIATION . ')';
+
 		$concat = "CONCAT(
 					IF(
 						CONCAT(users.name,' ',users.surname) = members.name,
 						CONCAT(users.surname,' ',users.name),
 						members.name
 					), ' (ID ',members.id,')')";
-		
-		if ($optgroup)
-		{
+
+		if ($optgroup) {
 			$list[__('Members')] = $assoc
-					->join('users', array('members.id' => 'users.member_id'))
-					->where('members.id !=', self::ASSOCIATION)
-					->select_list('member_id', $concat, array('surname' => 'ASC', 'users.name' => 'ASC'));
-		}
-		else
-		{
+				->join('users', array('members.id' => 'users.member_id'))
+				->where('members.id !=', self::ASSOCIATION)
+				->select_list('member_id', $concat, array('surname' => 'ASC', 'users.name' => 'ASC'));
+		} else {
 			$list += $assoc
 				->join('users', array('members.id' => 'users.member_id'))
 				->where('members.id !=', self::ASSOCIATION)
 				->select_list('member_id', $concat, array('surname' => 'ASC', 'users.name' => 'ASC'));
 		}
-		
+
 		return $list;
 	}
 
@@ -1227,16 +1242,15 @@ class Member_Model extends ORM
 	 * @param integer $account_attribute_id
 	 * @return Mysql_Result object
 	 */
-	public function get_doubleentry_account ($account_attribute_id)
+	public function get_doubleentry_account($account_attribute_id)
 	{
-		if ($this->id)
-		{
+		if ($this->id) {
 			return $this->db->query("
 					SELECT * FROM accounts a
 					WHERE account_attribute_id = ? AND member_id = ?
 			", array($account_attribute_id, $this->id))->current();
 		}
-		
+
 		return false;
 	}
 
@@ -1259,15 +1273,14 @@ class Member_Model extends ORM
 	 */
 	public function get_login()
 	{
-		if ($this->id)
-		{
+		if ($this->id) {
 			return $this->db->query("
 					SELECT u.login
 					FROM users u
 					WHERE u.member_id = ? AND u.type = ?
 			", array($this->id, User_Model::MAIN_USER))->current()->login;
 		}
-		
+
 		return false;
 	}
 
@@ -1279,37 +1292,35 @@ class Member_Model extends ORM
 	 */
 	public function get_main_user($member_id = NULL)
 	{
-		if ($member_id === NULL && $this)
-		{
+		if ($member_id === NULL && $this) {
 			$member_id = $this->id;
 		}
-		
+
 		$result = $this->db->query("
 				SELECT u.id
 				FROM users u
 				WHERE u.member_id = ? AND u.type = ?
 		", array($member_id, User_Model::MAIN_USER));
-		
-		if ($result->count())
-		{
+
+		if ($result->count()) {
 			return $result->current()->id;
 		}
-		
+
 		return NULL;
 	}
-	
+
 	/**
 	 * Gets all entrance and leaving dates
 	 *
 	 * @param string $filter_sql
 	 * @return Mysql_Result
 	 */
-	public function get_all_entrance_and_leaving_dates ($filter_sql = '')
+	public function get_all_entrance_and_leaving_dates($filter_sql = '')
 	{
 		$where = '';
 		if ($filter_sql != '')
 			$where = "WHERE $filter_sql";
-		
+
 		return $this->db->query("
 			SELECT date AS date, SUM(increase) AS increase, SUM(decrease) AS decrease
 			FROM
@@ -1333,7 +1344,7 @@ class Member_Model extends ORM
 			ORDER BY date
 		");
 	}
-	
+
 	/**
 	 * Deletes members accounts
 	 *
@@ -1345,7 +1356,7 @@ class Member_Model extends ORM
 				DELETE FROM accounts WHERE member_id = ?
 		", $member_id);
 	}
-	
+
 	/**
 	 * Deletes all devices and IP addresses of the given member or members
 	 * 
@@ -1354,13 +1365,11 @@ class Member_Model extends ORM
 	 */
 	public function delete_members_devices($member_id)
 	{
-		if (!is_array($member_id))
-		{
+		if (!is_array($member_id)) {
 			$member_id = array($member_id);
 		}
-		
-		if (count($member_id) > 0)
-		{
+
+		if (count($member_id) > 0) {
 			$mids = implode(',', array_map('intval', $member_id));
 			// delete devices
 			$this->db->query("
@@ -1381,7 +1390,7 @@ class Member_Model extends ORM
 			");
 		}
 	}
-	
+
 	/**
 	 * Returns balance of current member
 	 * 
@@ -1389,23 +1398,22 @@ class Member_Model extends ORM
 	 * @param integer $member_id
 	 * @return integer 
 	 */
-	public function get_balance ($member_id = NULL)
+	public function get_balance($member_id = NULL)
 	{
 		if (!$member_id || !is_numeric($member_id))
 			$member_id = $this->id;
-		
-		$account = ORM::factory('account')->where(array
-		(
+
+		$account = ORM::factory('account')->where(array(
 			'account_attribute_id' => Account_attribute_Model::CREDIT,
 			'member_id' => $member_id
 		))->find();
-		
+
 		if ($account && $account->id)
 			return $account->balance;
 		else
 			return 0;
 	}
-	
+
 	/**
 	 * Checks whether current member has membership interrupt in given date
 	 * 
@@ -1414,14 +1422,14 @@ class Member_Model extends ORM
 	 * @param integer $member_id
 	 * @return bool 
 	 */
-	public function has_membership_interrupt ($date = NULL, $member_id = NULL)
+	public function has_membership_interrupt($date = NULL, $member_id = NULL)
 	{
 		if (!$date)
 			$date = date('Y-m-d');
-		
+
 		if (!$member_id || !is_numeric($member_id))
 			$member_id = $this->id;
-		
+
 		return ORM::factory('membership_interrupt')
 			->has_member_interrupt_in_date($member_id, $date);
 	}
@@ -1435,11 +1443,11 @@ class Member_Model extends ORM
 	{
 		if ($member_id === NULL)
 			$member_id = $this->id;
-		
+
 		$mw = new Members_whitelist_Model();
 		return $mw->is_whitelisted_now($member_id);
 	}
-	
+
 	/**
 	 * Reactivates (rechecks) system messages for current member
 	 * 
@@ -1447,163 +1455,172 @@ class Member_Model extends ORM
 	 * @param integer $member_id
 	 * @return bool 
 	 */
-	public function reactivate_messages ($member_id = NULL)
+	public function reactivate_messages($member_id = NULL)
 	{
 		if ($member_id && is_numeric($member_id) && $member_id != 1)
-			$member = new Member_Model ($member_id);
+			$member = new Member_Model($member_id);
 		else if ($this->id && $this->id != 1)
 			$member = $this;
 		else
 			return false;
-		
+
 		// balance of member
 		$balance = $member->get_balance();
-		
+
 		// has membership interrupt in current date ?
 		$has_membership_interrupt = $member->has_membership_interrupt();
-		
+
 		// has member any active whitelist?
 		$is_whitelisted = $member->has_whitelist();
-		
+
 		// finds all ip addresses of member
 		$ip_addresses = ORM::factory('ip_address')
-				->get_ip_addresses_of_member($member->id);
-		
+			->get_ip_addresses_of_member($member->id);
+
 		$messages_ip_addresses_model = new Messages_ip_addresses_Model();
 		$message_model = new Message_Model();
-		
+
 		// finds ids for system messages
-		
-		if (Settings::get('finance_enabled'))
-		{
+
+		if (Settings::get('finance_enabled')) {
 			$big_debtor_message_id = $message_model
 				->get_message_id_by_type(
-						Message_Model::BIG_DEBTOR_MESSAGE
+					Message_Model::BIG_DEBTOR_MESSAGE
 				);
 
 			$debtor_message_id = $message_model
 				->get_message_id_by_type(
-						Message_Model::DEBTOR_MESSAGE
+					Message_Model::DEBTOR_MESSAGE
 				);
-		
+
 			$payment_notice_message_id = $message_model
 				->get_message_id_by_type(
-						Message_Model::PAYMENT_NOTICE_MESSAGE
+					Message_Model::PAYMENT_NOTICE_MESSAGE
 				);
 		}
-		
-		if (Settings::get('membership_interrupt_enabled'))
-		{
+
+		if (Settings::get('membership_interrupt_enabled')) {
 			$interrupt_membership_message_id = $message_model
 				->get_message_id_by_type(
-						Message_Model::INTERRUPTED_MEMBERSHIP_MESSAGE
+					Message_Model::INTERRUPTED_MEMBERSHIP_MESSAGE
 				);
 		}
-		
+
 		$connection_test_expired_id = $message_model
-				->get_message_id_by_type(
-						Message_Model::CONNECTION_TEST_EXPIRED
-				);
-		
+			->get_message_id_by_type(
+				Message_Model::CONNECTION_TEST_EXPIRED
+			);
+
 		$former_member_message_id = $message_model
-				->get_message_id_by_type(
-						Message_Model::FORMER_MEMBER_MESSAGE
-				);
-		
+			->get_message_id_by_type(
+				Message_Model::FORMER_MEMBER_MESSAGE
+			);
+
 		// deletes all redirections of member
-		foreach ($ip_addresses as $ip_address)
-		{
+		foreach ($ip_addresses as $ip_address) {
 			// deletes all system redirections of member
 			$messages_ip_addresses_model
 				->delete_all_system_redirections_of_ip_address($ip_address->id);
-			
+
 			// former member?
-			if ($member->type == Member_Model::TYPE_FORMER)
-			{
+			if ($member->type == Member_Model::TYPE_FORMER) {
 				$messages_ip_addresses_model
 					->add_redirection_to_ip_address(
-							$former_member_message_id, $ip_address->id, ''
+						$former_member_message_id,
+						$ip_address->id,
+						''
 					);
-				
+
 				continue; // nothing more required
 			}
-			
+
 			// member has membership interrupt
-			if (Settings::get('membership_interrupt_enabled') &&
-				$has_membership_interrupt)
-			{
+			if (
+				Settings::get('membership_interrupt_enabled') &&
+				$has_membership_interrupt
+			) {
 				$messages_ip_addresses_model
 					->add_redirection_to_ip_address(
-							$interrupt_membership_message_id, $ip_address->id, ''
+						$interrupt_membership_message_id,
+						$ip_address->id,
+						''
 					);
-				
+
 				continue; // nothing more required
 			}
-			
+
 			// only delete all if whitelisted or member is applicant
 			if ($is_whitelisted)
 				continue;
-			
+
 			// applicant test connection
-			if ($member->type == Member_Model::TYPE_APPLICANT)
-			{
+			if ($member->type == Member_Model::TYPE_APPLICANT) {
 				$actd = Settings::get('applicant_connection_test_duration');
 				$acf = $member->applicant_connected_from;
-				
-				if (!$member->registration && $actd &&
+
+				if (
+					!$member->registration && $actd &&
 					!empty($acf) && $acf != '0000-00-00' &&
-					((time() - strtotime($acf)) / 86400 > $actd))
-				{
+					((time() - strtotime($acf)) / 86400 > $actd)
+				) {
 					$messages_ip_addresses_model
 						->add_redirection_to_ip_address(
-								$connection_test_expired_id, $ip_address->id, ''
+							$connection_test_expired_id,
+							$ip_address->id,
+							''
 						);
 				}
-				
+
 				continue; // no other messages for applicants
 			}
-			
+
 			// finance redirections
-			if (Settings::get('finance_enabled') && !$has_membership_interrupt)
-			{
+			if (Settings::get('finance_enabled') && !$has_membership_interrupt) {
 				$idi = Settings::get('initial_debtor_immunity');
 				$ii = Settings::get('initial_immunity');
 				$ed_diff = (time() - strtotime($member->entrance_date)) / 86400;
 
-				if (is_numeric(Settings::get('big_debtor_boundary')) &&
+				if (
+					is_numeric(Settings::get('big_debtor_boundary')) &&
 					$balance < Settings::get('big_debtor_boundary') &&
-					($ed_diff >= $idi))
-				{ // member is big debtor
+					($ed_diff >= $idi)
+				) { // member is big debtor
 					$messages_ip_addresses_model
 						->add_redirection_to_ip_address(
-								$big_debtor_message_id, $ip_address->id, ''
+							$big_debtor_message_id,
+							$ip_address->id,
+							''
 						);
-				}
-				else if ($balance < Settings::get('debtor_boundary') &&
-					($ed_diff >= $idi))
-				{ // member is debtor
+				} else if (
+					$balance < Settings::get('debtor_boundary') &&
+					($ed_diff >= $idi)
+				) { // member is debtor
 					$messages_ip_addresses_model
 						->add_redirection_to_ip_address(
-								$debtor_message_id, $ip_address->id, ''
+							$debtor_message_id,
+							$ip_address->id,
+							''
 						);
-				}
-				else if ($balance < Settings::get('payment_notice_boundary') &&
+				} else if (
+					$balance < Settings::get('payment_notice_boundary') &&
 					$member->notification_by_redirection && (
-							$balance >= Settings::get('debtor_boundary') &&
-							($ed_diff >= $idi)
-					) || (($ed_diff < $idi) && ($ed_diff >= $ii)))
-				{ // member is almost debtor
+						$balance >= Settings::get('debtor_boundary') &&
+						($ed_diff >= $idi)
+					) || (($ed_diff < $idi) && ($ed_diff >= $ii))
+				) { // member is almost debtor
 					$messages_ip_addresses_model
 						->add_redirection_to_ip_address(
-								$payment_notice_message_id, $ip_address->id, ''
+							$payment_notice_message_id,
+							$ip_address->id,
+							''
 						);
 				}
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Updates state of members registrations
 	 * 
@@ -1611,16 +1628,15 @@ class Member_Model extends ORM
 	 * @param array $ids
 	 * @param array $registrations 
 	 */
-	public function update_member_registrations ($ids = array(), $registrations = array())
+	public function update_member_registrations($ids = array(), $registrations = array())
 	{
-		foreach ($ids as $id)
-		{
+		foreach ($ids as $id) {
 			$this->db->query("
 				UPDATE members SET registration = ? WHERE id = ?
-			",array(isset($registrations[$id]), $id));
+			", array(isset($registrations[$id]), $id));
 		}
 	}
-	
+
 	/**
 	 * Adds today former members (members that have set leaving date that is less
 	 * or equal than today and their type is not former).
@@ -1635,14 +1651,14 @@ class Member_Model extends ORM
 				AND leaving_date <> '0000-00-00'
 		", self::TYPE_FORMER, self::TYPE_FORMER, date('Y-m-d'));
 	}
-	
+
 	/**
 	 * Returns members with set-up qos ceil or rate
 	 * 
 	 * @author Michal Kliment
 	 * @return MySQL Result
 	 */
-	public function get_members_qos_ceil_rate ()
+	public function get_members_qos_ceil_rate()
 	{
 		return $this->db->query("
 			SELECT m.id, sc.d_ceil, sc.d_rate, sc.u_ceil, sc.u_rate
@@ -1651,7 +1667,7 @@ class Member_Model extends ORM
 			ORDER BY m.id
 		");
 	}
-	
+
 	/**
 	 * Returns today former members (for auto notification)
 	 * 
@@ -1674,7 +1690,7 @@ class Member_Model extends ORM
 			GROUP BY m.id
 		", date('Y-m-d'));
 	}
-	
+
 	/**
 	 * Returns all former members (for auto redirection)
 	 * 
@@ -1697,7 +1713,7 @@ class Member_Model extends ORM
 			GROUP BY m.id
 		", self::TYPE_FORMER);
 	}
-	
+
 	/**
 	 * Returns all interrupted members (for auto redirection)
 	 * 
@@ -1711,16 +1727,14 @@ class Member_Model extends ORM
 	 */
 	public function get_interrupted_members_on($date = NULL, $operation = 1)
 	{
-		if (empty($date))
-		{
+		if (empty($date)) {
 			$date = date('Y-m-d');
 		}
-		
+
 		$op = '';
-		
+
 		// select op
-		switch ($operation)
-		{
+		switch ($operation) {
 			case 2: // begin
 				$op = "= mf.activation_date";
 				break;
@@ -1731,7 +1745,7 @@ class Member_Model extends ORM
 				$op = "BETWEEN mf.activation_date AND mf.deactivation_date";
 				break;
 		}
-		
+
 		return $this->db->query("
 			SELECT mi.member_id, w.whitelisted
 			FROM membership_interrupts mi
@@ -1747,7 +1761,7 @@ class Member_Model extends ORM
 			GROUP BY mi.member_id
 		", $date);
 	}
-	
+
 	/**
 	 * Returns all former members without debt (used to membership transfer)
 	 * 
@@ -1763,7 +1777,7 @@ class Member_Model extends ORM
 			WHERE m.type = ? AND a.balance >= 0
 		", self::TYPE_FORMER);
 	}
-	
+
 	/**
 	 * Return credit account of member
 	 * 
@@ -1775,11 +1789,12 @@ class Member_Model extends ORM
 	{
 		if (!$member_id && $this)
 			$member_id = $this->id;
-		
+
 		$account_model = new Account_Model();
-		
+
 		return $account_model->get_account_by_account_attribute_and_member(
-			Account_attribute_Model::CREDIT, $member_id
+			Account_attribute_Model::CREDIT,
+			$member_id
 		);
 	}
 }

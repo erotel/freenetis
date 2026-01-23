@@ -30,23 +30,23 @@ class Message_Model extends ORM
 {
 	
 	// type constants
-	
+
 	/**
 	 * user message, can be added and deleted by user
 	 */
 	const USER_MESSAGE													= 0;
-	
+
 	/**
 	 * not exactly message, it is content of side panel,
 	 * should be used for information for all redirections
 	 */
 	const CONTACT_INFORMATION											= 1;
-	
+
 	/**
 	 * content of page shown after canceling redirection
 	 */
 	const CANCEL_MESSAGE												= 2;
-	
+
 	/**
 	 *  content of page with text for unknown device
 	 */
@@ -56,80 +56,80 @@ class Message_Model extends ORM
 	 * this redirection can be set in system
 	 */
 	const INTERRUPTED_MEMBERSHIP_MESSAGE								= 4;
-	
+
 	/**
 	 * content of page for debtor, this redirection can be set in system
 	 */
 	const DEBTOR_MESSAGE												= 5;
-	
+
 	/**
 	 * content of page for payment notice, this redirection can be set
 	 * in system and can be canceled by user
 	 */
 	const PAYMENT_NOTICE_MESSAGE										= 6;
-	
+
 	/**
 	 * content of page for unallowed connecting place, depends on allowed subnets
 	 */
 	const UNALLOWED_CONNECTING_PLACE_MESSAGE							= 7;
-	
+
 	/**
 	 * content of page for received payment notice
 	 */
 	const RECEIVED_PAYMENT_NOTICE_MESSAGE								= 8;
-	
+
 	/**
 	 * content of page for approved application for membership
 	 */
 	const APPLICANT_APPROVE_MEMBERSHIP									= 9;
-	
+
 	/**
 	 * content of page for refused application for membership
 	 */
 	const APPLICANT_REFUSE_MEMBERSHIP									= 10;
-	
+
 	/**
 	 * content of page for approved request for connection
 	 */
 	const CONNECTION_REQUEST_APPROVE									= 11;
-	
+
 	/**
 	 * content of page for refused request for connection
 	 */
 	const CONNECTION_REQUEST_REFUSE										= 12;
-	
+
 	/**
 	 * content of page for information about request for connection
 	 */
 	const CONNECTION_REQUEST_INFO										= 13;
-	
+
 	/**
 	 * content of page for information about host down in monitoring
 	 */
 	const MONITORING_HOST_DOWN											= 14;
-	
+
 	/**
 	 * content of page for information about host up in monitoring
 	 */
 	const MONITORING_HOST_UP											= 15;
-	
+
 	/**
 	 * content of page for information about connection test expiration
 	 */
 	const CONNECTION_TEST_EXPIRED										= 16;
-	
+
 	/**
 	 * notification e-mail message that is sended to a interupted member
 	 * at the start of his interuption
 	 */
 	const INTERRUPTED_MEMBERSHIP_BEGIN_NOTIFY_MESSAGE					= 17;
-	
+
 	/**
 	 * notification e-mail message that is sended to a interupted member
 	 * at the end of his interuption
 	 */
 	const INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE						= 18;
-	
+
 	/**
 	 * content of page for information about former membership
 	 * e-mail content of this message is send to the former member at the day
@@ -142,48 +142,58 @@ class Message_Model extends ORM
 	 */
 	const BIG_DEBTOR_MESSAGE
 
-	 /**
-         * ukončení při neplacení
-         */
-											= 20;
+	/**
+	 * ukončení při neplacení
+	 */
+	= 20;
 
 	const FORMER_MEMBER_MESSAGE_NOPAYMENT										= 21;
 
-	 /**
-         * ukončení bez emailu
-         */
+	/**
+	 * ukončení bez emailu
+	 */
 
-	
+
 	const FORMER_MEMBER_NOMESSAGE											= 22;
 
 	const FORMER_MEMBER_MESSAGE_RETURN_PAYMENT										= 23;
 
+	/**
+	 * content of page for debtor, this redirection can be set in system
+	 */
+	const DEBTOR_MESSAGE_CLEN												= 25;
+
+	/**
+	 * content of page for payment notice, this redirection can be set
+	 * in system and can be canceled by user
+	 */
+	const PAYMENT_NOTICE_MESSAGE_CLEN								= 26;
+
 	// self-cancel constants
-	
+
 	/**
 	 * self cancel disabled, remote computer cannot cancel this message
 	 */
 	const SELF_CANCEL_DISABLED											= 0;
-	
+
 	/**
 	 * self cancel enabled, every member's IP address will have cancelled
 	 * given redirection
 	 */
 	const SELF_CANCEL_MEMBER											= 1;
-	
+
 	/**
 	 * self cancel enabled, redirection is canceled only for current remote computer
 	 */
 	const SELF_CANCEL_IP												= 2;
-	
+
 	/**
 	 * Message's types
 	 * 
 	 * @author Michal Kliment
-     * @var type 
+	 * @var type 
 	 */
-	private static $types = array
-	(
+	private static $types = array(
 		self::USER_MESSAGE									=> 'User message',
 		self::CONTACT_INFORMATION							=> 'Contact information',
 		self::CANCEL_MESSAGE								=> 'Page after canceling redirection',
@@ -208,21 +218,22 @@ class Message_Model extends ORM
 		self::FORMER_MEMBER_MESSAGE_NOPAYMENT                                          => 'Former member message no payment',
 		self::FORMER_MEMBER_NOMESSAGE                                                     => 'Former member no message',
 		self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT                                          => 'Former member message return payment',
+		self::DEBTOR_MESSAGE_CLEN	=> 'Dlužník člen',
+		self::PAYMENT_NOTICE_MESSAGE_CLEN => 'Upozornění na placení člen',
 	);
-	
+
 	/**
 	 * Self cancel messages
 	 *
 	 * @author Ondřej Fibich
 	 * @var array
 	 */
-	private static $self_cancel_messages = array
-	(
+	private static $self_cancel_messages = array(
 		self::SELF_CANCEL_DISABLED	=> 'Disabled',
 		self::SELF_CANCEL_MEMBER	=> 'Possibility of canceling redirection to all IP addresses of member',
 		self::SELF_CANCEL_IP		=> 'Possibility of canceling redirection to only current IP address'
 	);
-	
+
 	/**
 	 * Returns all message's types
 	 * 
@@ -244,14 +255,13 @@ class Message_Model extends ORM
 	 */
 	public static function get_self_cancel_messages($translate = TRUE)
 	{
-		if ($translate)
-		{
+		if ($translate) {
 			return array_map('__', self::$self_cancel_messages);
 		}
-		
+
 		return self::$self_cancel_messages;
 	}
-	
+
 	/**
 	 * Check if message may be self cancable.
 	 * 
@@ -267,7 +277,7 @@ class Message_Model extends ORM
 			$type == self::RECEIVED_PAYMENT_NOTICE_MESSAGE
 		);
 	}
-	
+
 	/**
 	 * Check if message may ignore the white list.
 	 * 
@@ -289,11 +299,13 @@ class Message_Model extends ORM
 			$type == self::FORMER_MEMBER_MESSAGE ||
 			$type == self::FORMER_MEMBER_MESSAGE_NOPAYMENT ||
 			$type == self::FORMER_MEMBER_NOMESSAGE ||
-			$type == self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
+			$type == self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT ||
+			$type == self::DEBTOR_MESSAGE_CLEN	||
+			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN
 		);
 	}
-	
-	
+
+
 	/**
 	 * Check if message is special message.
 	 * 
@@ -309,7 +321,7 @@ class Message_Model extends ORM
 			$type == self::APPLICANT_REFUSE_MEMBERSHIP ||
 			$type == self::CONNECTION_REQUEST_APPROVE ||
 			$type == self::CONNECTION_REQUEST_REFUSE ||
-			$type == self::CONNECTION_REQUEST_INFO || 
+			$type == self::CONNECTION_REQUEST_INFO ||
 			$type == self::MONITORING_HOST_DOWN ||
 			$type == self::MONITORING_HOST_UP ||
 			$type == self::CONNECTION_TEST_EXPIRED ||
@@ -333,7 +345,7 @@ class Message_Model extends ORM
 			$type == self::PAYMENT_NOTICE_MESSAGE
 		);
 	}
-	
+
 	/**
 	 * Check if message contains redirection content.
 	 * 
@@ -356,7 +368,7 @@ class Message_Model extends ORM
 			$type != self::INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE
 		);
 	}
-	
+
 	/**
 	 * Check if message contains email content.
 	 * 
@@ -367,7 +379,7 @@ class Message_Model extends ORM
 	public static function has_email_content($type)
 	{
 		return (
-			$type == self::USER_MESSAGE || 
+			$type == self::USER_MESSAGE ||
 			$type == self::DEBTOR_MESSAGE ||
 			$type == self::BIG_DEBTOR_MESSAGE ||
 			$type == self::PAYMENT_NOTICE_MESSAGE ||
@@ -385,10 +397,12 @@ class Message_Model extends ORM
 			$type == self::FORMER_MEMBER_MESSAGE ||
 			$type == self::FORMER_MEMBER_MESSAGE_NOPAYMENT ||
 			$type == self::FORMER_MEMBER_NOMESSAGE ||
-			$type == self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
+			$type == self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT ||
+			$type == self::DEBTOR_MESSAGE_CLEN	||
+			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN
 		);
 	}
-	
+
 	/**
 	 * Check if message contains sms content.
 	 * 
@@ -399,7 +413,7 @@ class Message_Model extends ORM
 	public static function has_sms_content($type)
 	{
 		return (
-			$type == self::USER_MESSAGE || 
+			$type == self::USER_MESSAGE ||
 			$type == self::DEBTOR_MESSAGE ||
 			$type == self::BIG_DEBTOR_MESSAGE ||
 			$type == self::PAYMENT_NOTICE_MESSAGE ||
@@ -410,11 +424,13 @@ class Message_Model extends ORM
 			$type == self::INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE ||
 			$type == self::FORMER_MEMBER_MESSAGE ||
 			$type == self::FORMER_MEMBER_MESSAGE_NOPAYMENT ||
-			$type == self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
+			$type == self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT ||
+			$type == self::DEBTOR_MESSAGE_CLEN	||
+			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN
 		);
 	}
-	
-	
+
+
 	/**
 	 * Check if message can be activated directly.
 	 * 
@@ -447,7 +463,7 @@ class Message_Model extends ORM
 			$type != self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
 		);
 	}
-	
+
 	/**
 	 * Check if message can be activated manually.
 	 * 
@@ -462,7 +478,7 @@ class Message_Model extends ORM
 			$type == self::PAYMENT_NOTICE_MESSAGE
 		);
 	}
-	
+
 	/**
 	 * Counts all activated redirections from junction table messages_ip_addresses.
 	 * 
@@ -471,18 +487,15 @@ class Message_Model extends ORM
 	 */
 	public function count_all_redirections($filter_sql = '')
 	{
-		if (!empty($filter_sql))
-		{
+		if (!empty($filter_sql)) {
 			$where = "WHERE $filter_sql";
-		}
-		else
-		{
+		} else {
 			// Optimalization:
 			// don't want search throught staff down here because of filter
 			// which will be still unused
 			return $this->db->count_records('messages_ip_addresses');
 		}
-		
+
 		return $this->db->query("
 			SELECT COUNT(*) AS total FROM
 			(
@@ -503,37 +516,36 @@ class Message_Model extends ORM
 			$where
 		")->current()->total;
 	}
-	
+
 	/**
 	 * Gets all activated redirections from junction table messages_ip_addresses.
 	 * 
 	 * @return Mysql_Result
 	 */
 	public function get_all_redirections(
-			$limit_from = 0, $limit_results = 20, $order_by = 'ip_address',
-			$order_by_direction = 'ASC', $filter_sql = '')
-	{
+		$limit_from = 0,
+		$limit_results = 20,
+		$order_by = 'ip_address',
+		$order_by_direction = 'ASC',
+		$filter_sql = ''
+	) {
 		// direction
-		if (strtolower($order_by_direction) != 'asc')
-		{
+		if (strtolower($order_by_direction) != 'asc') {
 			$order_by_direction = 'DESC';
 		}
 		// order by check
-		if ($order_by == 'ip_address')
-		{
+		if ($order_by == 'ip_address') {
 			//$order_by = 'inet_aton(ip_address)';
 			$order_by = 'inet_aton(ip_address) ASC, self_cancel DESC, mip.datetime ASC';
 			$order_by_direction = '';
-		}
-		else
-		{
+		} else {
 			$order_by = $this->db->escape_column($order_by);
 		}
-		
+
 		$where = '';
 		if ($filter_sql)
 			$where = "WHERE $filter_sql";
-		
+
 		// query
 		return $this->db->query("
 			SELECT * FROM
@@ -557,7 +569,7 @@ class Message_Model extends ORM
 			LIMIT " . intval($limit_from) . ", " . intval($limit_results) . "
 		");
 	}
-	
+
 	/**
 	 * Counts all messages.
 	 * 
@@ -568,7 +580,7 @@ class Message_Model extends ORM
 		return $this->get_all_messages(NULL, NULL, '', '', $filter_sql)
 			->count();
 	}
-	
+
 	/**
 	 * Gets all redirection messages.
 	 * 
@@ -581,90 +593,78 @@ class Message_Model extends ORM
 	 * @return Mysql_Result
 	 */
 	public function get_all_messages(
-			$limit_from = 0, $limit_results = 20,
-			$order_by = 'id', $order_by_direction = 'asc',
-			$filter_sql = '')
-	{
+		$limit_from = 0,
+		$limit_results = 20,
+		$order_by = 'id',
+		$order_by_direction = 'asc',
+		$filter_sql = ''
+	) {
 		// order by check
-		if (!$this->has_column($order_by))
-		{
-			if ($order_by == 'message')
-			{
+		if (!$this->has_column($order_by)) {
+			if ($order_by == 'message') {
 				$order_by = 'name';
-			}
-			else
-			{
+			} else {
 				$order_by = 'id';
 			}
 		}
 		// order by direction check
-		if (strtolower($order_by_direction) != 'desc')
-		{
+		if (strtolower($order_by_direction) != 'desc') {
 			$order_by_direction = 'asc';
 		}
-		
+
 		$where = array();
-		
-		if (!Settings::get('finance_enabled'))
-		{
+
+		if (!Settings::get('finance_enabled')) {
 			$where[] = "m.type <> " . intval(self::PAYMENT_NOTICE_MESSAGE);
 			$where[] = "m.type <> " . intval(self::DEBTOR_MESSAGE);
+			$where[] = "m.type <> " . intval(self::PAYMENT_NOTICE_MESSAGE_CLEN);
+			$where[] = "m.type <> " . intval(self::DEBTOR_MESSAGE_CLEN);
 			$where[] = "m.type <> " . intval(self::BIG_DEBTOR_MESSAGE);
 			$where[] = "m.type <> " . intval(self::RECEIVED_PAYMENT_NOTICE_MESSAGE);
-		}
-		else if (!is_numeric(Settings::get('big_debtor_boundary')))
-		{
+		} else if (!is_numeric(Settings::get('big_debtor_boundary'))) {
 			$where[] = "m.type <> " . intval(self::BIG_DEBTOR_MESSAGE);
 		}
-		
-		if (!Settings::get('membership_interrupt_enabled'))
-		{
+
+		if (!Settings::get('membership_interrupt_enabled')) {
 			$where[] = "m.type <> " . intval(self::INTERRUPTED_MEMBERSHIP_MESSAGE);
 			$where[] = "m.type <> " . intval(self::INTERRUPTED_MEMBERSHIP_BEGIN_NOTIFY_MESSAGE);
 			$where[] = "m.type <> " . intval(self::INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE);
 		}
-		
-		if (!Settings::get('monitoring_enabled'))
-		{
+
+		if (!Settings::get('monitoring_enabled')) {
 			$where[] = "m.type <> " . intval(self::MONITORING_HOST_UP);
 			$where[] = "m.type <> " . intval(self::MONITORING_HOST_DOWN);
 		}
-		
-		if (!Settings::get('connection_request_enable'))
-		{
+
+		if (!Settings::get('connection_request_enable')) {
 			$where[] = "m.type <> " . intval(self::CONNECTION_REQUEST_APPROVE);
 			$where[] = "m.type <> " . intval(self::CONNECTION_REQUEST_INFO);
 			$where[] = "m.type <> " . intval(self::CONNECTION_REQUEST_REFUSE);
 		}
-		
-		if (!Settings::get('allowed_subnets_enabled'))
-		{
+
+		if (!Settings::get('allowed_subnets_enabled')) {
 			$where[] = "m.type <> " . intval(self::UNALLOWED_CONNECTING_PLACE_MESSAGE);
 		}
-		
-		if (!Settings::get('self_registration'))
-		{
+
+		if (!Settings::get('self_registration')) {
 			$where[] = "m.type <> " . intval(self::APPLICANT_APPROVE_MEMBERSHIP);
 			$where[] = "m.type <> " . intval(self::APPLICANT_REFUSE_MEMBERSHIP);
 			$where[] = "m.type <> " . intval(self::CONNECTION_TEST_EXPIRED);
-		}
-		else if (Settings::get('applicant_connection_test_duration') <= 0)
-		{
+		} else if (Settings::get('applicant_connection_test_duration') <= 0) {
 			$where[] = "m.type <> " . intval(self::CONNECTION_TEST_EXPIRED);
 		}
-		
+
 		if ($filter_sql != '')
 			$where[] = $filter_sql;
-		
+
 		$where_sql = (count($where)) ? 'WHERE ' . implode(' AND ', $where) : '';
-		
+
 		$limit = '';
-		
-		if (!is_null($limit_from) && !is_null($limit_results))
-		{
+
+		if (!is_null($limit_from) && !is_null($limit_results)) {
 			$limit = "LIMIT " . intval($limit_from) . ", " . intval($limit_results);
 		}
-		
+
 		// query
 		return $this->db->query("
 			SELECT m.id, m.name AS message, m.type, m.self_cancel,
@@ -673,9 +673,9 @@ class Message_Model extends ORM
 			$where_sql
 			ORDER BY $order_by $order_by_direction
 			$limit
-		");	
+		");
 	}
-	
+
 	/**
 	 * Deny ip addresses with expired test connections
 	 * 
@@ -686,26 +686,22 @@ class Message_Model extends ORM
 	public function activate_test_connection_end_message($user_id)
 	{
 		$mm = new Message_Model();
-		
-		try
-		{
+
+		try {
 			$mm->transaction_start();
-			
+
 			// preparation
-			$message = ORM::factory('message')->where(array
-			(
+			$message = ORM::factory('message')->where(array(
 				'type' => self::CONNECTION_TEST_EXPIRED
 			))->find();
 
 			// message do not exists
-			if (!$message || !$message->id)
-			{
+			if (!$message || !$message->id) {
 				throw new Exception('Connection test expired message not founded');
 			}
 
 			// deletes old redirections
-			Database::instance()->delete('messages_ip_addresses', array
-			(
+			Database::instance()->delete('messages_ip_addresses', array(
 				'message_id' => $message->id
 			));
 
@@ -716,20 +712,18 @@ class Message_Model extends ORM
 
 			// activate
 			$result = self::activate_redirection($message, $ips, $user_id);
-			
+
 			$mm->transaction_commit();
-			
+
 			return $result;
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$mm->transaction_rollback();
 			Log::add_exception($e);
-			
+
 			return 0;
 		}
 	}
-	
+
 	/**
 	 * Activates notifications for ip addresses with unallowed connecting place
 	 * 
@@ -740,26 +734,22 @@ class Message_Model extends ORM
 	public function activate_unallowed_connecting_place_message($user_id)
 	{
 		$mm = new Message_Model();
-		
-		try
-		{
+
+		try {
 			$mm->transaction_start();
-			
+
 			// preparation
-			$message = ORM::factory('message')->where(array
-			(
+			$message = ORM::factory('message')->where(array(
 				'type' => self::UNALLOWED_CONNECTING_PLACE_MESSAGE
 			))->find();
 
 			// message do not exists
-			if (!$message || !$message->id)
-			{
+			if (!$message || !$message->id) {
 				throw new Exception('Unallowed connecting place message not founded');
 			}
 
 			// deletes old redirections
-			Database::instance()->delete('messages_ip_addresses', array
-			(
+			Database::instance()->delete('messages_ip_addresses', array(
 				'message_id' => $message->id
 			));
 
@@ -770,20 +760,18 @@ class Message_Model extends ORM
 
 			// activate
 			$result = self::activate_redirection($message, $ips, $user_id);
-			
+
 			$mm->transaction_commit();
-			
+
 			return $result;
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$mm->transaction_rollback();
 			Log::add_exception($e);
-			
+
 			return 0;
 		}
 	}
-	
+
 	/**
 	 * Activates notice messages (only e-mail and sometimes also SMS) for accept
 	 * payment notice, approoving/refusing of application for membership
@@ -800,56 +788,67 @@ class Message_Model extends ORM
 	 * @return boolean					Notification made?
 	 */
 	public static function activate_special_notice(
-			$type, $member_id, $user_id, $email, $sms, $comment = NULL)
-	{
-		if (!self::is_special_message($type))
-		{
+		$type,
+		$member_id,
+		$user_id,
+		$email,
+		$sms,
+		$comment = NULL
+	) {
+		if (!self::is_special_message($type)) {
 			throw new Exception('Wrong type');
 		}
-		
+
 		// preparation
 		$message = ORM::factory('message')->where(array('type' => $type))->find();
-		
+
 		$uc_model = new Users_contacts_Model();
-		
+
 		// message do not exists
-		if (!$message || !$message->id)
-		{
+		if (!$message || !$message->id) {
 			Log::add('error', 'Notice message (' . $type . ') not exists in messages table');
 			return false;
 		}
-		
+
 		// member notification settings only enabled for self cancel messages 
 		$ignore_mnotif_settings = !$message->self_cancel;
-		
+
 		// send emails
-		if (Settings::get('email_enabled') &&
-			$email == Notifications_Controller::ACTIVATE)
-		{
+		if (
+			Settings::get('email_enabled') &&
+			$email == Notifications_Controller::ACTIVATE
+		) {
 			// find email addresses of debtors
 			$emails = $uc_model->get_contacts_by_member_and_type(
-					$member_id, Contact_Model::TYPE_EMAIL,
-					$message->ignore_whitelist, FALSE, FALSE,
-					$ignore_mnotif_settings
+				$member_id,
+				Contact_Model::TYPE_EMAIL,
+				$message->ignore_whitelist,
+				FALSE,
+				FALSE,
+				$ignore_mnotif_settings
 			);
 			// send emails for finded emails
 			self::send_emails($message, $emails, $comment);
 		}
-		
+
 		// send SMS messages
-		if (Settings::get('sms_enabled') &&
-			$sms == Notifications_Controller::ACTIVATE)
-		{
+		if (
+			Settings::get('sms_enabled') &&
+			$sms == Notifications_Controller::ACTIVATE
+		) {
 			// find phone numbers of debtors
 			$smss = $uc_model->get_contacts_by_member_and_type(
-					$member_id, Contact_Model::TYPE_PHONE,
-					$message->ignore_whitelist, FALSE, FALSE,
-					$ignore_mnotif_settings
+				$member_id,
+				Contact_Model::TYPE_PHONE,
+				$message->ignore_whitelist,
+				FALSE,
+				FALSE,
+				$ignore_mnotif_settings
 			);
 			// send SMS messages for finded phone numbers
 			self::send_sms_messages($message, $smss, $user_id, $comment);
 		}
-		
+
 		// return stats array
 		return true;
 	}
@@ -868,12 +867,12 @@ class Message_Model extends ORM
 			FROM messages_ip_addresses
 			WHERE message_id = ?
 		", $message_id)->current()->count;
-		
+
 		$this->db->query("
 			DELETE FROM messages_ip_addresses
 			WHERE message_id = ?
 		", $message_id);
-		
+
 		return $count;
 	}
 
@@ -885,19 +884,15 @@ class Message_Model extends ORM
 	 */
 	public function get_message_by_type($type)
 	{
-		if (!$type)
-		{
+		if (!$type) {
 			return NULL;
 		}
-		
+
 		$message = ORM::factory('message')->where('type', $type)->find();
-		
-		if ($message->id)
-		{
+
+		if ($message->id) {
 			return $message;
-		}
-		else
-		{
+		} else {
 			return NULL;
 		}
 	}
@@ -911,23 +906,19 @@ class Message_Model extends ORM
 	 */
 	public function get_message_id_by_type($type)
 	{
-		if (!$type)
-		{
+		if (!$type) {
 			return NULL;
 		}
-		
+
 		$message = $this->where('type', $type)->find();
-		
-		if ($message->id)
-		{
+
+		if ($message->id) {
 			return $message->id;
-		}
-		else
-		{
+		} else {
 			return NULL;
 		}
 	}
-	
+
 	/**
 	 * Activate redirection for given IPs
 	 *
@@ -939,56 +930,54 @@ class Message_Model extends ORM
 	 * @throws Exception				On error
 	 */
 	public static function activate_redirection(
-			Message_Model $message, $ips, $user_id = NULL, $comment = NULL)
-	{
+		Message_Model $message,
+		$ips,
+		$user_id = NULL,
+		$comment = NULL
+	) {
 		// param check
-		if (!$message->id || !is_object($ips))
-		{
+		if (!$message->id || !is_object($ips)) {
 			throw new Exception('Wrong args');
 		}
-		
+
 		// empty message
-		if (trim($message->text) == '')
-		{
+		if (trim($message->text) == '') {
 			return 0;
 		}
-		
+
 		// preparations
 		$datetime = date('Y-m-d H:i:s');
 		$user_id = (intval($user_id)) ? intval($user_id) : 'NULL';
 		$comment = Database::instance()->escape($comment);
-		
+
 		// ip count stats
 		$ip_count = 0;
 
 		// first sql for inserting transfers
 		$sql_insert = "REPLACE messages_ip_addresses "
-					. "(message_id, ip_address_id, user_id, comment, datetime) "
-					. "VALUES ";
+			. "(message_id, ip_address_id, user_id, comment, datetime) "
+			. "VALUES ";
 
 		$values = array();
 		// set new redirections in junction table
-		foreach($ips as $ip)
-		{
+		foreach ($ips as $ip) {
 			// insert values
 			$values[] = "($message->id, $ip->id, $user_id, $comment, '$datetime')";
 			$ip_count++;
 		}
 
 		// any redirection?
-		if (count($values) > 0)
-		{
+		if (count($values) > 0) {
 			$sql_insert .= implode(',', $values);
 
-			if (!Database::instance()->query($sql_insert))
-			{
+			if (!Database::instance()->query($sql_insert)) {
 				throw new Exception();
 			}
 		}
-		
+
 		return $ip_count;
 	}
-	
+
 	/**
 	 * Send emails with redirection message to given contacts
 	 *
@@ -1000,77 +989,65 @@ class Message_Model extends ORM
 	 * @throws Exception				On error
 	 */
 	public static function send_emails(
-			Message_Model $message, $contacts, $comment = NULL)
-	{
+		Message_Model $message,
+		$contacts,
+		$comment = NULL
+	) {
 		// param check
-		if (!$message->id || !is_object($contacts))
-		{
+		if (!$message->id || !is_object($contacts)) {
 			throw new Exception('Wrong args');
 		}
-		
+
 		// emails counter
 		$email_count = 0;
-		
+
 		// if default email ans subject prefix is set
-		if (!Settings::get('email_default_email'))
-		{
+		if (!Settings::get('email_default_email')) {
 			throw new Exception('Email not configured properly');
 		}
-		
+
 		// continue
-		try
-		{
+		try {
 			// Email queues model
 			$eq_model = new Email_queue_Model();
 			// start transaction
 			$eq_model->transaction_start();
-			
+
 			// for each contact
-			foreach ($contacts as $contact)
-			{
+			foreach ($contacts as $contact) {
 				// text of message
 				$text = $message->email_text;
 
 				// replace tags
-				foreach ($contact as $key => $value)
-				{
-					if ($key != 'email_text' && $key != 'country_code')
-					{
-						$text = str_replace('{'.$key.'}', $value, $text);
+				foreach ($contact as $key => $value) {
+					if ($key != 'email_text' && $key != 'country_code') {
+						$text = str_replace('{' . $key . '}', $value, $text);
 					}
 				}
-				
+
 				// replace comment or additional arguments
-				if (!is_array($comment))
-				{
+				if (!is_array($comment)) {
 					$comment = array('comment' => $comment);
 				}
-				foreach ($comment as $key => $value)
-				{
-					$text = str_replace('{'.$key.'}', $value, $text);
+				foreach ($comment as $key => $value) {
+					$text = str_replace('{' . $key . '}', $value, $text);
 				}
 
 				// if empty message do not send
-				if (empty($text))
-				{
+				if (empty($text)) {
 					continue;
 				}
 
 				// subject
 				$subject = '';
-				if (Settings::get('notification_email_message_name_in_subject'))
-				{
+				if (Settings::get('notification_email_message_name_in_subject')) {
 					$subject = __($message->name);
 				}
 				$email_subject_prefix = Settings::get('email_subject_prefix');
-				if ($email_subject_prefix)
-				{
-					if ($subject)
-					{
+				if ($email_subject_prefix) {
+					if ($subject) {
 						$subject = $email_subject_prefix . ':' . $subject;
-					}
-					else
-					{
+					} else {
 						$subject = $email_subject_prefix;
 					}
 				}
@@ -1083,16 +1060,14 @@ class Message_Model extends ORM
 				$eq_model->body = $text;
 				$eq_model->state = Email_queue_Model::STATE_NEW;
 				$eq_model->save_throwable();
-				
+
 				// add E-mail to counter
 				$email_count++;
 			}
-			
+
 			// commit
 			$eq_model->transaction_commit();
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$eq_model->transaction_rollback();
 			Log::add_exception($e);
 			throw $e;
@@ -1100,7 +1075,7 @@ class Message_Model extends ORM
 
 		return $email_count;
 	}
-	
+
 	/**
 	 * Generic function to send e-mail
 	 * 
@@ -1111,50 +1086,44 @@ class Message_Model extends ORM
 	 * @param boolean $push Whether message will be push on top of queue
 	 * @throws Exception
 	 */
-	public static function send_email (Message_Model $message, $email, $object = NULL, $push = FALSE)
+	public static function send_email(Message_Model $message, $email, $object = NULL, $push = FALSE)
 	{
-		if (!Settings::get('email_enabled'))
-		{
+		if (!Settings::get('email_enabled')) {
 			throw new Exception('E-mail is not enabled');
 		}
-		
+
 		// param check
-		if (!$message->id)
-		{
+		if (!$message->id) {
 			throw new Exception('Wrong args');
 		}
-		
+
 		// if default email ans subject prefix is set
-		if (!Settings::get('email_default_email'))
-		{
+		if (!Settings::get('email_default_email')) {
 			throw new Exception('Email not configured properly');
 		}
-		
+
 		$subject = $message->name;
 		$text = $message->email_text;
-		
-		foreach ($object as $key => $value)
-		{
-			$subject	= str_replace('{'.$key.'}', $value, $subject);
-			$text		= str_replace('{'.$key.'}', $value, $text);
+
+		foreach ($object as $key => $value) {
+			$subject	= str_replace('{' . $key . '}', $value, $subject);
+			$text		= str_replace('{' . $key . '}', $value, $text);
 		}
-		
-		try
-		{
+
+		try {
 			$email_queue_model = new Email_queue_Model();
-			
+
 			$email_queue_model->transaction_start();
-			
+
 			// push e-mail on top of queue?
-			if ($push)
-			{
+			if ($push) {
 				$email_queue_model->push(
-						Settings::get('email_default_email'),
-						$email, $subject, $text
+					Settings::get('email_default_email'),
+					$email,
+					$subject,
+					$text
 				);
-			}
-			else
-			{
+			} else {
 				$email_queue_model->from = Settings::get('email_default_email');
 				$email_queue_model->to = $email;
 				$email_queue_model->subject = $subject;
@@ -1162,17 +1131,15 @@ class Message_Model extends ORM
 				$email_queue_model->state = Email_queue_Model::STATE_NEW;
 				$email_queue_model->save_throwable();
 			}
-			
+
 			$email_queue_model->transaction_commit();
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$email_queue_model->transaction_rollback();
 			Log::add_exception($e);
 			throw $e;
 		}
 	}
-	
+
 	/**
 	 * Send SMS messages with redirection message to given contacts
 	 *
@@ -1184,77 +1151,72 @@ class Message_Model extends ORM
 	 * @throws Exception				On error
 	 */
 	public static function send_sms_messages(
-			Message_Model $message, $contacts, $user_id = NULL, $comment = NULL)
-	{
+		Message_Model $message,
+		$contacts,
+		$user_id = NULL,
+		$comment = NULL
+	) {
 		// param check
-		if (!$message->id || !is_object($contacts))
-		{
+		if (!$message->id || !is_object($contacts)) {
 			throw new Exception('Wrong args');
 		}
-		
+
 		// check if enabled
-		if (!Settings::get('sms_enabled'))
-		{
+		if (!Settings::get('sms_enabled')) {
 			throw new Exception('SMS are not enabled');
 		}
-		
+
 		// preparations
 		$datetime = date('Y-m-d H:i:s');
 		$user_id = (intval($user_id)) ? intval($user_id) : 'NULL';
 		$comment = strip_tags($comment);
-		
+
 		// ip count stats
 		$sms_count = 0;
-		
+
 		// if SMS enabled, is any active SMS driver
 		// SMS sender number is set and SMS default driver is set
-		if (!Sms::enabled() ||
+		if (
+			!Sms::enabled() ||
 			!Sms::has_active_driver() ||
 			!Settings::get('sms_sender_number') ||
-			!Settings::get('sms_driver'))
-		{
+			!Settings::get('sms_driver')
+		) {
 			return 0;
 		}
-		
+
 		// continue
-		try
-		{
+		try {
 			// SMS model
 			$sms = new Sms_message_Model();
 			// start transaction
 			$sms->transaction_start();
 
 			// for each contact
-			foreach ($contacts as $contact)
-			{
+			foreach ($contacts as $contact) {
 				// text of message
 				$text = $message->sms_text;
-				
+
 				// number
 				$number = $contact->country_code . $contact->value;
 
 				// replace tags
-				foreach ($contact as $key => $value)
-				{
-					if ($key != 'sms_text' && $key != 'country_code')
-					{
-						$text = str_replace('{'.$key.'}', $value, $text);
+				foreach ($contact as $key => $value) {
+					if ($key != 'sms_text' && $key != 'country_code') {
+						$text = str_replace('{' . $key . '}', $value, $text);
 					}
 				}
 				// replace comment
-				if (!is_array($comment))
-				{
+				if (!is_array($comment)) {
 					$comment = array('comment' => $comment);
 				}
-				foreach ($comment as $key => $value)
-				{
-					$text = str_replace('{'.$key.'}', $value, $text);
+				foreach ($comment as $key => $value) {
+					$text = str_replace('{' . $key . '}', $value, $text);
 				}
 
 
 				// if empty message or invalid number for sending SMS do not send
-				if (empty($text) || !Phone_operator_Model::is_sms_enabled_for($number))
-				{
+				if (empty($text) || !Phone_operator_Model::is_sms_enabled_for($number)) {
 					continue;
 				}
 
@@ -1278,15 +1240,12 @@ class Message_Model extends ORM
 
 			// end transaction
 			$sms->transaction_commit();
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$sms->transaction_rollback();
 			Log::add_exception($e);
 			throw $e;
 		}
-		
+
 		return $sms_count;
-	}	
-	
+	}
 }
