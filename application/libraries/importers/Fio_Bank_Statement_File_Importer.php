@@ -219,7 +219,25 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 					} elseif ($item['typ'] == 'Vklad pokladnou') {
 						$bt_comment = null;
 						$member_id = $this->find_member_by_vs($item['vs']);
+
+						$ba = $this->get_bank_account();
+						$dst = ($ba && $ba->id) ? trim($ba->account_nr . '/' . $ba->bank_nr) : 'neznámý účet';
+
+						// když VS v DB není -> comment s protiúčtem + cílovým účtem
+						if (!$member_id) {
+							$origin = trim($counter_ba->account_nr . '/' . $counter_ba->bank_nr);
+							$oname  = trim((string)$counter_ba->name);
+
+							$bt_comment = sprintf(
+								'Neidentifikovaný převod: VS=%s, na účet %s',
+								(string)$item['vs'],
+								$dst
+							);
+						}
+
+						// pak tvoje kontrola "správný účet pro type2/type90"
 						$member_id = $this->pvfree_filter_member_by_bank_account($member_id, $bt_comment);
+
 
 						if (!$member_id) {
 							$stats['unidentified_nr']++;
@@ -250,7 +268,11 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 						$bt->constant_symbol = $item['ks'];
 						$bt->variable_symbol = $item['vs'];
 						$bt->specific_symbol = $item['ss'];
+						if (!empty($bt_comment)) {
+							$bt->comment = $bt_comment;
+						}
 						$bt->save();
+
 
 						// assign transfer? (0 - invalid id, 1 - assoc id, other are ordinary members)
 						if ($member_id && $member_id != Member_Model::ASSOCIATION) {
@@ -317,7 +339,25 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 						// let's identify member
 						$bt_comment = null;
 						$member_id = $this->find_member_by_vs($item['vs']);
+
+						$ba = $this->get_bank_account();
+						$dst = ($ba && $ba->id) ? trim($ba->account_nr . '/' . $ba->bank_nr) : 'neznámý účet';
+
+						// když VS v DB není -> comment s protiúčtem + cílovým účtem
+						if (!$member_id) {
+							$origin = trim($counter_ba->account_nr . '/' . $counter_ba->bank_nr);
+							$oname  = trim((string)$counter_ba->name);
+
+							$bt_comment = sprintf(
+								'Neidentifikovaný převod: VS=%s, na účet %s',
+								(string)$item['vs'],
+								$dst
+							);
+						}
+
+						// pak tvoje kontrola "správný účet pro type2/type90"
 						$member_id = $this->pvfree_filter_member_by_bank_account($member_id, $bt_comment);
+
 
 						if (!$member_id) {
 							$stats['unidentified_nr']++;
