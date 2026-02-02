@@ -70,12 +70,23 @@
 
       <td><?php echo (int)$op->id ?></td>
       <td><?php echo $op->created_at ?></td>
-      <td><?php echo $op->reason ?></td>
+      <td>
+        <?php
+        $reason = trim((string)$op->reason);
+        echo $reason !== '' ? url_lang::lang('texts.' . $reason) : '';
+        ?>
+      </td>
+
       <td><?php echo html::specialchars($op->from_account_nr . '/' . $op->from_bank_nr) ?></td>
       <td><?php echo html::specialchars($op->target_account) ?></td>
       <td><?php echo number_format((float)$op->amount, 2, ',', ' ') . ' ' . $op->currency ?></td>
       <td><?php echo html::specialchars((string)$op->variable_symbol) ?></td>
-      <td><?php echo $op->status ?></td>
+      <td>
+        <?php
+        $status = trim((string)$op->status);
+        echo $status !== '' ? url_lang::lang('texts.' . $status) : '';
+        ?>
+      </td>
       <td>
         <?php if ($op->status == 'draft' && $this->acl_check_edit('Accounts_Controller', 'unidentified_transfers')): ?>
           <a class="submit" style="text-decoration:none; color:white"

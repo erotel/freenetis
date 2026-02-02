@@ -2978,5 +2978,12 @@ $lang = array(
 	'your work has been rejected' => 'Vaše práce byla zamítnuta',
 	'your work has been updated' => 'Vaše práce byla aktualizována',
 	'zip code' => 'PSČ',
-	'Outgoing payments' => 'Odchozí platby'
+	'Outgoing payments' => 'Odchozí platby',
+	'unidentified_refund' => 'Neidentifikovaný převod',
+	'draft'     => 'Koncept',
+	'approved'  => 'Schváleno',
+	'exported'  => 'Exportováno',
+	'paid'      => 'Zaplaceno',
+	'cancelled' => 'Zrušeno'
+
 );
