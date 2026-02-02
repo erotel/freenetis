@@ -53,10 +53,36 @@ class Outgoing_payments_Controller extends Controller
 
     // podle driveru: někdy je to ->result() nebo ->as_array()
     $items = method_exists($res, 'result') ? $res->result() : $res;
+    // --- export buttons bank accounts from config (e.g. "32,33") ---
+    $ids_raw = trim((string) Settings::get('outgoing_payments_export_bank_accounts')); // nastavíš v DB settings
+    $export_bank_accounts = array();
 
+    if ($ids_raw !== '') {
+      $ids = array();
+      foreach (preg_split('/[,\s;]+/', $ids_raw, -1, PREG_SPLIT_NO_EMPTY) as $v) {
+        $v = trim($v);
+        if ($v !== '' && ctype_digit($v)) $ids[] = (int)$v;
+      }
+      $ids = array_values(array_unique($ids));
+
+      if (!empty($ids)) {
+        // načti jen existující účty
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $res2 = $this->db->query(
+          "SELECT id, account_nr, bank_nr, name
+         FROM bank_accounts
+        WHERE id IN ($ph)
+        ORDER BY FIELD(id, $ph)",
+          array_merge($ids, $ids) // FIELD(...) chce stejné parametry znovu
+        );
+        $export_bank_accounts = method_exists($res2, 'result') ? $res2->result() : $res2;
+      }
+    }
     $view = new View('main');
     $view->title = __('Outgoing payments');
     $view->content = new View('outgoing_payments/index');
+    $view->content->export_bank_accounts = $export_bank_accounts;
+    $view->content->export_bank_accounts_raw = $ids_raw;
     $view->content->items = $items;
     $view->content->status = $status;
     $view->render(TRUE);
@@ -457,6 +483,176 @@ class Outgoing_payments_Controller extends Controller
     );
 
     status::success(__('All draft outgoing payments approved.'));
+    url::redirect('outgoing_payments');
+  }
+
+  protected function get_export_bank_account_ids(): array
+  {
+    $raw = (string) Settings::get('outgoing_payments_export_bank_accounts'); // např. "31,2 "
+    $raw = trim($raw);
+
+    if ($raw === '') return array();
+
+    $ids = array();
+    $bad = array();
+
+    foreach (preg_split('/[,\s;]+/', $raw, -1, PREG_SPLIT_NO_EMPTY) as $tok) {
+      $tok = trim($tok);
+      if ($tok === '') continue;
+
+      if (ctype_digit($tok)) {
+        $ids[] = (int)$tok;
+      } else {
+        $bad[] = $tok;
+      }
+    }
+
+    $ids = array_values(array_unique($ids));
+
+    // volitelně: zalogovat/ukázat, že config obsahoval bordel
+    if (!empty($bad)) {
+      // do logu:
+      // Log_queue_Model::warning("Outgoing payments: invalid bank account IDs in settings: " . implode(', ', $bad));
+
+      // nebo klidně jen status warning (pokud to chceš vidět v UI):
+      // status::warning(__('Invalid bank account IDs in settings were ignored: %s', implode(', ', $bad)));
+    }
+
+    return $ids;
+  }
+
+
+  protected function get_export_bank_accounts(): array
+  {
+    $ids = $this->get_export_bank_account_ids();
+    if (empty($ids)) return array();
+
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+
+    $res = $this->db->query(
+      "SELECT id, account_nr, bank_nr, name
+       FROM bank_accounts
+      WHERE id IN ($ph)
+      ORDER BY id",
+      $ids
+    );
+
+    // Kohana: většinou ->result() = array objektů
+    if (is_object($res) && method_exists($res, 'result')) {
+      $rows = $res->result();
+      return is_array($rows) ? $rows : array();
+    }
+
+    // fallback: kdyby driver vracel rovnou pole
+    return is_array($res) ? $res : array();
+  }
+
+
+  public function export_all()
+  {
+    if (!$this->acl_check_edit('Accounts_Controller', 'unidentified_transfers')) {
+      self::error(ACCESS);
+    }
+
+    $accounts = $this->get_export_bank_accounts();
+    if (empty($accounts)) {
+      status::warning(__('No bank accounts configured for bulk export.'));
+      url::redirect('outgoing_payments');
+    }
+
+    $sent = 0;
+    $skipped = 0;
+    $no_token = 0;
+    $errors = array();
+
+    foreach ($accounts as $acc) {
+      $bank_account_id = (int)$acc->id;
+
+      try {
+        // approved platby pro daný bankovní účet
+        $res = $this->db->query(
+          "SELECT op.*
+           FROM outgoing_payments op
+          WHERE op.bank_account_id=? AND op.status='approved'
+          ORDER BY op.id ASC",
+          array($bank_account_id)
+        );
+        $rows = method_exists($res, 'result') ? $res->result() : array();
+
+        if (!$rows || !count($rows)) {
+          $skipped++;
+          continue;
+        }
+
+        // účet odesílatele
+        $ba = $this->db->query(
+          "SELECT * FROM bank_accounts WHERE id=?",
+          array($bank_account_id)
+        )->result();
+        $ba = $ba && isset($ba[0]) ? $ba[0] : null;
+        if (!$ba) {
+          $errors[] = "bank_account_id=$bank_account_id: missing bank_accounts record";
+          continue;
+        }
+
+        $token_key = 'fio_api_token_bank_account_' . $bank_account_id;
+        $token = trim((string) Settings::get($token_key));
+
+        $xml = $this->build_fio_import_xml($rows, $ba);
+
+        // Bez tokenu: v bulk režimu nebudeme stahovat soubor do prohlížeče.
+        // Buď to jen přeskočíme, nebo uložíme server-side (doporučeno).
+        if ($token === '') {
+          $no_token++;
+
+          // varianta: uložit XML na disk, aby šlo ručně nahrát
+          $fn = 'fio_import_' . $bank_account_id . '_' . date('Ymd_His') . '.xml';
+          $path = sys_get_temp_dir() . '/' . $fn;
+          @file_put_contents($path, $xml);
+
+          // označit exported i bez uploadu? já bych spíš NE (ať to nezmizí z approved)
+          // pokud chceš označit exported i při uložení, odkomentuj:
+          // $this->mark_exported($rows, $fn, null, null);
+
+          continue;
+        }
+
+        // Token existuje -> poslat do Fio
+        $resp = $this->send_fio_import($token, $xml, 'cs');
+        if ((string)$resp['errorCode'] !== '0') {
+          $errors[] = "bank_account_id=$bank_account_id: Fio errorCode={$resp['errorCode']}";
+          continue;
+        }
+
+        $this->mark_exported($rows, null, (string)$resp['idInstruction'], (string)$resp['raw']);
+        $sent++;
+      } catch (Exception $e) {
+        $errors[] = "bank_account_id=$bank_account_id: " . $e->getMessage();
+      }
+    }
+
+    // Souhrn do status hlášek
+    if ($sent > 0) {
+      status::success(__('Uploaded batches to Fio for %s bank account(s).', $sent));
+    } else {
+      status::warning(__('No batches were uploaded to Fio.'));
+    }
+
+    if ($skipped > 0) {
+      status::info(__('Skipped %s bank account(s) with no approved payments.', $skipped));
+    }
+
+    if ($no_token > 0) {
+      status::warning(__('Skipped %s bank account(s) without Fio token configured.', $no_token));
+    }
+
+    if (!empty($errors)) {
+      // zkráceně, ať to nerozbije UI
+      $msg = implode(' | ', array_slice($errors, 0, 5));
+      if (count($errors) > 5) $msg .= ' ...';
+      status::error(__('Some exports failed: %s', $msg));
+    }
+
     url::redirect('outgoing_payments');
   }
 }

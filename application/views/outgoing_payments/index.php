@@ -5,25 +5,41 @@
 
 
 <?php if ($this->acl_check_edit('Accounts_Controller', 'unidentified_transfers')): ?>
-  <div style="margin: 0 0 15px 0;">
-    <div style="margin-bottom:8px;">
-      <?php echo __('Export approved payments: if Fio token is not set, XML file is downloaded; if token is set, it is uploaded to Fio.') ?>
+
+
+  <?php if (!empty($export_bank_accounts) && count($export_bank_accounts)): ?>
+    <div style="margin: 0 0 15px 0;">
+      <div style="margin-bottom:8px;">
+        <?php echo __('Export approved payments: if Fio token is not set, XML file is downloaded; if token is set, it is uploaded to Fio.') ?>
+      </div>
+
+      <?php foreach ($export_bank_accounts as $ba): ?>
+        <a class="submit" style="text-decoration:none; color:white"
+          href="<?php echo url_lang::site() ?>/outgoing_payments/export/<?php echo (int)$ba->id ?>"
+          onclick="return confirm('<?php echo __('Export/Send approved payments for bank account ID %s?', (int)$ba->id) ?>');">
+          <?php
+          // hezčí popisek: bank id + účet
+          $label = (int)$ba->id;
+          $acc = trim((string)$ba->account_nr);
+          $bnk = trim((string)$ba->bank_nr);
+          if ($acc !== '' && $bnk !== '') $label .= ' – ' . $acc . '/' . $bnk;
+
+          echo __('Export/Send (bank %s)', $label);
+          ?>
+        </a>
+        &nbsp;
+      <?php endforeach; ?>
     </div>
+  <?php endif; ?>
 
-    <a class="submit" style="text-decoration:none; color:white"
-      href="<?php echo url_lang::site() ?>/outgoing_payments/export/31"
-      onclick="return confirm('<?php echo __('Export/Send approved payments for bank account ID 31?') ?>');">
-      <?php echo __('Export/Send (bank 31)') ?>
-    </a>
+  <a class="submit" style="text-decoration:none; color:white"
+    href="<?php echo url_lang::site() ?>/outgoing_payments/export_all"
+    onclick="return confirm('<?php echo __('Export/Send approved payments for ALL configured bank accounts?') ?>');">
+    <?php echo __('Export/Send ALL') ?>
+  </a>
 
-    &nbsp;
+  &nbsp;&nbsp;
 
-    <a class="submit" style="text-decoration:none; color:white"
-      href="<?php echo url_lang::site() ?>/outgoing_payments/export/32"
-      onclick="return confirm('<?php echo __('Export/Send approved payments for bank account ID 32?') ?>');">
-      <?php echo __('Export/Send (bank 32)') ?>
-    </a>
-  </div>
 
   <?php if ($status === 'all'): ?>
     <a class="submit"
