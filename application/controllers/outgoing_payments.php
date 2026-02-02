@@ -235,11 +235,15 @@ class Outgoing_payments_Controller extends Controller
     // odpověď je XML (responseImportIB.xsd) – zajímá nás errorCode + idInstruction :contentReference[oaicite:7]{index=7}
     $xmlr = @simplexml_load_string($raw);
     if (!$xmlr) {
-      return array('errorCode' => '11', 'idInstruction' => null, 'raw' => $raw);
+      return array('errorCode' => '', 'idInstruction' => null, 'raw' => $raw);
     }
 
-    $errorCode = (string)($xmlr->errorCode ?? '');
-    $idInstr   = (string)($xmlr->idInstruction ?? '');
+    // robustní čtení bez ohledu na namespace/prefixy
+    $ec = $xmlr->xpath('//*[local-name()="errorCode"]');
+    $ii = $xmlr->xpath('//*[local-name()="idInstruction"]');
+
+    $errorCode = ($ec && isset($ec[0])) ? trim((string)$ec[0]) : '';
+    $idInstr   = ($ii && isset($ii[0])) ? trim((string)$ii[0]) : '';
 
     return array('errorCode' => $errorCode, 'idInstruction' => $idInstr, 'raw' => $raw);
   }
