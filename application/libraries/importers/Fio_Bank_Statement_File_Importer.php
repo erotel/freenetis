@@ -156,6 +156,42 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 				if ($item['castka'] < 0) {
 					// outbound transfer
 					// -----------------
+					$matched_transfer_id = $this->pvfree_try_mark_outgoing_paid($item); // vrací outgoing_payments.transfer_id
+					if ($matched_transfer_id) {
+
+						$db = Database::instance('default');
+
+						// 1) bank_transfers: soft-delete + poznámka
+						$db->query(
+							"UPDATE bank_transfers
+         SET comment = 'Poslano zpět neidentifikovaná platba',
+             deleted_at = NOW()
+         WHERE transfer_id = ?",
+							array($matched_transfer_id)
+						);
+
+						// 2) transfers: změň origin_id tak, aby to NEBYL MEMBER_FEES a zmizelo z Neidentifikovaných
+						// POZOR: 5 musí být účet, který není MEMBER_FEES.
+						$db->query(
+							"UPDATE transfers
+         SET origin_id = ?,
+             text = ?,
+             creation_datetime = ?
+         WHERE id = ?",
+							array(
+								5,
+								'Přiřazení neidentifikované platby',
+								date('Y-m-d H:i:s'),
+								$matched_transfer_id
+							)
+						);
+
+						Log_queue_Model::info(
+							"BANK IMPORT: OP matched -> bank_transfers soft-deleted + transfer #{$matched_transfer_id} moved away from MEMBER_FEES"
+						);
+					}
+
+
 					// by default we assume, it is "invoice" (this includes all expenses)
 					// double-entry transfer
 					$transfer_id = Transfer_Model::insert_transfer(
@@ -183,6 +219,11 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 					$bt->variable_symbol = $item['vs'];
 					$bt->specific_symbol = $item['ss'];
 					$bt->save();
+
+
+
+
+
 					// stats
 					$stats['invoices'] += abs($item['castka']);
 					$stats['invoices_nr']++;
@@ -519,5 +560,89 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 		}
 
 		return $member_id;
+	}
+
+	/**
+	 * Match odchozí bankovní položky (castka < 0) na outgoing_payments podle OP #ID ve zprávě.
+	 * Po úspěchu nastaví outgoing_payments.status='paid' a vrátí outgoing_payments.transfer_id,
+	 * aby šlo uklidit bank_transfers podle transfer_id.
+	 */
+	protected function pvfree_try_mark_outgoing_paid(array $item): ?int
+	{
+		// jen odchozí položky (výdaj z účtu)
+		if (!isset($item['castka']) || (float)$item['castka'] >= 0) {
+			return NULL;
+		}
+
+		$msg = isset($item['zprava']) ? trim((string)$item['zprava']) : '';
+		if ($msg === '') return NULL;
+
+		if (!preg_match('~\bOP\s*#\s*([0-9]+)\b~i', $msg, $m)) {
+			return NULL;
+		}
+
+		$op_id = (int)$m[1];
+		if ($op_id <= 0) return NULL;
+
+		$ba = $this->get_bank_account();
+		if (!$ba || !$ba->id) return NULL;
+
+		$amount = (float)abs((float)$item['castka']);
+		$now = date('Y-m-d H:i:s');
+
+		$db = Database::instance('default');
+
+		// načti outgoing_payment včetně transfer_id
+		$res = $db->query(
+			"SELECT id, bank_account_id, status, amount, transfer_id
+         FROM outgoing_payments
+         WHERE id=?",
+			array($op_id)
+		);
+		$rows = method_exists($res, 'result') ? $res->result() : array();
+		$op = $rows[0] ?? NULL;
+		if (!$op) return NULL;
+
+		// transfer_id musí existovat, jinak není podle čeho uklízet bank_transfers
+		if (empty($op->transfer_id) || (int)$op->transfer_id <= 0) {
+			Log_queue_Model::info("BANK IMPORT: OP #$op_id matched, but outgoing_payments.transfer_id is empty");
+			return NULL;
+		}
+
+		// musí sedět účet
+		if ((int)$op->bank_account_id !== (int)$ba->id) return NULL;
+
+		// musí sedět částka (tolerance 0.01)
+		if (abs(((float)$op->amount) - $amount) > 0.01) {
+			Log_queue_Model::info(sprintf(
+				"BANK IMPORT: OP #%d amount mismatch (statement=%.2f, outgoing=%.2f, ba_id=%d)",
+				$op_id,
+				$amount,
+				(float)$op->amount,
+				(int)$ba->id
+			));
+			return NULL;
+		}
+
+		// povolené stavy
+		if (!in_array((string)$op->status, array('exported', 'approved'), true)) return NULL;
+
+		// update (idempotentní)
+		$db->query(
+			"UPDATE outgoing_payments
+         SET status='paid', paid_at=?, updated_at=?
+         WHERE id=? AND status IN ('exported','approved')",
+			array($now, $now, $op_id)
+		);
+
+		Log_queue_Model::info(sprintf(
+			"BANK IMPORT: OP #%d auto-marked as PAID (amount=%.2f, ba_id=%d, transfer_id=%d)",
+			$op_id,
+			$amount,
+			(int)$ba->id,
+			(int)$op->transfer_id
+		));
+
+		return (int)$op->transfer_id;
 	}
 }

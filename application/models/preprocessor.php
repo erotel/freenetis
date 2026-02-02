@@ -276,6 +276,16 @@ class Preprocessor_Model extends Model
 					AND a.account_attribute_id = ?
 		", array(684000))->current()->total;
 	}
+
+	public function scount_outgoing_transfers()
+{
+    return (int)$this->db->query("
+        SELECT COUNT(op.id) AS total
+        FROM outgoing_payments op
+        WHERE op.status = 'draft'
+    ")->current()->total;
+}
+
 	
 	/**
 	 * Returns allowed subnet by member and ip address

@@ -1023,6 +1023,22 @@ class Controller extends Controller_Core
 				));
 		}
 		
+// list of outgoing payments (refund instructions)
+if (Settings::get('finance_enabled') &&
+	$this->acl_check_view('Accounts_Controller', 'bank_transfers'))
+{
+	$menu->addItem(
+		'outgoing_payments',
+		__('Odchozí platby'),
+		'transfer',
+		array
+				(
+				    'count' => $pm->scount_outgoing_transfers()
+				)
+	);
+}
+
+
 		// list of bank accounts
 		if (Settings::get('finance_enabled') &&
 			$this->acl_check_view('Accounts_Controller', 'bank_accounts'))

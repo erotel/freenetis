@@ -2977,5 +2977,6 @@ $lang = array(
 	'your work has been deleted' => 'Vaše práce byla smazána',
 	'your work has been rejected' => 'Vaše práce byla zamítnuta',
 	'your work has been updated' => 'Vaše práce byla aktualizována',
-	'zip code' => 'PSČ'
+	'zip code' => 'PSČ',
+	'Outgoing payments' => 'Odchozí platby'
 );

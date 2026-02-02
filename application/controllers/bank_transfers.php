@@ -202,13 +202,13 @@ class Bank_transfers_Controller extends Controller
 				->label(__('Bank code'));
 		}
 
-		$grid->order_field('text');
+
 
 		$grid->order_field('variable_symbol')
 			->label(__('VS'));
 
-		$grid->order_field('comment')
-			->label(__('Comment'));
+		$grid->order_field('text')
+			->label(__('text'));
 
 
 		$grid->order_callback_field('amount')
@@ -593,6 +593,199 @@ class Bank_transfers_Controller extends Controller
 		$view->content->mt = $bt;
 		$view->render(TRUE);
 	} // end show_unidentified_transfer function
+
+
+	/**
+	 * Create outgoing refund instruction for an unidentified incoming transfer
+	 * WITHOUT accounting (no credit note, no transfer booking).
+	 *
+	 * @param int $trans_id transfers.id
+	 */
+	public function refund_unidentified($trans_id = NULL)
+	{
+		// access rights: same level as assigning
+		if (!$this->acl_check_edit('Accounts_Controller', 'unidentified_transfers')) {
+			self::error(ACCESS);
+		}
+
+		if (!isset($trans_id)) {
+			self::warning(PARAMETER);
+		}
+		if (!is_numeric($trans_id)) {
+			self::error(RECORD);
+		}
+
+		// Load transfer + bank transfer (same validation as show_unidentified_transfer)
+		$t_model = new Transfer_Model($trans_id);
+
+		$bt_model = new Bank_transfer_Model();
+		$bt = $bt_model->get_bank_transfer($trans_id);
+
+		if (
+			!is_object($bt) || !$t_model->id || $t_model->member_id ||
+			$t_model->origin->account_attribute_id != Account_attribute_Model::MEMBER_FEES
+		) {
+			self::error(RECORD);
+		}
+
+		// Determine: from which OUR bank account to send (destination_id),
+		// and to which counteraccount (origin_id)
+		// Determine: from which OUR bank account to send and which counteraccount to refund to
+		// NOTE: get_bank_transfer() returns oba_* / dba_* aliases (used in view), not origin_id/destination_id.
+
+		$our_ba_id     = null;
+		$counter_ba_id = null;
+
+		// preferred fields (as in show_unidentified_transfer view)
+		if (!empty($bt->dba_id)) $our_ba_id = (int)$bt->dba_id;
+		if (!empty($bt->oba_id)) $counter_ba_id = (int)$bt->oba_id;
+
+		// fallback (if your get_bank_transfer ever returns origin/destination)
+		if (!$our_ba_id && !empty($bt->destination_id)) $our_ba_id = (int)$bt->destination_id;
+		if (!$counter_ba_id && !empty($bt->origin_id)) $counter_ba_id = (int)$bt->origin_id;
+
+		if (!$our_ba_id || !$counter_ba_id) {
+			self::error(RECORD);
+		}
+
+		$our_ba = new Bank_account_Model($our_ba_id);
+		$counter_ba = new Bank_account_Model($counter_ba_id);
+
+		if (!$our_ba->id || !$counter_ba->id) {
+			self::error(RECORD);
+		}
+
+		// target account string
+		$target_account = '';
+		if (!empty($bt->oba_number)) {
+			// already formatted "account/bank"
+			$target_account = trim((string)$bt->oba_number);
+		} else {
+			$target_account = trim($counter_ba->account_nr . '/' . $counter_ba->bank_nr);
+		}
+
+		$target_name = null;
+		if (!empty($bt->oba_name)) {
+			$target_name = trim((string)$bt->oba_name);
+		} elseif (isset($counter_ba->name)) {
+			$target_name = trim((string)$counter_ba->name);
+		}
+
+
+		$default_msg = __('Vrácení neidentifikované platby') . ' #' . $trans_id;
+
+		// form
+		$form = new Forge('bank_transfers/refund_unidentified/' . $trans_id);
+
+		$form->group(__('Refund instruction'));
+
+		// show info (readonly-ish)
+		$form->input('from_bank_account')
+			->label(__('Pay from bank account') . ':')
+			->value($our_ba->account_nr . '/' . $our_ba->bank_nr)
+			->rules('required');
+
+		$form->input('target_account')
+			->label(__('To account') . ':')
+			->value($target_account)
+			->rules('required');
+
+		$form->input('target_name')
+			->label(__('Recipient name') . ':')
+			->value($target_name);
+
+		$form->input('amount')
+			->label(__('Amount') . ':')
+			->value($t_model->amount)
+			->rules('required|valid_numeric');
+
+		$form->input('variable_symbol')
+			->label(__('VS') . ':')
+			->value(isset($bt->variable_symbol) ? (string)$bt->variable_symbol : '');
+
+		$form->input('message')
+			->label(__('Message') . ':')
+			->value($default_msg)
+			->rules('required');
+
+		$form->submit(__('Create refund'));
+
+		if ($form->validate()) {
+			$data = $form->as_array();
+
+			try {
+				$db = new Transfer_Model();
+				$db->transaction_start();
+
+				// Ensure no duplicate refund for this transfer
+				$exists = ORM::factory('outgoing_payment')
+					->where('transfer_id', $trans_id)
+					->find();
+
+				if ($exists->id) {
+					throw new Exception('Refund already exists for this transfer.');
+				}
+
+				$user_id = 0;
+
+				// FreenetIS/Kohana: user id bývá na controlleru nebo v session
+				if (isset($this->user) && isset($this->user->id)) {
+					$user_id = (int) $this->user->id;
+				} elseif (isset($this->user_id)) {
+					$user_id = (int) $this->user_id;
+				} elseif (Session::instance()->get('user_id')) {
+					$user_id = (int) Session::instance()->get('user_id');
+				}
+
+				// fallback: pokud by to nebylo k dispozici, ať to nespadne
+				if ($user_id <= 0) {
+					$user_id = 1; // typicky admin/system user ve FreenetIS
+				}
+
+				$now = date('Y-m-d H:i:s');
+
+				$op = ORM::factory('outgoing_payment');
+				$op->bank_account_id = (int) $our_ba->id;
+				$op->transfer_id = (int) $trans_id;
+				$op->target_account = (string) $data['target_account'];
+				$op->target_name = (string) $data['target_name'];
+				$op->amount = (float) $data['amount'];
+				$op->currency = 'CZK';
+				$op->variable_symbol = (string) $data['variable_symbol'];
+				$op->message = (string) $data['message'];
+				$op->reason = 'unidentified_refund';
+				$op->status = 'draft';
+				$op->created_by = $user_id;
+				$op->created_at = $now;
+				$op->updated_at = $now;
+				$op->save();
+
+				$db->transaction_commit();
+
+				status::success(__('Refund instruction created.') . ' ID=' . $op->id);
+				url::redirect('bank_transfers/show_unidentified_transfer/' . $trans_id);
+			} catch (Exception $e) {
+				if (isset($db)) $db->transaction_rollback();
+				Log::add_exception($e);
+				status::error(__('Error - cannot create refund instruction.'), $e);
+			}
+		}
+
+		$breadcrumbs = breadcrumbs::add()
+			->link('bank_accounts/show_all', 'Bank accounts', $this->acl_check_view('Accounts_Controller', 'bank_accounts'))
+			->link('bank_transfers/unidentified_transfers', 'Unidentified transfers')
+			->link('bank_transfers/show_unidentified_transfer/' . $trans_id, $trans_id)
+			->text(__('Refund instruction'))
+			->html();
+
+		$view = new View('main');
+		$view->title = __('Refund instruction');
+		$view->breadcrumbs = $breadcrumbs;
+		$view->content = new View('form');
+		$view->content->headline = __('Refund instruction');
+		$view->content->form = $form->html();
+		$view->render(TRUE);
+	}
 
 	/**
 	 * @author Jiri Svitak, Tomas Dulik
