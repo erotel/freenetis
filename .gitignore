@@ -4,3 +4,5 @@
 /logs/
 /data/
 /application/cache/mpdf/
+/application/views/outgoing_payments/index.php
+
