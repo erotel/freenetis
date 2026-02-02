@@ -574,7 +574,7 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 			return NULL;
 		}
 
-		$msg = isset($item['zprava']) ? trim((string)$item['zprava']) : '';
+		$msg = isset($item['identifikace']) ? trim((string)$item['identifikace']) : '';
 		if ($msg === '') return NULL;
 
 		if (!preg_match('~\bOP\s*#\s*([0-9]+)\b~i', $msg, $m)) {
