@@ -4032,7 +4032,7 @@ class Members_Controller extends Controller
 					// VS update
 					$var_sym_id = $variable_symbol_model->get_id_variable_symbol_id_member($member->id);
 					$var_sym = $variable_symbol_model->get_variable_symbol_id_member($member->id);
-					$var_sym = "$var_sym"; //+U";
+					$var_sym = "$var_sym+U";
 					$variable_symbol_model->update_variable_symbol($var_sym, $var_sym_id);
 
 					$member->save_throwable();
