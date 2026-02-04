@@ -3886,192 +3886,329 @@ class Members_Controller extends Controller
 		$view->render(TRUE);
 	}
 
-	/**
-	 * Function ends membership of member.
-	 * 
-	 * @param integer $member_id
-	 * 
-	 */
-	public function end_membership($member_id = null)
+	public function end_membership($member_id = NULL)
 	{
-		// wrong argument
-		if (!isset($member_id) || !is_numeric($member_id))
-			Controller::warning(PARAMETER);
+		if (!isset($member_id) || !is_numeric($member_id)) {
+			self::warning(PARAMETER);
+		}
 
 		$member = new Member_Model($member_id);
+
+		if (!$member->id) {
+			self::error(RECORD);
+		}
+
+		if (!$this->acl_check_delete(get_class($this), 'members', $member->id)) {
+			self::error(ACCESS);
+		}
+
 		$variable_symbol_model = new Variable_Symbol_Model();
+		$is_association = ($member->id == Member_Model::ASSOCIATION);
 
-		$end_membership = ORM::factory('membership_interrupt')
-			->has_member_end_after_interrupt_end_in_date($member->id, date('Y-m-d'));
+		// -----------------------------
+		// Balance (bezpečně)
+		// -----------------------------
+		$balance = 0.0;
+		$account = null;
 
-		// wrong id
-		if (!$member->id)
-			Controller::error(RECORD);
+		if (Settings::get('finance_enabled') && !$is_association) {
+			$account = ORM::factory('account')->where(array(
+				'member_id' => $member_id,
+				'account_attribute_id' => Account_attribute_Model::CREDIT
+			))->find();
 
-		// access
-		if (!$this->acl_check_edit(get_class($this), 'members', $member_id))
-			Controller::error(ACCESS);
-
-		if ($end_membership) {
-			status::warning('Cannot end membership when interrupt with end membership is activated.');
-			$this->redirect('members/show/', $member->id);
+			if ($account && $account->id) {
+				$account_bal = new Account_Model();
+				$tmp = $account_bal->get_account_balance($account);
+				$balance = (float)$tmp;
+			}
 		}
 
-		// cannot end membership to association (#725)
-		if ($member->id == Member_Model::ASSOCIATION) {
-			status::warning('Cannot end membership to association.');
-			$this->redirect('members/show/', $member->id);
+		// -----------------------------
+		// Předvyplnění refund účtu
+		// -----------------------------
+		$refund_account_default = '';
+
+		$bank_account = new Bank_account_Model();
+		$row = $bank_account->get_first_bank_account_row_by_member($member->id);
+
+		if ($row) {
+			$account_nr = is_array($row) ? ($row['account_nr'] ?? '') : ($row->account_nr ?? '');
+			$bank_nr    = is_array($row) ? ($row['bank_nr'] ?? '')    : ($row->bank_nr ?? '');
+
+			if ($account_nr !== '') {
+				$refund_account_default = trim($account_nr);
+				if ($bank_nr !== '') {
+					$refund_account_default .= '/' . trim($bank_nr);
+				}
+			}
 		}
 
-		// form
-		$form = new Forge();
+		// -----------------------------
+		// FORM
+		// -----------------------------
+		$form = new Forge('members/end_membership/' . $member->id);
+		$form->group(__('End membership'));
 
-		$form->date('leaving_date')
-			->label('Leaving date');
+		$form->date('leaving_date')->label('Leaving date');
 
-		$array_mess = array("0" => 'Neposílat', "19" => 'Žádost', "21" => 'Neplacení', "23" => 'Přeplatek');
+		$is_customer = ((int)$member->type === 2);
+		$opts = array(
+			"1" => ($is_customer ? __('Ukončit zákazníka bez emailu') : __('Ukončit člena bez emailu')),
+			"2" => ($is_customer ? __('Ukončit zákazníka pro neplacení (email)') : __('Ukončit člena pro neplacení (email)')),
+			"3" => ($is_customer ? __('Ukončit zákazníka s vratkou na č.ú. (email + PDF + platba)') : __('Ukončit člena s vratkou na č.ú. (email + PDF + platba)')),
+		);
 
-		$form->dropdown('mess')
-			->label('Typ emailu')
-			->options($array_mess)
-			->style('width:200px');
+		$form->dropdown('end_mode')
+			->label(__('Způsob ukončení'))
+			->options($opts)
+			->style('width:420px');
 
-		$form->input('comment')
-			->label('č.ú.')
-			->style('width:200px');
+		$form->input('refund_account')
+			->label(__('č.ú. (pouze pro vratku)'))
+			->style('width:200px')
+			->value($refund_account_default);
 
+		$form->input('refund_amount')
+			->label(__('částka'))
+			->style('width:200px')
+			->value($balance);
 
 		$form->submit('End membership');
 
-
-		// validation
+		// -----------------------------
+		// SUBMIT
+		// -----------------------------
 		if ($form->validate()) {
 			$form_data = $form->as_array();
-			try {
-				$member->transaction_start();
 
-				$member->leaving_date = date('Y-m-d', $form_data['leaving_date']);
-				$mess = $form_data['mess'];
-				$comment = array('leaving_date' => $member->leaving_date);
+			$end_mode = isset($form_data['end_mode']) ? (string)$form_data['end_mode'] : "1";
 
-				// leaving date is in past or today
-				if ($member->leaving_date <= date('Y-m-d')) {
-					$member->type = Member_Model::TYPE_FORMER;
-					$member->locked = 1; // lock account
+			$refund_account = trim((string)($form_data['refund_account'] ?? ''));
+			$refund_amount  = (float)($form_data['refund_amount'] ?? 0);
+
+			if ($refund_amount > 0.009) $refund_amount = round($refund_amount, 2);
+			else $refund_amount = 0.0;
+
+			$stop = false;
+
+			if ($end_mode === "3") {
+				if ($refund_account === '') {
+					status::error(__('Chybí číslo účtu pro vratku.'));
+					$stop = true;
+				} else if ($refund_amount <= 0) {
+					status::error(__('Částka vratky musí být > 0.'));
+					$stop = true;
 				}
 
-				//get variable symbol id
-
-				$var_sym_id = $variable_symbol_model->get_id_variable_symbol_id_member($member->id);
-				$var_sym = $variable_symbol_model->get_variable_symbol_id_member($member->id);
-				$var_sym = "$var_sym+U";
-				$variable_symbol_model->update_variable_symbol($var_sym, $var_sym_id);
-
-
-				$member->save_throwable();
-
-				// leaving date is in past or today and deletion of devices is enabled
-				if (
-					$member->leaving_date <= date('Y-m-d') &&
-					Settings::get('former_member_auto_device_remove')
-				) {
-					$member->delete_members_devices($member_id);
+				$from_bank_account_id = null;
+				if ((int)$member->type === 2) $from_bank_account_id = 6160;
+				else if ((int)$member->type === 90) $from_bank_account_id = 10765;
+				else {
+					throw new Exception(__('Neznámý typ člena pro vratku.'));
+					$stop = true;
 				}
-
-				// reactivate messages
-				$member->reactivate_messages();
-
-				// recalculates member's fees
-				Accounts_Controller::recalculate_member_fees(
-					$member->get_credit_account()->id
-				);
-
-				// leaving date is in past or today
-				if (module::e('notification')) {
-					if ($mess == "19") {
-						$message = ORM::factory('message')->get_message_by_type(
-							Message_Model::FORMER_MEMBER_MESSAGE
-						);
-					}
-
-					if ($mess == "21") {
-						$message = ORM::factory('message')->get_message_by_type(
-							Message_Model::FORMER_MEMBER_MESSAGE_NOPAYMENT
-						);
-					}
-
-					if ($mess == "23") {
-						$message = ORM::factory('message')->get_message_by_type(
-							Message_Model::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
-						);
-						$comment = array(
-							'leaving_date' => $member->leaving_date,
-							'ucet' => $form_data['comment']
-						);
-					}
-
-					if ($mess == "0") {
-						$message = ORM::factory('message')->get_message_by_type(
-							Message_Model::FORMER_MEMBER_NOMESSAGE
-						);
-					}
-
-
-
-					// create notification object
-					$member_notif = array(
-						'member_id'		=> $member->id,
-						'whitelisted'	=> $member->has_whitelist()
-					);
-					// notify by email
-					Notifications_Controller::notify(
-						$message,
-						array($member_notif),
-						$this->user_id,
-						$comment,
-						FALSE,
-						TRUE,
-						FALSE,
-						FALSE,
-						FALSE,
-						TRUE
-					);
-				}
-
-				$member->transaction_commit();
-
-				status::success('Membership of the member has been ended.');
-			} catch (Exception $e) {
-				$member->transaction_rollback();
-				Log::add_exception($e);
-				status::error('Error - cant end membership.', $e);
 			}
+			if (!$stop) {
+				try {
+					$member->transaction_start();
 
-			$this->redirect('members/show/', $member_id);
+					// leaving date from form (Forge date gives timestamp)
+					$member->leaving_date = date('Y-m-d', $form_data['leaving_date']);
+
+					// payload do šablon
+					$comment = array(
+						'leaving_date' => $member->leaving_date,
+						'member_type'  => (int)$member->type,
+					);
+					$member_old_type = $member->type;
+					// přepnout na former pokud je dnes/past
+					if ($member->leaving_date <= date('Y-m-d')) {
+						$member->type = Member_Model::TYPE_FORMER;
+						$member->locked = 1;
+					}
+
+					// VS update
+					$var_sym_id = $variable_symbol_model->get_id_variable_symbol_id_member($member->id);
+					$var_sym = $variable_symbol_model->get_variable_symbol_id_member($member->id);
+					$var_sym = "$var_sym"; //+U";
+					$variable_symbol_model->update_variable_symbol($var_sym, $var_sym_id);
+
+					$member->save_throwable();
+
+					// auto remove devices
+					if ($member->leaving_date <= date('Y-m-d') && Settings::get('former_member_auto_device_remove')) {
+						$member->delete_members_devices($member_id);
+					}
+
+					$member->reactivate_messages();
+
+					Accounts_Controller::recalculate_member_fees($member->get_credit_account()->id);
+
+					// -----------------------------
+					// Režim 3: vytvořit draft vratky + fronta pro Pohodu
+					// -----------------------------
+					if ($end_mode === "3") {
+
+
+
+
+						$op_model = new Outgoing_payment_Model();
+						$msg = 'Vratka při ukončení – member ID ' . (int)$member->id;
+
+						$op_id = $op_model->create_draft(
+							$from_bank_account_id,
+							$refund_account,
+							$refund_amount,
+							'CZK',
+							$msg,
+							'termination_refund'
+						);
+
+						$q = new Pohoda_refund_queue_Model();
+
+						// 🔢 vygeneruj číslo dokladu
+						$doc_number = $q->generate_next_doc_number((int)$member_old_type);
+
+
+						$q = new Pohoda_refund_queue_Model();
+						$q->enqueue(
+							(int)$member->id,
+							(int)$member_old_type,
+							$refund_account,
+							$refund_amount,
+							'CZK',
+							$op_id,
+							'Ukončení + vratka',
+							$doc_number
+						);
+
+						$comment['ucet'] = $refund_account;
+						$comment['amount'] = $refund_amount;
+						$comment['op_id'] = $op_id;
+					}
+
+					// -----------------------------
+					// Email dle režimu (1 = none)
+					// -----------------------------
+
+
+					if ($end_mode !== "1" && module::e('notification')) {
+
+						if ($end_mode === "2") {
+							$message = ORM::factory('message')->get_message_by_type(
+								Message_Model::FORMER_MEMBER_MESSAGE_NOPAYMENT
+							);
+						} else if ($end_mode === "3") {
+							$message = ORM::factory('message')->get_message_by_type(
+								Message_Model::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
+							);
+						} else {
+							$message = ORM::factory('message')->get_message_by_type(
+								Message_Model::FORMER_MEMBER_NOMESSAGE
+							);
+						}
+
+						// ✅ ochrana proti NULL
+						if (!$message) {
+
+
+							//Log_queue_Model::error("Missing message template for end_mode=$message ($member->id)");
+
+							// buď:
+							// 1) přeskočit email
+							// status::warning(__('Email nebyl odeslán – chybí šablona zprávy.'));
+							// nebo:
+							// 2) spadnout na "nomessage" (pokud existuje)
+							$message = ORM::factory('message')->get_message_by_type(
+								Message_Model::FORMER_MEMBER_NOMESSAGE
+							);
+						}
+
+						$member_notif = array(
+							'member_id'   => $member->id,
+							'whitelisted' => $member->has_whitelist()
+						);
+
+
+						// jestli ani fallback neexistuje, tak email přeskoč
+						if ($message) {
+							Notifications_Controller::notify(
+								$message,
+								array($member_notif),
+								$this->user_id,
+								$comment,
+								FALSE,
+								TRUE,
+								FALSE,
+								FALSE,
+								FALSE,
+								TRUE
+							);
+						}
+					}
+
+
+					$member->transaction_commit();
+
+					if ($end_mode === "3") {
+
+						// Email po commitu je správně – ale nesmí to shodit request
+						try {
+							Termination_refund_mail_Model::send_refund_pdf(
+								(int)$member->id,
+								(int)$member_old_type,
+								(string)$doc_number,
+								(string)$member->leaving_date,
+								(string)$refund_account,
+								(float)$refund_amount,
+								isset($op_id) ? (int)$op_id : null
+							);
+						} catch (Exception $e) {
+							// Logni to, ale NEPADAT
+							Log_queue_Model::error(
+								"Refund PDF email failed for member_id={$member->id}, op_id=" . (isset($op_id) ? (int)$op_id : 'NULL') .
+									" : " . $e->getMessage()
+							);
+							status::warning(__('Ukončení a vratka jsou hotové, ale email s PDF se nepodařilo odeslat.'));
+						}
+
+						status::success('Ukončeno + vytvořena vratka (draft) + záznam do POHODA fronty.');
+					} else if ($end_mode === "2") {
+
+						status::success('Ukončeno + odeslán email (neplacení).');
+					} else {
+
+						status::success('Ukončeno bez emailu.');
+					}
+
+
+					$this->redirect('members/show/', $member_id);
+					return;
+				} catch (Exception $e) {
+					$member->transaction_rollback();
+					Log::add_exception($e);
+					status::error('Error - cant end membership.', $e);
+					// a spadneš dolů na render formuláře (s error msg)
+				}
+			}
 		}
 
+		// -----------------------------
+		// VIEW (vždy mimo validate)
+		// -----------------------------
 		$headline = __('End membership');
 
-		// breadcrumbs navigation		
 		$breadcrumbs = breadcrumbs::add()
-			->link(
-				'members/show_all',
-				'Members',
-				$this->acl_check_view(get_class($this), 'members')
-			)
+			->link('members/show_all', 'Members', $this->acl_check_view(get_class($this), 'members'))
 			->disable_translation()
 			->link(
 				'members/show/' . $member->id,
 				"ID $member->id - $member->name",
-				$this->acl_check_view(
-					get_class($this),
-					'members',
-					$member->id
-				)
+				$this->acl_check_view(get_class($this), 'members', $member->id)
 			)
 			->text($headline);
 
-		// view
 		$view = new View('main');
 		$view->breadcrumbs = $breadcrumbs->html();
 		$view->title = $headline;

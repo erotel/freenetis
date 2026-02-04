@@ -1054,9 +1054,10 @@ class Scheduler_Controller extends Controller
 				$message = new Swift_Message($email->subject);
 
 				// posílej jen HTML (ať Thunderbird nerenderuje tagy jako text)
-				$message->setContentType('text/html');
+				$message = new Swift_Message($email->subject);
 				$message->setCharset('utf-8');
-				$message->setBody((string) $email->body);
+				$message->setBody((string)$email->body, 'text/html');
+
 
 
 				// Attachments
@@ -1077,14 +1078,14 @@ class Scheduler_Controller extends Controller
 					$name = $a->name ?: basename($real);
 					$mime = $a->mime ?: 'application/octet-stream';
 
-					$message->attach(
-						new Swift_Message_Attachment(
-							file_get_contents($real),
-							$name,
-							$mime
-						)
-					);
+					// Swift 3.x správně:
+					$file = new Swift_File($real, $name);
+					$file->setContentType($mime);
+
+					$message->attach($file);
 				}
+
+
 
 				// Send
 				if (Config::get('unit_tester') || $swift->send($message, $recipients, $email->from)) {
