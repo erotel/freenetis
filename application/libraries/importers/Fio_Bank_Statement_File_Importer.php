@@ -535,8 +535,8 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 		$ba = $this->get_bank_account();
 		if (!$ba || !$ba->id) return $member_id;
 
-		$expected_services_ba_id = 3;   // internet
-		$expected_members_ba_id  = 2;  // členové
+		$expected_services_ba_id = 6160;   // internet
+		$expected_members_ba_id  = 10765;  // členové
 
 		$m = new Member_Model((int)$member_id);
 		$type = (int)$m->type;
