@@ -5,6 +5,7 @@
 /data/
 /application/cache/mpdf/
 /vendor/
-
+/composer.json
+/composer.lock
 
 
