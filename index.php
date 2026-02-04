@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file acts as the "front controller" to your application. You can
  * configure your application and system directories here, as well as error
@@ -9,6 +10,10 @@
  * @copyright  (c) 2007 Kohana Team
  * @license    http://kohanaphp.com/license.html
  */
+$vendor = __DIR__ . '/vendor/autoload.php';
+if (file_exists($vendor)) {
+	require $vendor;
+}
 
 /**
  * Kohana website application directory. This directory should contain your
@@ -61,40 +66,31 @@ version_compare(PHP_VERSION, '5.1.3', '<') and exit('Kohana requires PHP 5.1.3 o
 $unittest = (empty($_SERVER['SERVER_NAME']) && strpos(@$_SERVER['SCRIPT_NAME'], 'phpunit'));
 
 // If unit testing change relative address of system and appplication folders
-if ($unittest)
-{
+if ($unittest) {
 	$kohana_application = dirname(__FILE__) . '/' . $kohana_application;
 	$kohana_system = dirname(__FILE__) . '/' . $kohana_system;
-	
+
 	// Define the front controller name and docroot
 	define('DOCROOT', dirname(__FILE__) . '/');
 	define('KOHANA',  substr(__FILE__, strlen(DOCROOT)));
-}
-else
-{
+} else {
 	// Define the front controller name and docroot
-	define('DOCROOT', getcwd().DIRECTORY_SEPARATOR);
+	define('DOCROOT', getcwd() . DIRECTORY_SEPARATOR);
 	define('KOHANA',  substr(__FILE__, strlen(DOCROOT)));
 }
 
 // Define application and system paths
-define('APPPATH', str_replace('\\', '/', realpath($kohana_application)).'/');
-define('SYSPATH', str_replace('\\', '/', realpath($kohana_system)).'/');
+define('APPPATH', str_replace('\\', '/', realpath($kohana_application)) . '/');
+define('SYSPATH', str_replace('\\', '/', realpath($kohana_system)) . '/');
 
 // Clean up
 unset($kohana_application, $kohana_system);
 
-(is_dir(APPPATH)) or die
-(
-	'Your <code>$kohana_application</code> directory does not exist. '.
-	'Set a valid <code>$kohana_application</code> in <tt>'.KOHANA.'</tt> and refresh the page.'
-);
+(is_dir(APPPATH)) or die('Your <code>$kohana_application</code> directory does not exist. ' .
+	'Set a valid <code>$kohana_application</code> in <tt>' . KOHANA . '</tt> and refresh the page.');
 
-(is_dir(SYSPATH) AND file_exists(SYSPATH.'/core/'.'Bootstrap'.EXT)) or die
-(
-	'Your <code>$kohana_system</code> directory does not exist. '.
-	'Set a valid <code>$kohana_system</code> in <tt>'.KOHANA.'</tt> and refresh the page.'
-);
+(is_dir(SYSPATH) and file_exists(SYSPATH . '/core/' . 'Bootstrap' . EXT)) or die('Your <code>$kohana_system</code> directory does not exist. ' .
+	'Set a valid <code>$kohana_system</code> in <tt>' . KOHANA . '</tt> and refresh the page.');
 
 // Mail to developers
 define('DEVELOPER_EMAIL_ADDRESS', 'bugs@freenetis.org');
@@ -103,11 +99,8 @@ define('DEVELOPER_EMAIL_ADDRESS', 'bugs@freenetis.org');
 define('AXODOC_URL', 'http://axo.doc.freenetis.org/');
 
 // If unit testing just initilize do not execute
-if($unittest)
-{
-    require 'tests/BootstrapPHPUnit'.EXT;
-}
-else
-{
-    require SYSPATH.'core/Bootstrap'.EXT;
+if ($unittest) {
+	require 'tests/BootstrapPHPUnit' . EXT;
+} else {
+	require SYSPATH . 'core/Bootstrap' . EXT;
 }

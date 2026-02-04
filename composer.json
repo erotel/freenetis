@@ -1,0 +1,16 @@
+{
+  "require": {
+    "php": ">=7.4",
+    "symfony/mailer": "^5.4",
+    "symfony/mime": "^5.4"
+  },
+  "config": {
+    "platform": {
+      "php": "7.4.0"
+    }
+  }
+}
+
+
+
+

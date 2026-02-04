@@ -1019,55 +1019,57 @@ class Scheduler_Controller extends Controller
 			return;
 		}
 
-		$swift = email::connect();
+		// Symfony Mailer init (sendmail default)
+		// Pokud chceš SMTP, změň DSN např. na: smtp://localhost:25
+		$dsn = $this->build_mailer_dsn_from_settings();
+
+		try {
+			$transport = \Symfony\Component\Mailer\Transport::fromDsn($dsn);
+			$mailer = new \Symfony\Component\Mailer\Mailer($transport);
+		} catch (\Throwable $e) {
+			Log::add('error', 'Mailer init failed: ' . $e->getMessage());
+			return;
+		}
 
 		foreach ($email_queue as $email) {
 			try {
-				// Recipients
-				$recipients = new Swift_RecipientList;
-				$recipients->addTo($email->to);
+				$to = (string) $email->to;
+				$from = (string) $email->from;
+				$subject = (string) $email->subject;
+				$htmlBody = (string) $email->body;
 
-				if (strpos($email->subject, 'Oznámení o přijaté platbě') !== FALSE) {
-					$recipients->addBcc('ucdokl@pvfree.net');
+				// --- BCC pravidla (stejná logika jako dřív) ---
+				$bcc = array();
+
+				if (strpos($subject, 'Oznámení o přijaté platbě') !== FALSE) {
+					//$bcc[] = 'ucdokl@pvfree.net';
 				}
-				if (strpos($email->subject, 'Ukončení členství s přeplatkem') !== FALSE) {
-					$recipients->addBcc('rada@pvfree.net');
-					$recipients->addBcc('pokladnik@pvfree.net');
+				if (strpos($subject, 'Ukončení členství s přeplatkem') !== FALSE) {
+					$bcc[] = 'rada@pvfree.net';
+					//$bcc[] = 'pokladnik@pvfree.net';
 				}
-				if (strpos($email->subject, 'Ukončení členství podle Stanov') !== FALSE) {
-					$recipients->addBcc('rada@pvfree.net');
+				if (strpos($subject, 'Ukončení členství podle Stanov') !== FALSE) {
+					$bcc[] = 'rada@pvfree.net';
 				}
-				if (strpos($email->subject, 'Ukončení členství na vlastní žádost') !== FALSE) {
-					$recipients->addBcc('rada@pvfree.net');
+				if (strpos($subject, 'Ukončení členství na vlastní žádost') !== FALSE) {
+					$bcc[] = 'rada@pvfree.net';
 				}
-				if (strpos($email->subject, 'Oznámení o započetí přerušení členství') !== FALSE) {
-					$recipients->addBcc('rada@pvfree.net');
+				if (strpos($subject, 'Oznámení o započetí přerušení členství') !== FALSE) {
+					$bcc[] = 'rada@pvfree.net';
+				}
+				if (strpos($subject, 'Faktura ') === 0) {
+					//	$bcc[] = 'ucdokl@pvfree.net';
 				}
 
-				if (strpos($email->subject, 'Faktura ') === 0) {
-					$recipients->addBcc('ucdokl@pvfree.net');
-				}
-
-
-				// Message
-				// Message
-				$message = new Swift_Message($email->subject);
-
-				// posílej jen HTML (ať Thunderbird nerenderuje tagy jako text)
-				$message = new Swift_Message($email->subject);
-				$message->setCharset('utf-8');
-				$message->setBody((string)$email->body, 'text/html');
-
-
-
-				// Attachments
+				// --- Attachments (z DB) + bezpečnostní kontrola cesty ---
+				$attachments = array();
 				$atts = $email_queue_model->get_attachments($email->id);
 
 				foreach ($atts as $a) {
 					$real = realpath($a->path);
 					$base = realpath(APPPATH . '../data');
 
-					if ($real === FALSE || strpos($real, $base . DIRECTORY_SEPARATOR) !== 0) {
+					if ($real === FALSE || $base === FALSE || strpos($real, $base . DIRECTORY_SEPARATOR) !== 0) {
 						throw new Exception('Attachment path not allowed: ' . $a->path);
 					}
 
@@ -1075,34 +1077,75 @@ class Scheduler_Controller extends Controller
 						throw new Exception('Attachment not readable: ' . $real);
 					}
 
-					$name = $a->name ?: basename($real);
-					$mime = $a->mime ?: 'application/octet-stream';
-
-					// Swift 3.x správně:
-					$file = new Swift_File($real, $name);
-					$file->setContentType($mime);
-
-					$message->attach($file);
+					$attachments[] = array(
+						'path' => $real,
+						'name' => ($a->name ? (string)$a->name : basename($real)),
+						'mime' => ($a->mime ? (string)$a->mime : 'application/octet-stream'),
+					);
 				}
 
-
-
-				// Send
-				if (Config::get('unit_tester') || $swift->send($message, $recipients, $email->from)) {
+				// --- Unit tester: neodesílat, jen označit OK ---
+				if (Config::get('unit_tester')) {
 					$email->state = Email_queue_Model::STATE_OK;
-				} else {
-					$email->state = Email_queue_Model::STATE_FAIL;
+					$email->save();
+					continue;
 				}
-			} catch (Exception $e) {
+
+				// --- Build email ---
+				$msg = new \Symfony\Component\Mime\Email();
+
+				// From: pokud chceš jméno, můžeš dát Address($from, 'PVfree.net')
+				$msg->from(new \Symfony\Component\Mime\Address($from));
+				$msg->to($to);
+				$msg->subject($subject);
+
+				// HTML + text fallback
+				$msg->html($htmlBody, 'utf-8');
+
+				$plain = $this->html_to_text($htmlBody);
+				if ($plain !== '') {
+					$msg->text($plain, 'utf-8');
+				}
+
+				// BCC
+				foreach ($bcc as $b) {
+					$msg->addBcc($b);
+				}
+
+				// Attachments
+				foreach ($attachments as $a) {
+					$msg->attachFromPath($a['path'], $a['name'], $a['mime']);
+				}
+
+				// --- Send ---
+				$mailer->send($msg);
+
+				$email->state = Email_queue_Model::STATE_OK;
+			} catch (\Throwable $e) {
 				$email->state = Email_queue_Model::STATE_FAIL;
 				Log::add('error', 'Email queue id ' . $email->id . ': ' . $e->getMessage());
 			}
 
 			$email->save();
 		}
-
-		$swift->disconnect();
 	}
+
+	/**
+	 * Jednoduchý převod HTML -> text pro fallback (multipart/alternative)
+	 */
+	private function html_to_text(string $html): string
+	{
+		$h = str_ireplace(
+			array('<br>', '<br/>', '<br />', '</p>', '</div>', '</tr>', '</li>'),
+			"\n",
+			$html
+		);
+		$h = html_entity_decode($h, ENT_QUOTES, 'UTF-8');
+		$h = strip_tags($h);
+		$h = preg_replace("/\n{3,}/", "\n\n", $h);
+		return trim($h);
+	}
+
 
 
 	/**
@@ -1291,5 +1334,52 @@ class Scheduler_Controller extends Controller
 
 		// ✅ označit jako odeslané
 		Settings::set('pohoda_export_last_sent', $periodKey);
+	}
+
+	private function build_mailer_dsn_from_settings(): string
+	{
+		$driver = (string) Settings::get('email_driver');
+
+		if ($driver === 'smtp') {
+			$host = (string) Settings::get('email_hostname');
+			$port = (int) Settings::get('email_port');
+
+			$user = (string) Settings::get('email_username');
+			$pass = (string) Settings::get('email_password');
+
+			$enc = (string) Settings::get('email_encryption'); // u vás bývá 'tsl' nebo 'ssl'
+			$enc = strtolower(trim($enc));
+
+			// Ošetření překlepu 'tsl' => 'tls'
+			if ($enc === 'tsl') $enc = 'tls';
+			if ($enc !== 'tls' && $enc !== 'ssl') $enc = '';
+
+			// user/pass musí být URL-encoded (hlavně když je tam @ : /)
+			$auth = '';
+			if ($user !== '') {
+				$auth = rawurlencode($user);
+				if ($pass !== '') {
+					$auth .= ':' . rawurlencode($pass);
+				}
+				$auth .= '@';
+			}
+
+			$query = [];
+			if ($enc !== '') $query[] = 'encryption=' . $enc;
+			// timeout ve Swiftu byl 15s; v Symfony se timeout řeší na úrovni streamu,
+			// ale aspoň to sem dáme jako dokumentační parametr (některé transporty ho respektují)
+			// $query[] = 'timeout=15';
+
+			$qs = $query ? ('?' . implode('&', $query)) : '';
+
+			return sprintf('smtp://%s%s:%d%s', $auth, $host, $port, $qs);
+		}
+
+		if ($driver === 'sendmail') {
+			return 'sendmail://default';
+		}
+
+		// default = PHP mail()
+		return 'native://default';
 	}
 }

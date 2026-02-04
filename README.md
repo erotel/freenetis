@@ -32,3 +32,23 @@ mkdir -p /usr/share/freenetis/application/cache/mpdf
 chown -R www-data:www-data /usr/share/freenetis/application/cache/mpdf
 
 chmod 2775 /usr/share/freenetis/application/cache/mpdf
+
+
+composer.json {
+  "require": {
+    "php": ">=7.4",
+    "symfony/mailer": "^5.4",
+    "symfony/mime": "^5.4"
+  },
+  "config": {
+    "platform": {
+      "php": "7.4.0"
+    }
+  }
+}
+
+rm -rf vendor composer.lock
+composer install
+
+composer require symfony/mailer symfony/mime
+
