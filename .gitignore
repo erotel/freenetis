@@ -4,5 +4,7 @@
 /logs/
 /data/
 /application/cache/mpdf/
+/vendor/
+
 
 

@@ -3954,9 +3954,10 @@ class Members_Controller extends Controller
 
 		$is_customer = ((int)$member->type === 2);
 		$opts = array(
-			"1" => ($is_customer ? __('Ukončit zákazníka bez emailu') : __('Ukončit člena bez emailu')),
+			"4" => ($is_customer ? __('Ukončit zákazníka na vlasní žádost') : __('Ukončit člena na vlasní žádost')),
 			"2" => ($is_customer ? __('Ukončit zákazníka pro neplacení (email)') : __('Ukončit člena pro neplacení (email)')),
 			"3" => ($is_customer ? __('Ukončit zákazníka s vratkou na č.ú. (email + PDF + platba)') : __('Ukončit člena s vratkou na č.ú. (email + PDF + platba)')),
+			"1" => ($is_customer ? __('Ukončit zákazníka bez emailu') : __('Ukončit člena bez emailu')),
 		);
 
 		$form->dropdown('end_mode')
@@ -4099,16 +4100,16 @@ class Members_Controller extends Controller
 							$message = ORM::factory('message')->get_message_by_type(
 								Message_Model::FORMER_MEMBER_MESSAGE_NOPAYMENT
 							);
-						} else if ($end_mode === "3") {
+						} else if ($end_mode === "4") {
 							$message = ORM::factory('message')->get_message_by_type(
-								Message_Model::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
+								Message_Model::FORMER_MEMBER_MESSAGE
 							);
 						} else {
 							$message = ORM::factory('message')->get_message_by_type(
 								Message_Model::FORMER_MEMBER_NOMESSAGE
 							);
 						}
-
+						Log_queue_Model::error("Missing message template for end_mode=$message ($member->id)");
 						// ✅ ochrana proti NULL
 						if (!$message) {
 
@@ -4130,21 +4131,28 @@ class Members_Controller extends Controller
 							'whitelisted' => $member->has_whitelist()
 						);
 
-
+						Log_queue_Model::error("Missing message template for end_mode=$this->user_id ($member->id)");
 						// jestli ani fallback neexistuje, tak email přeskoč
-						if ($message) {
-							Notifications_Controller::notify(
-								$message,
-								array($member_notif),
-								$this->user_id,
-								$comment,
-								FALSE,
-								TRUE,
-								FALSE,
-								FALSE,
-								FALSE,
-								TRUE
-							);
+						$stats = Notifications_Controller::notify(
+							$message,
+							array($member_notif),
+							$this->user_id,
+							$comment,
+							FALSE,  // redir
+							TRUE,   // email
+							FALSE,  // sms
+							FALSE,
+							FALSE,
+							TRUE,   // notify former
+							FALSE,  // notify interrupted
+							Notifications_Controller::TYPE_MEMBER,
+							TRUE   // ignore_member_notif_settings (necháme zatím)
+						);
+
+						if (!empty($stats['email'])) {
+							status::success('Ukončeno + odeslán email (neplacení).');
+						} else {
+							status::warning('Ukončeno, ale email nebyl odeslán (žádný příjemce / notifikace vypnuté).');
 						}
 					}
 
