@@ -4109,7 +4109,7 @@ class Members_Controller extends Controller
 								Message_Model::FORMER_MEMBER_NOMESSAGE
 							);
 						}
-						Log_queue_Model::error("Missing message template for end_mode=$message ($member->id)");
+						
 						// ✅ ochrana proti NULL
 						if (!$message) {
 
@@ -4131,7 +4131,7 @@ class Members_Controller extends Controller
 							'whitelisted' => $member->has_whitelist()
 						);
 
-						Log_queue_Model::error("Missing message template for end_mode=$this->user_id ($member->id)");
+						
 						// jestli ani fallback neexistuje, tak email přeskoč
 						$stats = Notifications_Controller::notify(
 							$message,

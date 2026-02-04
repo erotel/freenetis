@@ -55,10 +55,14 @@ class Pohoda_refund_queue_Model extends ORM
         ? $row['doc_number']
         : $row->doc_number;
 
-      // vytáhni číselnou část
       $num = (int)preg_replace('/\D+/', '', substr($last, strlen($prefix)));
     } else {
-      $num = 0;
+      // 🔽 ručně vytvořené doklady – startovní číslo
+      if ($is_member) {
+        $num = 3;   // další bude 0004
+      } else {
+        $num = 9;   // další bude 010
+      }
     }
 
     $num++;
