@@ -1042,11 +1042,11 @@ class Scheduler_Controller extends Controller
 				$bcc = array();
 
 				if (strpos($subject, 'Oznámení o přijaté platbě') !== FALSE) {
-					//$bcc[] = 'ucdokl@pvfree.net';
+					$bcc[] = 'ucdokl@pvfree.net';
 				}
 				if (strpos($subject, 'Ukončení členství s přeplatkem') !== FALSE) {
 					$bcc[] = 'rada@pvfree.net';
-					//$bcc[] = 'pokladnik@pvfree.net';
+					$bcc[] = 'pokladnik@pvfree.net';
 				}
 				if (strpos($subject, 'Ukončení členství podle Stanov') !== FALSE) {
 					$bcc[] = 'rada@pvfree.net';
@@ -1058,7 +1058,11 @@ class Scheduler_Controller extends Controller
 					$bcc[] = 'rada@pvfree.net';
 				}
 				if (strpos($subject, 'Faktura ') === 0) {
-					//	$bcc[] = 'ucdokl@pvfree.net';
+						$bcc[] = 'ucdokl@pvfree.net';
+				}
+
+				if (strpos($subject, 'Vratka ') === 0) {
+						$bcc[] = 'ucdokl@pvfree.net';
 				}
 
 				// --- Attachments (z DB) + bezpečnostní kontrola cesty ---
