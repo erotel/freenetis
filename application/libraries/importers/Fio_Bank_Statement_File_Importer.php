@@ -603,11 +603,10 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 		$op = $rows[0] ?? NULL;
 		if (!$op) return NULL;
 
-		// transfer_id musí existovat, jinak není podle čeho uklízet bank_transfers
-		if (empty($op->transfer_id) || (int)$op->transfer_id <= 0) {
-			Log_queue_Model::info("BANK IMPORT: OP #$op_id matched, but outgoing_payments.transfer_id is empty");
-			return NULL;
-		}
+		$transfer_id = (!empty($op->transfer_id) && (int)$op->transfer_id > 0) ? (int)$op->transfer_id : NULL;
+
+		
+
 
 		// musí sedět účet
 		if ((int)$op->bank_account_id !== (int)$ba->id) return NULL;
@@ -643,6 +642,7 @@ abstract class Fio_Bank_Statement_File_Importer extends Bank_Statement_File_Impo
 			(int)$op->transfer_id
 		));
 
-		return (int)$op->transfer_id;
+		return $transfer_id; // NULL pokud není - cleanup se přeskočí
+
 	}
 }

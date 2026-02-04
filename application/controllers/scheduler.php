@@ -1044,10 +1044,7 @@ class Scheduler_Controller extends Controller
 				if (strpos($subject, 'Oznámení o přijaté platbě') !== FALSE) {
 					$bcc[] = 'ucdokl@pvfree.net';
 				}
-				if (strpos($subject, 'Ukončení členství s přeplatkem') !== FALSE) {
-					$bcc[] = 'rada@pvfree.net';
-					$bcc[] = 'pokladnik@pvfree.net';
-				}
+				
 				if (strpos($subject, 'Ukončení členství podle Stanov') !== FALSE) {
 					$bcc[] = 'rada@pvfree.net';
 				}
