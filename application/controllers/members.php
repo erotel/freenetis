@@ -4150,12 +4150,6 @@ class Members_Controller extends Controller
 							Notifications_Controller::TYPE_MEMBER,
 							TRUE   // ignore_member_notif_settings (necháme zatím)
 						);
-
-						if (!empty($stats['email'])) {
-							status::success('Ukončeno + odeslán email (neplacení).');
-						} else {
-							status::warning('Ukončeno, ale email nebyl odeslán (žádný příjemce / notifikace vypnuté).');
-						}
 					}
 
 
@@ -4187,6 +4181,9 @@ class Members_Controller extends Controller
 					} else if ($end_mode === "2") {
 
 						status::success('Ukončeno + odeslán email (neplacení).');
+					} else if ($end_mode === "4") {
+
+						status::success('Ukončeno + odeslán email (žádost).');
 					} else {
 
 						status::success('Ukončeno bez emailu.');
