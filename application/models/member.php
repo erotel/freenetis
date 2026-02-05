@@ -1797,4 +1797,81 @@ class Member_Model extends ORM
 			$member_id
 		);
 	}
+
+	public function get_all_ip_address_member($member_id)
+	{
+		$member_id = (int)$member_id;
+
+		// IP přímo přes member_id
+		$q1 = $this->db->query("
+  SELECT DISTINCT ia.ip_address
+  FROM ip_addresses ia
+  WHERE ia.member_id = $member_id
+    AND ia.ip_address IS NOT NULL
+");
+
+		// IP přes iface -> device -> user -> member (i když ia.member_id je NULL)
+		$q2 = $this->db->query("
+  SELECT DISTINCT ia.ip_address
+  FROM ip_addresses ia
+  JOIN ifaces i  ON i.id = ia.iface_id
+  JOIN devices d ON d.id = i.device_id
+  JOIN users u   ON u.id = d.user_id
+  WHERE u.member_id = $member_id
+    AND ia.ip_address IS NOT NULL
+");
+
+		$ips = [];
+		foreach ($q1 as $r) $ips[] = (string)$r->ip_address;
+		foreach ($q2 as $r) $ips[] = (string)$r->ip_address;
+
+		$ips = array_values(array_unique($ips));
+		sort($ips);
+
+		return $ips;
+	}
+
+	public function add_ip_member_comment($ips, $member_id)
+	{
+		$member_id = (int)$member_id;
+
+		$today  = date('Y-m-d');
+		$prefix = "[" . $today . "] ";
+		$maxLen = 250;
+
+		$out = $prefix;
+		$countShown = 0;
+
+		foreach ($ips as $ip) {
+			$add = ($countShown ? "," : "") . $ip;
+			if (strlen($out . $add) > $maxLen) break;
+			$out .= $add;
+			$countShown++;
+		}
+
+		$rest = count($ips) - $countShown;
+		if ($rest > 0) {
+			$suffix = " (+" . $rest . " další)";
+			if (strlen($out . $suffix) > $maxLen) {
+				$out = substr($out, 0, max(0, $maxLen - strlen($suffix)));
+				$out = rtrim($out, ", ");
+			}
+			$out .= $suffix;
+		}
+
+		if (!count($ips)) {
+			$out = $prefix . "(žádné)";
+		}
+
+		// PREPEND + ořez starého konce
+		$this->db->query("
+        UPDATE members
+        SET comment = LEFT(
+            CONCAT(" . $this->db->escape($out) . ", IF(comment IS NULL OR comment = '', '', '\n'), IFNULL(comment,'')),
+            250
+        )
+        WHERE id = $member_id
+        LIMIT 1
+    ");
+	}
 }

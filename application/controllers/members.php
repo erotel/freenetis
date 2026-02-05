@@ -4039,6 +4039,8 @@ class Members_Controller extends Controller
 
 					// auto remove devices
 					if ($member->leaving_date <= date('Y-m-d') && Settings::get('former_member_auto_device_remove')) {
+						$ips = $member->get_all_ip_address_member($member->id);
+						$member->add_ip_member_comment($ips, $member->id);
 						$member->delete_members_devices($member_id);
 					}
 
@@ -4109,7 +4111,7 @@ class Members_Controller extends Controller
 								Message_Model::FORMER_MEMBER_NOMESSAGE
 							);
 						}
-						
+
 						// ✅ ochrana proti NULL
 						if (!$message) {
 
@@ -4131,7 +4133,7 @@ class Members_Controller extends Controller
 							'whitelisted' => $member->has_whitelist()
 						);
 
-						
+
 						// jestli ani fallback neexistuje, tak email přeskoč
 						$stats = Notifications_Controller::notify(
 							$message,

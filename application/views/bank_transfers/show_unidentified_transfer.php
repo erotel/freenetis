@@ -73,22 +73,23 @@
 
 <p style="margin: 5px 2px 15px 2px;"><?php echo url_lang::lang('help.assign_payment') ?></p>
 
-<a href="<?php echo url_lang::site() ?>/bank_transfers/assign_member_transfer/<?php echo $mt->id ?>"
-	class="submit" style="text-decoration: none; color: white">
-	<?php echo __('Transfer is member payment') ?>
-</a>
+<div style="display:none">
+	<a href="<?php echo url_lang::site() ?>/bank_transfers/assign_member_transfer/<?php echo $mt->id ?>"
+		class="submit" style="text-decoration: none; color: white">
+		<?php echo __('Transfer is member payment') ?>
+	</a>
 
-<br />
-<br />
+	<br />
+	<br />
 
-<a href="<?php echo url_lang::site() ?>/bank_transfers/assign_other_transfer/<?php echo $mt->id ?>"
-	class="submit" style="text-decoration: none; color: white">
-	<?php echo __('Transfer is not member payment') ?>
-</a>
+	<a href="<?php echo url_lang::site() ?>/bank_transfers/assign_other_transfer/<?php echo $mt->id ?>"
+		class="submit" style="text-decoration: none; color: white">
+		<?php echo __('Transfer is not member payment') ?>
+	</a>
 
-<br />
-<br />
-
+	<br />
+	<br />
+</div>
 <a href="<?php echo url_lang::site() ?>/bank_transfers/refund_unidentified/<?php echo $mt->id ?>"
 	class="submit"
 	style="text-decoration: none; color: white; background:#c0392b;"
