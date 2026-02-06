@@ -1012,6 +1012,8 @@ class Scheduler_Controller extends Controller
 
 	private function send_quened_emails()
 	{
+
+
 		$email_queue_model = new Email_queue_Model();
 		$email_queue = $email_queue_model->get_current_queue();
 
@@ -1044,7 +1046,7 @@ class Scheduler_Controller extends Controller
 				if (strpos($subject, 'Oznámení o přijaté platbě') !== FALSE) {
 					$bcc[] = 'ucdokl@pvfree.net';
 				}
-				
+
 				if (strpos($subject, 'Ukončení členství podle Stanov') !== FALSE) {
 					$bcc[] = 'rada@pvfree.net';
 				}
@@ -1055,11 +1057,11 @@ class Scheduler_Controller extends Controller
 					$bcc[] = 'rada@pvfree.net';
 				}
 				if (strpos($subject, 'Faktura ') === 0) {
-						$bcc[] = 'ucdokl@pvfree.net';
+					$bcc[] = 'ucdokl@pvfree.net';
 				}
 
 				if (strpos($subject, 'Vratka ') === 0) {
-						$bcc[] = 'ucdokl@pvfree.net';
+					$bcc[] = 'ucdokl@pvfree.net';
 				}
 
 				// --- Attachments (z DB) + bezpečnostní kontrola cesty ---
@@ -1317,25 +1319,63 @@ class Scheduler_Controller extends Controller
 			return;
 		}
 
+		$attachments = [];
+
+		// ===== 1) měsíční faktury =====
 		$m = new Pohoda_export_Model();
 		$invoices = $m->get_invoices_for_month($year, $month);
-		if (!count($invoices)) return;
+		if (count($invoices)) {
+			$xml  = $m->build_xml($invoices);
+			$file = $m->save_xml($year, $month, $xml);
 
-		$xml  = $m->build_xml($invoices);
-		$file = $m->save_xml($year, $month, $xml);
+			$attachments[] = ['path' => $file, 'name' => basename($file), 'mime' => 'application/xml'];
+		}
 
+		// ===== 2) dobropisy / vratky =====
+		// posíláme jen pokud je něco ve frontě (status=new)
+		$refund = new Pohoda_Refund_Export_Model();
+
+		// vezmeme "new" (ať to nekoliduje s měsíční pojistkou)
+		$rows = $refund->get_queue_items('new', 2000);
+		if (count($rows)) {
+			// build_xml si umí vzít ico ze Settings::get('ico')
+			$rxml = $refund->build_xml($rows);
+
+			$rfileName = sprintf('pohoda_refund_invoices_%s.xml', date('Ymd_His'));
+			$rfile = $refund->save_xml($rxml, $rfileName);
+
+			$attachments[] = ['path' => $rfile, 'name' => basename($rfile), 'mime' => 'application/xml'];
+
+			// označit exported (jen ty co jsme poslali)
+			$ids = [];
+			foreach ($rows as $r) $ids[] = (int)$r->id;
+			$refund->mark_exported($ids);
+		}
+
+		// nic k odeslání
+		if (!count($attachments)) {
+			return;
+		}
+
+		// ===== email účetní =====
 		$eq = new Email_queue_Model();
+
+		$body = "V příloze je XML export do POHODY:\n";
+		if (count($invoices)) $body .= "- Faktury za {$month}/{$year}\n";
+		if (count($rows))     $body .= "- Dobropisy / vratky \n";
+
 		$eq->push(
 			'noreply@pvfree.net',
 			'svacinova@aldekon.cz',
 			"Export POHODA {$month}/{$year}",
-			"V příloze je XML export vystavených faktur za {$month}/{$year}.",
-			[['path' => $file, 'name' => basename($file), 'mime' => 'application/xml']]
+			$body,
+			$attachments
 		);
 
 		// ✅ označit jako odeslané
 		Settings::set('pohoda_export_last_sent', $periodKey);
 	}
+
 
 	private function build_mailer_dsn_from_settings(): string
 	{
