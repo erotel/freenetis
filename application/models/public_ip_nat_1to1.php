@@ -50,7 +50,7 @@ WHERE 1=1
       $args[] = '%' . $q . '%';
     }
 
-    $sql .= " ORDER BY n.enabled DESC, n.public_ip ASC";
+    $sql .= " ORDER BY n.enabled DESC, INET_ATON(n.public_ip) ASC";
 
     return $this->db->query($sql, $args);
   }

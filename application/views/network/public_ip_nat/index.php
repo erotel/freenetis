@@ -17,7 +17,7 @@
   <input type="text" name="q" value="<?php echo html::specialchars($filters['q']) ?>" />
 
   <input type="submit" class="submit" value="<?php echo __('Filter') ?>" />
-
+  <!--
   <?php if ($can_edit): ?>
     &nbsp;&nbsp;
     <a class="submit" style="text-decoration:none; color:white"
@@ -25,6 +25,7 @@
       <?php echo __('Add') ?>
     </a>
   <?php endif; ?>
+  -->
 </form>
 
 <br />
@@ -82,11 +83,13 @@
             <a href="<?php echo url_lang::base() ?>network/public_ip_nat_toggle/<?php echo (int)$r->id ?>">
               <?php echo ((int)$r->enabled ? __('Disable') : __('Enable')) ?>
             </a>
+            <!--
             &nbsp;|&nbsp;
             <a href="<?php echo url_lang::base() ?>network/public_ip_nat_delete/<?php echo (int)$r->id ?>"
               onclick="return confirm('<?php echo __('Really delete?') ?>');">
               <?php echo __('Delete') ?>
             </a>
+        -->
           </td>
         <?php endif; ?>
       </tr>
