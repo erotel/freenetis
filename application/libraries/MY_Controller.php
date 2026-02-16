@@ -1247,6 +1247,28 @@ if (Settings::get('finance_enabled') &&
 				));
 		}
 		
+	// public IP 1:1 NAT
+if (Settings::get('networks_enabled') &&
+	$this->acl_check_view('Network_Controller', 'public_ip_nat'))
+{
+	$menu->addItem(
+		'network/public_ip_nat',
+		__('Veřejné ip (1:1 NAT)'),
+		'networks'
+	);
+}
+
+if (Settings::get('networks_enabled') &&
+    $this->acl_check_view('Network_Controller', 'public_ports'))
+{
+  $menu->addItem(
+    'network/public_ports',
+    __('Public ports'),
+    'networks'
+  );
+}
+
+
 		/*****************     NOTIFICATIONS      *********************/
 		
 		if (module::e('notification'))
