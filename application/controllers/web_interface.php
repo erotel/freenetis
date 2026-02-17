@@ -847,4 +847,176 @@ class Web_interface_Controller extends Controller
 			"version"      => Version::get_version(),
 		), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 	}
+
+	/**
+	 * Export: Public ports (DNAT / port forward)
+	 * URL: /web_interface/public_port_forwards_json
+	 */
+	public function public_port_forwards_json()
+	{
+		// jen trusted rozsahy (stejné jako qos_json apod.)
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
+			@header('HTTP/1.0 403 Forbidden');
+			die();
+		}
+
+		header('Content-Type: application/json; charset=utf-8');
+
+		$db = Database::instance();
+
+		$rows = $db->query("
+			SELECT
+				id,
+				public_ip,
+				public_port_from,
+				public_port_to,
+				private_ip,
+				private_port_from,
+				private_port_to,
+				protocol
+			FROM public_port_forwards
+			WHERE enabled = 1
+			ORDER BY public_ip, protocol, public_port_from, public_port_to, private_ip
+		")->result_array(FALSE);
+
+		echo json_encode(array(
+			"generated_at" => gmdate('c'),
+			"public_port_forwards" => $rows,
+		), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+	}
+	/**
+	 * Export: Public IP NAT 1:1
+	 * URL: /web_interface/public_ip_nat_1to1_json
+	 */
+	public function public_ip_nat_1to1_json()
+	{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
+			@header('HTTP/1.0 403 Forbidden');
+			die();
+		}
+
+		header('Content-Type: application/json; charset=utf-8');
+
+		$db = Database::instance();
+
+		$rows = $db->query("
+			SELECT
+				id,
+				public_ip,
+				private_ip,
+				scope,
+				comment
+			FROM public_ip_nat_1to1
+			WHERE enabled = 1 AND private_ip IS NOT NULL AND private_ip <> ''
+			ORDER BY scope, public_ip
+		")->result_array(FALSE);
+
+		echo json_encode(array(
+			"generated_at" => gmdate('c'),
+			"public_ip_nat_1to1" => $rows,
+		), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+	}
+	/**
+	 * Export: /etc/firewall/port-forw.txt
+	 * Formát řádku:
+	 *   tcp;185.138.44.1;5900;10.133.145.2;5900
+	 *   udp;185.138.44.1;6000:6005;10.133.83.11;6000-6005
+	 *
+	 * URL: /web_interface/public_port_forwards_txt
+	 */
+	public function public_port_forwards_txt()
+	{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
+			@header('HTTP/1.0 403 Forbidden');
+			die();
+		}
+
+		header('Content-Type: text/plain; charset=utf-8');
+
+		$db = Database::instance();
+
+		$rows = $db->query("
+      SELECT
+        protocol, public_ip, public_port_from, public_port_to,
+        private_ip, private_port_from, private_port_to
+      FROM public_port_forwards
+      WHERE enabled = 1
+      ORDER BY public_ip, protocol, public_port_from, public_port_to, private_ip
+    ")->result_array(FALSE);
+
+		foreach ($rows as $r) {
+			$proto = strtolower((string)$r['protocol']);
+
+			$pub_from = (int)$r['public_port_from'];
+			$pub_to   = (int)$r['public_port_to'];
+			$lan_from = (int)$r['private_port_from'];
+			$lan_to   = (int)$r['private_port_to'];
+
+			$pub_ports = ($pub_from === $pub_to) ? (string)$pub_from : ($pub_from . ':' . $pub_to);
+			$lan_ports = ($lan_from === $lan_to) ? (string)$lan_from : ($lan_from . '-' . $lan_to);
+
+			echo $proto . ';'
+				. $r['public_ip'] . ';'
+				. $pub_ports . ';'
+				. $r['private_ip'] . ';'
+				. $lan_ports . "\n";
+		}
+	}
+
+	/**
+	 * Export: /etc/firewall/verejne.txt (NAT 1:1)
+	 * Formát řádku:
+	 *   185.138.46.2;10.133.139.22
+	 *
+	 * URL: /web_interface/public_ip_nat_1to1_txt
+	 * Volitelně: ?scope=igw2
+	 */
+	public function public_ip_nat_1to1_txt()
+	{
+		if (!network::ip_address_in_ranges(server::remote_addr())) {
+			@header('HTTP/1.0 403 Forbidden');
+			die();
+		}
+
+		header('Content-Type: text/plain; charset=utf-8');
+
+		$db = Database::instance();
+
+		$scope = $this->input->get('scope');
+		$scope = is_string($scope) ? trim($scope) : '';
+		// jednoduchý whitelist (ať se tam nedostane bordel)
+		if ($scope !== '' && !preg_match('~^[A-Za-z0-9_.:-]{1,64}$~', $scope)) {
+			@header('HTTP/1.0 400 Bad Request');
+			die();
+		}
+
+		if ($scope !== '') {
+			$rows = $db->query("
+        SELECT public_ip, private_ip, comment
+        FROM public_ip_nat_1to1
+        WHERE enabled = 1
+          AND scope = ?
+          AND private_ip IS NOT NULL
+          AND private_ip <> ''
+        ORDER BY public_ip
+      ", array($scope))->result_array(FALSE);
+		} else {
+			$rows = $db->query("
+        SELECT public_ip, private_ip, comment
+        FROM public_ip_nat_1to1
+        WHERE enabled = 1
+          AND private_ip IS NOT NULL
+          AND private_ip <> ''
+        ORDER BY scope, public_ip
+      ")->result_array(FALSE);
+		}
+
+		foreach ($rows as $r) {
+			// volitelně můžeš posílat komentáře jako # ...
+			if (!empty($r['comment'])) {
+				echo '# ' . str_replace(array("\r", "\n"), ' ', (string)$r['comment']) . "\n";
+			}
+			echo $r['public_ip'] . ';' . $r['private_ip'] . "\n";
+		}
+	}
 }
