@@ -1,60 +1,106 @@
 <?php defined('SYSPATH') or die('No direct script access.'); ?>
+
 <?php
+// ===== Pojistky proti undefined proměnným =====
+if (!isset($action)) $action = 'edit';
 if (!isset($data) || !is_array($data)) $data = array();
-if (!isset($data['public_ip']))  $data['public_ip'] = '';
-if (!isset($data['private_ip'])) $data['private_ip'] = '';
-if (!isset($data['enabled']))    $data['enabled'] = 1;
-if (!isset($data['comment']))    $data['comment'] = '';
 if (!isset($errors) || !is_array($errors)) $errors = array();
+
+$defaults = array(
+  'public_ip'  => '',
+  'private_ip' => '',
+  'enabled'    => 1,
+);
+
+foreach ($defaults as $k => $v) {
+  if (!isset($data[$k])) $data[$k] = $v;
+}
 ?>
 
 <h2>
-	<?php echo ($action === 'add' ? __('Add public IP (1:1 NAT)') : __('Edit public IP (1:1 NAT)')) ?>
+  <?php
+    if ($action === 'edit') {
+      echo __('Edit public IP (1:1 NAT)');
+    } else {
+      echo __('Add public IP (1:1 NAT)');
+    }
+  ?>
 </h2>
+
 <br />
 
-<?php if (!empty($errors)): ?>
-	<div class="error">
-		<ul>
-			<?php foreach ($errors as $k => $v): ?>
-				<li><?php echo html::specialchars($v) ?></li>
-			<?php endforeach; ?>
-		</ul>
-	</div>
-	<br />
+<?php if (!empty($errors) && is_array($errors)): ?>
+  <div class="error">
+    <ul>
+      <?php foreach ($errors as $e): ?>
+        <li><?php echo html::specialchars((string)$e) ?></li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+  <br />
 <?php endif; ?>
 
 <form method="post" action="">
-	<table class="extended">
-		<tr>
-			<th><?php echo __('Public IP') ?></th>
-			<td>
-				<input type="text" name="public_ip" value="<?php echo html::specialchars($data['public_ip']) ?>" />
-			</td>
-		</tr>
+  <table class="extended">
 
-		<tr>
-			<th><?php echo __('Private IP') ?></th>
-			<td>
-				<input type="text" name="private_ip" value="<?php echo html::specialchars($data['private_ip']) ?>" />
-			</td>
-		</tr>
+    <!-- PUBLIC IP -->
+    <tr>
+      <th><?php echo __('Public IP') ?></th>
+      <td>
 
-		<tr>
-			<th><?php echo __('Enabled') ?></th>
-			<td>
-				<input type="checkbox" name="enabled" value="1" <?php echo ((int)$data['enabled'] ? 'checked' : '') ?> />
-			</td>
-		</tr>
+        <?php if ($action === 'edit'): ?>
 
-		
-	</table>
+          <!-- při edit readonly -->
+          <strong><?php echo html::specialchars((string)$data['public_ip']); ?></strong>
 
-	<br />
-	<input type="submit" class="submit" value="<?php echo __('Save') ?>" />
-	&nbsp;
-	<a class="submit" style="text-decoration:none; color:white"
-	   href="<?php echo url_lang::base() ?>network/public_ip_nat">
-		<?php echo __('Back') ?>
-	</a>
+        <?php else: ?>
+
+          <input type="text" name="public_ip"
+            value="<?php echo html::specialchars((string)$data['public_ip']); ?>" />
+
+          <?php if (!empty($errors['public_ip'])): ?>
+            <div class="error"><?php echo html::specialchars((string)$errors['public_ip']); ?></div>
+          <?php endif; ?>
+
+        <?php endif; ?>
+
+      </td>
+    </tr>
+
+    <!-- PRIVATE IP -->
+    <tr>
+      <th><?php echo __('Private IP') ?></th>
+      <td>
+
+        <input type="text" name="private_ip"
+          value="<?php echo html::specialchars((string)$data['private_ip']); ?>" />
+
+        <?php if ($action === 'edit'): ?>
+          <span style="color:#666; margin-left:10px;">
+            <?php echo __('leave empty to clear mapping'); ?>
+          </span>
+        <?php endif; ?>
+
+        <?php if (!empty($errors['private_ip'])): ?>
+          <div class="error"><?php echo html::specialchars((string)$errors['private_ip']); ?></div>
+        <?php endif; ?>
+
+      </td>
+    </tr>
+
+   
+
+    <!-- SUBMIT -->
+    <tr>
+      <th></th>
+      <td>
+        <input type="submit" class="submit" value="<?php echo __('Save'); ?>" />
+        &nbsp;
+        <a href="<?php echo url_lang::base(); ?>network/public_ip_nat">
+          <?php echo __('Back'); ?>
+        </a>
+      </td>
+    </tr>
+
+  </table>
 </form>

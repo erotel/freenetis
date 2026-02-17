@@ -99,13 +99,13 @@ class Network_Controller extends Controller
     );
 
     if ($_POST) {
-      $data['public_ip']  = trim($this->get_scalar('public_ip', '', 'post'));
+      //$data['public_ip']  = trim($this->get_scalar('public_ip', '', 'post'));
       $data['private_ip'] = trim($this->get_scalar('private_ip', '', 'post'));
       $data['enabled']    = $this->input->post('enabled') ? 1 : 0;
       $data['comment']    = trim($this->get_scalar('comment', '', 'post'));
 
       if ($model->validate($data, $errors, (int)$id)) {
-        $model->update((int)$id, $data, (int)$this->member_id);
+        $model->update_private_ip((int)$id, $data['private_ip'], (int)$this->member_id);
         status::success(__('Saved'));
         $this->redirect('network/public_ip_nat');
       }
@@ -169,21 +169,21 @@ class Network_Controller extends Controller
   }
 
   public function public_ports()
-{
-  if (!$this->acl_check_view('Network_Controller', 'public_ports')) {
-    self::error(ACCESS);
+  {
+    if (!$this->acl_check_view('Network_Controller', 'public_ports')) {
+      self::error(ACCESS);
+    }
+
+    $model = new Public_port_forwards_Model();
+    $rows = $model->find_all();
+
+    $view = new View('main');
+    $view->title = __('Public ports');
+    $view->content = new View('network/public_ports/index');
+    $view->content->rows = $rows;
+    $view->content->can_edit = $this->acl_check_edit('Network_Controller', 'public_ports');
+    $view->render(TRUE);
   }
-
-  $model = new Public_port_forwards_Model();
-  $rows = $model->find_all();
-
-  $view = new View('main');
-  $view->title = __('Public ports');
-  $view->content = new View('network/public_ports/index');
-  $view->content->rows = $rows;
-  $view->content->can_edit = $this->acl_check_edit('Network_Controller', 'public_ports');
-  $view->render(TRUE);
-}
 
   public function public_ports_add()
   {
@@ -329,5 +329,22 @@ class Network_Controller extends Controller
     $model->delete((int)$id);
     status::success(__('Deleted'));
     $this->redirect('network/public_ports');
+  }
+
+  public function public_ip_nat_clear($id = NULL)
+  {
+    if (!$this->acl_check_edit('Network_Controller', 'public_ip_nat'))
+      self::error(ACCESS);
+
+    if (!is_numeric($id)) self::error(RECORD);
+
+    $model = new Public_ip_nat_1to1_Model();
+    $row = $model->get((int)$id);
+    if (!$row) self::error(RECORD);
+
+    $model->clear_private_ip((int)$id, (int)$this->member_id);
+
+    status::success(__('Mapping cleared'));
+    $this->redirect('network/public_ip_nat');
   }
 }

@@ -35,7 +35,7 @@
     <th><?php echo __('Public IP') ?></th>
     <th><?php echo __('Private IP') ?></th>
     <th><?php echo __('Owner') ?></th>
-    <th><?php echo __('Enabled') ?></th>
+
     <th><?php echo __('Last change') ?></th>
     <?php if ($can_edit): ?><th><?php echo __('Actions') ?></th><?php endif; ?>
   </tr>
@@ -56,9 +56,7 @@
           ?>
         </td>
 
-        <td>
-          <?php echo ((int)$r->enabled ? __('Yes') : __('No')) ?>
-        </td>
+
         <td>
           <?php
           if ($r->modified && $r->modified_by) {
@@ -79,17 +77,13 @@
             <a href="<?php echo url_lang::base() ?>network/public_ip_nat_edit/<?php echo (int)$r->id ?>">
               <?php echo __('Edit') ?>
             </a>
+
             &nbsp;|&nbsp;
-            <a href="<?php echo url_lang::base() ?>network/public_ip_nat_toggle/<?php echo (int)$r->id ?>">
-              <?php echo ((int)$r->enabled ? __('Disable') : __('Enable')) ?>
-            </a>
-            <!--
-            &nbsp;|&nbsp;
-            <a href="<?php echo url_lang::base() ?>network/public_ip_nat_delete/<?php echo (int)$r->id ?>"
-              onclick="return confirm('<?php echo __('Really delete?') ?>');">
+            <a href="<?php echo url_lang::base() ?>network/public_ip_nat_clear/<?php echo (int)$r->id ?>"
+              onclick="return confirm('<?php echo __('Really clear internal IP mapping?') ?>');">
               <?php echo __('Delete') ?>
             </a>
-        -->
+
           </td>
         <?php endif; ?>
       </tr>

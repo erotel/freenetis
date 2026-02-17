@@ -119,9 +119,11 @@ WHERE 1=1
     if ($pub === '' || !filter_var($pub, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
       $errors['public_ip'] = __('Invalid public IPv4 address');
     }
-    if ($priv === '' || !filter_var($priv, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+    // private IP může být prázdná (clear)
+    if ($priv !== '' && !filter_var($priv, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
       $errors['private_ip'] = __('Invalid private IPv4 address');
     }
+
     if ($pub !== '' && $priv !== '' && $pub === $priv) {
       $errors['private_ip'] = __('Public and private IP cannot be the same');
     }
@@ -143,5 +145,26 @@ WHERE 1=1
     }
 
     return !count($errors);
+  }
+
+  public function update_private_ip(int $id, ?string $private_ip, int $member_id): void
+  {
+    $private_ip = trim((string)$private_ip);
+    if ($private_ip === '') $private_ip = NULL;
+
+    $this->db->update('public_ip_nat_1to1', array(
+      'private_ip'  => $private_ip,
+      'modified'    => date('Y-m-d H:i:s'),
+      'modified_by' => ($member_id ?: NULL),
+    ), array('id' => $id));
+  }
+
+  public function clear_private_ip(int $id, int $member_id): void
+  {
+    $this->db->update('public_ip_nat_1to1', array(
+      'private_ip'  => NULL,
+      'modified'    => date('Y-m-d H:i:s'),
+      'modified_by' => ($member_id ?: NULL),
+    ), array('id' => $id));
   }
 }

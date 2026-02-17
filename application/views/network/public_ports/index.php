@@ -19,7 +19,7 @@
     <th><?php echo __('Owner') ?></th>
     <th><?php echo __('Private port') ?></th>
     <th><?php echo __('Proto') ?></th>
-    <th><?php echo __('Enabled') ?></th>
+    
     <th><?php echo __('Last change') ?></th>
     <?php if ($can_edit): ?><th><?php echo __('Actions') ?></th><?php endif; ?>
   </tr>
@@ -61,7 +61,7 @@
 
         <td><?php echo html::specialchars(strtoupper((string)$r->protocol)) ?></td>
 
-        <td><?php echo ((int)$r->enabled ? __('Yes') : __('No')) ?></td>
+        
 
         <td>
           <?php
@@ -78,10 +78,7 @@
             <a href="<?php echo url_lang::base() ?>network/public_ports_edit/<?php echo (int)$r->id ?>">
               <?php echo __('Edit') ?>
             </a>
-            &nbsp;|&nbsp;
-            <a href="<?php echo url_lang::base() ?>network/public_ports_toggle/<?php echo (int)$r->id ?>">
-              <?php echo ((int)$r->enabled ? __('Disable') : __('Enable')) ?>
-            </a>
+            
             &nbsp;|&nbsp;
             <a href="<?php echo url_lang::base() ?>network/public_ports_delete/<?php echo (int)$r->id ?>"
                onclick="return confirm('<?php echo __('Really delete?') ?>');">
