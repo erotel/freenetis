@@ -935,7 +935,7 @@ class Web_interface_Controller extends Controller
 
 		$db = Database::instance();
 
-		$$rows = $db->query("
+		$rows = $db->query("
   SELECT
     protocol, public_ip, public_port_from, public_port_to,
     private_ip, private_port_from, private_port_to
