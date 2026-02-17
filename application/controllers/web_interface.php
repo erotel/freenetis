@@ -935,14 +935,18 @@ class Web_interface_Controller extends Controller
 
 		$db = Database::instance();
 
-		$rows = $db->query("
-      SELECT
-        protocol, public_ip, public_port_from, public_port_to,
-        private_ip, private_port_from, private_port_to
-      FROM public_port_forwards
-      WHERE enabled = 1
-      ORDER BY public_ip, protocol, public_port_from, public_port_to, private_ip
-    ")->result_array(FALSE);
+		$$rows = $db->query("
+  SELECT
+    protocol, public_ip, public_port_from, public_port_to,
+    private_ip, private_port_from, private_port_to
+  FROM public_port_forwards
+  WHERE enabled = 1
+    AND (public_port_to - public_port_from) = (private_port_to - private_port_from)
+    AND public_port_from <= public_port_to
+    AND private_port_from <= private_port_to
+  ORDER BY public_ip, protocol, public_port_from, public_port_to, private_ip
+")->result_array(FALSE);
+
 
 		foreach ($rows as $r) {
 			$proto = strtolower((string)$r['protocol']);
