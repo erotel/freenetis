@@ -18,6 +18,13 @@
 		?>
 
 		<?php echo ($label) ? $label . $separator : '' ?>
+
+		<?php if (!empty($paginator) || !empty($selector)): ?>
+			<div class="grid-nav grid-nav-top">
+				<?php echo $paginator; ?>
+				<?php echo $selector; ?>
+			</div>
+		<?php endif; ?>
 		<table<?php echo (empty($id) ? '' : ' id="' . $id . '"') ?> class="main grid_table tablesorter" cellspacing="0">
 			<?php if ($show_labels): ?>
 				<thead>
@@ -236,8 +243,13 @@
 			}
 			?>
 
-			<?php echo  $paginator; ?>
-			<?php echo  $selector; ?>
+			<?php if (!empty($paginator) || !empty($selector)): ?>
+				<div class="grid-nav grid-nav-bottom">
+					<?php echo $paginator; ?>
+					<?php echo $selector; ?>
+				</div>
+			<?php endif; ?>
+
 
 		<?php endif ?>
 
