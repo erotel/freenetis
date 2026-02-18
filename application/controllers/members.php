@@ -852,7 +852,7 @@ class Members_Controller extends Controller
 		if ($this->acl_check_edit(get_class($this), 'registration')) {
 			$form->dropdown('registration')
 				->options(arr::rbool())
-				->selected($member->registration);
+				->selected($member->registration ?: 1);
 		}
 
 		if (

@@ -1,4 +1,4 @@
-<?php defined('SYSPATH') OR die('No direct access allowed.');
+<?php defined('SYSPATH') or die('No direct access allowed.');
 /**
  * Array helper class.
  *
@@ -9,7 +9,8 @@
  * @copyright  (c) 2007-2008 Kohana Team
  * @license    http://kohanaphp.com/license.html
  */
-class arr {
+class arr
+{
 
 	/**
 	 * Return a callback array from a string, eg: limit[10,20] would become
@@ -21,17 +22,14 @@ class arr {
 	public static function callback_string($str)
 	{
 		// command[param,param]
-		if (preg_match('/([^\[]*+)\[(.+)\]/', (string) $str, $match))
-		{
+		if (preg_match('/([^\[]*+)\[(.+)\]/', (string) $str, $match)) {
 			// command
 			$command = $match[1];
 
 			// param,param
 			$params = preg_split('/(?<!\\\\),/', $match[2]);
 			$params = str_replace('\,', ',', $params);
-		}
-		else
-		{
+		} else {
 			// command
 			$command = $str;
 
@@ -55,14 +53,11 @@ class arr {
 	public static function rotate($source_array, $keep_keys = TRUE)
 	{
 		$new_array = array();
-		
-		if (is_array($source_array))
-		{
-			foreach ($source_array as $key => $value)
-			{
+
+		if (is_array($source_array)) {
+			foreach ($source_array as $key => $value) {
 				$value = ($keep_keys === TRUE) ? $value : array_values($value);
-				foreach ($value as $k => $v)
-				{
+				foreach ($value as $k => $v) {
 					$new_array[$k][$key] = $v;
 				}
 			}
@@ -78,12 +73,12 @@ class arr {
 	 * @param   array   array to work on
 	 * @return  mixed   value of the requested array key
 	 */
-	public static function remove($key, & $array)
+	public static function remove($key, &$array)
 	{
-		if ( ! is_array($array))
+		if (! is_array($array))
 			return NULL;
-		
-		if ( ! array_key_exists($key, $array))
+
+		if (! array_key_exists($key, $array))
 			return NULL;
 
 		$val = $array[$key];
@@ -108,18 +103,14 @@ class arr {
 		$keys = array_slice(func_get_args(), 1);
 
 		$found = array();
-		
-		if ( ! is_array($search))
+
+		if (! is_array($search))
 			return NULL;
-		
-		foreach ($keys as $key)
-		{
-			if (isset($search[$key]))
-			{
+
+		foreach ($keys as $key) {
+			if (isset($search[$key])) {
 				$found[$key] = $search[$key];
-			}
-			else
-			{
+			} else {
 				$found[$key] = NULL;
 			}
 		}
@@ -135,11 +126,11 @@ class arr {
 	 * @param   mixed   value to unshift
 	 * @return  array
 	 */
-	public static function unshift_assoc( & $array, $key, $val)
+	public static function unshift_assoc(&$array, $key, $val)
 	{
-		if ( ! is_array($array))
+		if (! is_array($array))
 			return array();
-		
+
 		$array = array_reverse($array, TRUE);
 		$array[$key] = $val;
 		$array = array_reverse($array, TRUE);
@@ -157,11 +148,10 @@ class arr {
 	 */
 	public static function map_recursive($callback, $array)
 	{
-		if ( ! is_array($array))
+		if (! is_array($array))
 			return NULL;
-		
-		foreach ($array as $key => $val)
-		{
+
+		foreach ($array as $key => $val) {
 			// Map the callback to the key
 			$array[$key] = is_array($val) ? arr::map_recursive($callback, $val) : call_user_func($callback, $val);
 		}
@@ -180,32 +170,26 @@ class arr {
 	 */
 	public static function binary_search($needle, $haystack, $nearest = FALSE, $sort = FALSE)
 	{
-		if ( ! is_array($haystack))
+		if (! is_array($haystack))
 			return NULL;
-		
-		if ($sort === TRUE)
-		{
+
+		if ($sort === TRUE) {
 			sort($haystack);
 		}
 
 		$high = count($haystack);
 		$low = 0;
 
-		while ($high - $low > 1)
-		{
+		while ($high - $low > 1) {
 			$probe = ($high + $low) / 2;
-			if ($haystack[$probe] < $needle)
-			{
+			if ($haystack[$probe] < $needle) {
 				$low = $probe;
-			}
-			else
-			{
+			} else {
 				$high = $probe;
 			}
 		}
 
-		if ($high == count($haystack) OR $haystack[$high] != $needle)
-		{
+		if ($high == count($haystack) or $haystack[$high] != $needle) {
 			if ($nearest === FALSE)
 				return FALSE;
 
@@ -231,30 +215,20 @@ class arr {
 		$total = func_num_args();
 
 		$result = array();
-		for ($i = 0; $i < $total; $i++)
-		{
-			foreach (func_get_arg($i) as $key => $val)
-			{
-				if (isset($result[$key]))
-				{
-					if (is_array($val))
-					{
+		for ($i = 0; $i < $total; $i++) {
+			foreach (func_get_arg($i) as $key => $val) {
+				if (isset($result[$key])) {
+					if (is_array($val)) {
 						// Arrays are merged recursively
 						$result[$key] = arr::merge($result[$key], $val);
-					}
-					elseif (is_int($key))
-					{
+					} elseif (is_int($key)) {
 						// Indexed arrays are appended
 						array_push($result, $val);
-					}
-					else
-					{
+					} else {
 						// Associative arrays are replaced
 						$result[$key] = $val;
 					}
-				}
-				else
-				{
+				} else {
 					// New values are added
 					$result[$key] = $val;
 				}
@@ -274,15 +248,12 @@ class arr {
 	 */
 	public static function overwrite($array1)
 	{
-		if ( ! is_array($array1))
+		if (! is_array($array1))
 			return NULL;
-		
-		foreach (array_slice(func_get_args(), 1) as $array2)
-		{
-			foreach ($array2 as $key => $value)
-			{
-				if (array_key_exists($key, $array1))
-				{
+
+		foreach (array_slice(func_get_args(), 1) as $array2) {
+			foreach ($array2 as $key => $value) {
+				if (array_key_exists($key, $array1)) {
 					$array1[$key] = $value;
 				}
 			}
@@ -304,8 +275,7 @@ class arr {
 			return array();
 
 		$array = array();
-		for ($i = $step; $i <= $max; $i += $step)
-		{
+		for ($i = $step; $i <= $max; $i += $step) {
 			$array[$i] = $i;
 		}
 
@@ -321,11 +291,9 @@ class arr {
 	public static function to_object(array $array, $class = 'stdClass', $recursively = TRUE)
 	{
 		$object = new $class;
-		
-		foreach ($array as $key => $value)
-		{
-			if ($recursively && is_array($value))
-			{
+
+		foreach ($array as $key => $value) {
+			if ($recursively && is_array($value)) {
 				// Convert the array to an object
 				$value = arr::to_object($value, $class, $recursively);
 			}
@@ -344,11 +312,11 @@ class arr {
 	 * @param mixed $object
 	 * @return array
 	 */
-	public static function from_object ($object)
+	public static function from_object($object)
 	{
-		if ( ! is_object($object))
+		if (! is_object($object))
 			return array();
-		
+
 		$arr = array();
 		foreach ($object as $key => $value)
 			$arr[$key] = $value;
@@ -363,121 +331,114 @@ class arr {
 	 * @param array $array
 	 * @return array
 	 */
-	public static function tolower ($array = array())
+	public static function tolower($array = array())
 	{
-		if ( ! is_array($array))
+		if (! is_array($array))
 			return array();
-		
+
 		foreach ($array as $key => $value)
-			$array[$key] = strtolower ($value);
+			$array[$key] = strtolower($value);
 
 		return $array;
 	}
 
-    /**
-     * Converts array of objects to classic array in format: key = id of object, value = attributte
+	/**
+	 * Converts array of objects to classic array in format: key = id of object, value = attributte
 	 * 
-     * @author Michal Kliment
-     * @param $objects array of object to convert
-     * @param $attribute name of attributte to store as value of array
-     * @return array
-     */
-    public static function from_objects ($objects, $attribute = 'name')
-    {
-		if ( ! is_array($objects) && ! is_object($objects))
+	 * @author Michal Kliment
+	 * @param $objects array of object to convert
+	 * @param $attribute name of attributte to store as value of array
+	 * @return array
+	 */
+	public static function from_objects($objects, $attribute = 'name')
+	{
+		if (! is_array($objects) && ! is_object($objects))
 			return array();
-		
-        $array = array();
-        foreach ($objects as $object)
-        {
-            $array[$object->id] = $object->$attribute;
-        }
 
-        return $array;
-    }
-
-    /**
-     * Creates array from string
-     *
-     * @author Michal Kliment
-     * @param string $string
-     * @param integer $length
-     * @param integer $offset
-     * @return array
-     */
-    public static function from_string ($string, $length, $offset = 0)
-    {
 		$array = array();
-
-		for ($i = $offset; $i < ($offset+$length); $i++)
-				$array[$i] = $string;
+		foreach ($objects as $object) {
+			$array[$object->id] = $object->$attribute;
+		}
 
 		return $array;
-    }
+	}
 
-    /**
-     * Returns variation of array
-     *
-     * @author Michal Kliment
-     * @param array $array
-     * @param integer $class
-     * @return array
-     */
-    public static function variation ($array, $class)
-    {
-		if ( ! is_array($array))
+	/**
+	 * Creates array from string
+	 *
+	 * @author Michal Kliment
+	 * @param string $string
+	 * @param integer $length
+	 * @param integer $offset
+	 * @return array
+	 */
+	public static function from_string($string, $length, $offset = 0)
+	{
+		$array = array();
+
+		for ($i = $offset; $i < ($offset + $length); $i++)
+			$array[$i] = $string;
+
+		return $array;
+	}
+
+	/**
+	 * Returns variation of array
+	 *
+	 * @author Michal Kliment
+	 * @param array $array
+	 * @param integer $class
+	 * @return array
+	 */
+	public static function variation($array, $class)
+	{
+		if (! is_array($array))
 			return array();
-		
-	    $arr = array();
 
-	    if ($class)
-	    {
-			$ba = arr::variation ($array, $class-1);
+		$arr = array();
 
-			foreach ($array as $a)
-			{
-				foreach ($ba as $b)
-				{
-					if (!empty($a) && (empty($b) || strpos($b, $a) === FALSE))
-					{
+		if ($class) {
+			$ba = arr::variation($array, $class - 1);
+
+			foreach ($array as $a) {
+				foreach ($ba as $b) {
+					if (!empty($a) && (empty($b) || strpos($b, $a) === FALSE)) {
 						$arr[] = trim("$a $b");
 					}
 				}
 			}
-	    }
-	    else
-		    $arr[] = "";
-	    
-	    return $arr;
-    }
+		} else
+			$arr[] = "";
 
-    /**
-     * Searchs in array
-     *
-     * @author Michal Kliment
-     * @param string $needle
-     * @param array $haystack
-     * @return mixed
-     */
-    public static function search ($needle, $haystack)
-    {
-		if ( ! is_array($haystack))
+		return $arr;
+	}
+
+	/**
+	 * Searchs in array
+	 *
+	 * @author Michal Kliment
+	 * @param string $needle
+	 * @param array $haystack
+	 * @return mixed
+	 */
+	public static function search($needle, $haystack)
+	{
+		if (! is_array($haystack))
 			return array();
-		
+
 		$key = array_search($needle, $haystack);
 		if ($key !== FALSE)
-				return $key;
+			return $key;
 
-		foreach ($haystack as $key => $value)
-		{
-				if (is_array($value))
-						if (arr::search ($needle, $value) !== FALSE)
-								return $key;
+		foreach ($haystack as $key => $value) {
+			if (is_array($value))
+				if (arr::search($needle, $value) !== FALSE)
+					return $key;
 		}
 
 		return FALSE;
-    }
-	
+	}
+
 	/**
 	 * Sorts array, almost same as default PHP sort function,
 	 * but it doesn't edit original array and returns new array
@@ -486,23 +447,22 @@ class arr {
 	 * @param array $array
 	 * @return array 
 	 */
-	public static function sort ($array)
+	public static function sort($array)
 	{
 		// has to be array
 		if (!is_array($array))
 			$array = (array) $array;
-		
-		sort ($array);
-		
-		foreach ($array as $key => $val)
-		{
+
+		sort($array);
+
+		foreach ($array as $key => $val) {
 			if (is_array($val))
-				$array[$key] = arr::sort ($val);
+				$array[$key] = arr::sort($val);
 		}
-		
+
 		return $array;
 	}
-	
+
 	/**
 	 * Similar to sort, but sort by key
 	 * 
@@ -510,23 +470,22 @@ class arr {
 	 * @param type $array
 	 * @return type 
 	 */
-	public static function ksort ($array)
+	public static function ksort($array)
 	{
 		// has to be array
 		if (!is_array($array))
 			$array = (array) $array;
-		
-		ksort ($array);
-		
-		foreach ($array as $key => $val)
-		{
+
+		ksort($array);
+
+		foreach ($array as $key => $val) {
 			if (is_array($val))
-				$array[$key] = arr::ksort ($val);
+				$array[$key] = arr::ksort($val);
 		}
-		
+
 		return $array;
 	}
-	
+
 	/**
 	 * Returns key with minimal value from array
 	 * 
@@ -534,11 +493,11 @@ class arr {
 	 * @param type $array
 	 * @return type 
 	 */
-	public static function min_key ($array)
+	public static function min_key($array)
 	{
 		return min(array_keys($array));
 	}
-	
+
 	/**
 	 * Returns key with maximal value from array
 	 * 
@@ -546,11 +505,11 @@ class arr {
 	 * @param type $array
 	 * @return type 
 	 */
-	public static function max_key ($array)
+	public static function max_key($array)
 	{
 		return max(array_keys($array));
 	}
-	
+
 	/**
 	 * Return translated bool array (yes, no)
 	 *
@@ -559,13 +518,12 @@ class arr {
 	 */
 	public static function bool()
 	{
-		return array
-		(
+		return array(
 			1 => __('Yes'),
 			0 => __('No')
 		);
 	}
-	
+
 	/**
 	 * Return reverted translated bool array (no, yes)
 	 *
@@ -574,13 +532,13 @@ class arr {
 	 */
 	public static function rbool()
 	{
-		return array
-		(
-			0 => __('No'),
-			1 => __('Yes')
+		return array(
+
+			1 => __('Yes'),
+			0 => __('No')
 		);
 	}
-	
+
 	/**
 	 * Remove values given by charlist (seperated by comma) from array
 	 * 
@@ -592,14 +550,12 @@ class arr {
 	public static function trim($array = array(), $charlist = '')
 	{
 		$charlist = explode(',', $charlist);
-		
-		foreach ($array as $key => $val)
-		{
+
+		foreach ($array as $key => $val) {
 			if (in_array($val, $charlist))
-				unset ($array[$key]);
+				unset($array[$key]);
 		}
-		
+
 		return $array;
 	}
-
 } // End arr
