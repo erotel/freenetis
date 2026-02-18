@@ -28,7 +28,7 @@
 						<tr>			
 					<th><?php echo __('OKU kód') ?>:</th>
 					<td>
-					<?php echo html::specialchars($member->oku_code) ?>
+					<?php echo html::specialchars($variable_s->variable_symbol) ?>
 				</td>
 				</tr>
 			</td>
