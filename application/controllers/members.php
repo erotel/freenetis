@@ -1065,8 +1065,16 @@ class Members_Controller extends Controller
 
 				// inform new member
 				if (module::e('notification')) {
+
+					// zvol typ notifikace podle cílového typu
+					if ($target === 90) {
+						$notice = Message_Model::APPLICANT_APPROVE_MEMBERSHIP;
+					} else {
+						$notice = Message_Model::APPLICANT_APPROVE_CUSTOMER;
+					}
+
 					Message_Model::activate_special_notice(
-						Message_Model::APPLICANT_APPROVE_MEMBERSHIP,
+						$notice,
 						$member->id,
 						$this->session->get('user_id'),
 						Notifications_Controller::ACTIVATE,

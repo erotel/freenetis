@@ -169,6 +169,11 @@ class Message_Model extends ORM
 	 */
 	const PAYMENT_NOTICE_MESSAGE_CLEN								= 26;
 
+	/**
+	 * content of page for approved application for membership
+	 */
+	const APPLICANT_APPROVE_CUSTOMER								= 27;
+
 	// self-cancel constants
 
 	/**
