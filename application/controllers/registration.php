@@ -505,7 +505,7 @@ class Registration_Controller extends Controller
 		if ($to === '') return;
 
 		$from = (string)Settings::get('noreply_email');
-		if ($from === '') $from = 'spravci@pvfree.net';
+		if ($from === '') $from = '	freenetis@pvfree.net';
 
 		$subject = 'PVfree.net – Shrnutí smlouvy';
 
