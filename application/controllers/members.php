@@ -5965,7 +5965,7 @@ class Members_Controller extends Controller
     SELECT id
     FROM members_fees
     WHERE member_id = ?
-      AND fee_id = 10
+      AND fee_id = 24
       AND activation_date <= CURDATE()
       AND deactivation_date >= CURDATE()
     LIMIT 1
@@ -5980,7 +5980,7 @@ class Members_Controller extends Controller
     INSERT INTO members_fees
       (fee_id, member_id, activation_date, deactivation_date, priority, comment)
     VALUES
-      (10, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 20 YEAR), 1, '')
+      (24, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 20 YEAR), 1, '')
   ", array($member_id));
 	}
 }
