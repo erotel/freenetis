@@ -225,7 +225,7 @@ class Message_Model extends ORM
 		self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT                                          => 'Former member message return payment',
 		self::DEBTOR_MESSAGE_CLEN	=> 'Dlužník člen',
 		self::PAYMENT_NOTICE_MESSAGE_CLEN => 'Upozornění na placení člen',
-		self::APPLICANT_APPROVE_CUSTOMER => 'Žádost schválena',
+		self::APPLICANT_APPROVE_CUSTOMER => 'Application for customer approved',
 	);
 
 	/**

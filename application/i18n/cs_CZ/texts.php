@@ -282,6 +282,7 @@ $lang = array(
 	'application password' => 'Aplikační heslo',
 	'application for membership approved' => 'Žádost o členství schválena',
 	'application for membership rejected' => 'Žádost o členství zamítnuta',
+	'application for customer approved' => 'Žádost schválena',
 	'apply' => 'Použít',
 	'approval' => 'Hlasování',
 	'approval state' => 'Stav hlasování',
