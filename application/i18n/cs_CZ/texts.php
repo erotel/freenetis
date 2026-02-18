@@ -2984,6 +2984,7 @@ $lang = array(
 	'approved'  => 'Schváleno',
 	'exported'  => 'Exportováno',
 	'paid'      => 'Zaplaceno',
-	'cancelled' => 'Zrušeno'
+	'cancelled' => 'Zrušeno',
+	'Wants to become' => 'Chce se stát'
 
 );

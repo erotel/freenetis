@@ -411,40 +411,51 @@ class Member_Model extends ORM
 
 		// query
 		return $this->db->query("
-				SELECT id, id AS member_id, registration, name, street, street_number,
-					town, quarter, variable_symbol, aid, balance, applicant_registration_datetime,
-					applicant_connected_from, GROUP_CONCAT(a_comment SEPARATOR ', \n\n') AS a_comment,
-					comment, a_comments_thread_id, type, entrance_date, leaving_date, 0 AS toapprove
-				FROM
-				(
-					SELECT * FROM
-					(
-						SELECT
-							m.id, m.registration, m.name, m.applicant_connected_from,
-							s.street, ap.street_number, t.town, t.quarter,
-							vs.variable_symbol, a.id AS aid,
-							a.balance, m.applicant_registration_datetime,
-							CONCAT(u.surname,' ',u.name,' (',SUBSTRING(c.datetime,1,10),'):\n',c.text) AS a_comment,
-							a.comments_thread_id AS a_comments_thread_id,
-							m.type, m.entrance_date, m.leaving_date, m.comment
-						FROM members m
-						LEFT JOIN address_points ap ON m.address_point_id = ap.id
-						LEFT JOIN streets s ON ap.street_id = s.id
-						LEFT JOIN towns t ON ap.town_id = t.id
-						LEFT JOIN accounts a ON a.member_id = m.id AND m.id <> 1
-						LEFT JOIN variable_symbols vs ON vs.account_id = a.id
-						LEFT JOIN comments_threads ct ON a.comments_thread_id = ct.id
-						LEFT JOIN comments c ON ct.id = c.comments_thread_id
-						LEFT JOIN users u ON c.user_id = u.id
-						WHERE m.type = ?
-						ORDER BY c.datetime DESC
-					) m
-					$where
-				) AS q
-				GROUP BY id
-				ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
-				LIMIT " . intval($limit_from) . ", " . intval($limit_results) . "
-		", self::TYPE_APPLICANT);
+  SELECT
+    id, id AS member_id,
+    registration, CASE
+  WHEN registration_target_type = 90 THEN 'Člen'
+  WHEN registration_target_type = 2 THEN 'Zákazník'
+  ELSE ''
+   END AS wants_to_become,
+		name, street, street_number,
+    town, quarter, variable_symbol, aid, balance,
+    applicant_registration_datetime,
+    applicant_connected_from,
+    GROUP_CONCAT(a_comment SEPARATOR ', \n\n') AS a_comment,
+    comment, a_comments_thread_id,
+    type, entrance_date, leaving_date,
+    0 AS toapprove
+  FROM
+  (
+    SELECT * FROM
+    (
+      SELECT
+        m.id, m.registration, m.registration_target_type, m.name, m.applicant_connected_from,
+        s.street, ap.street_number, t.town, t.quarter,
+        vs.variable_symbol, a.id AS aid,
+        a.balance, m.applicant_registration_datetime,
+        CONCAT(u.surname,' ',u.name,' (',SUBSTRING(c.datetime,1,10),'):\n',c.text) AS a_comment,
+        a.comments_thread_id AS a_comments_thread_id,
+        m.type, m.entrance_date, m.leaving_date, m.comment
+      FROM members m
+      LEFT JOIN address_points ap ON m.address_point_id = ap.id
+      LEFT JOIN streets s ON ap.street_id = s.id
+      LEFT JOIN towns t ON ap.town_id = t.id
+      LEFT JOIN accounts a ON a.member_id = m.id AND m.id <> 1
+      LEFT JOIN variable_symbols vs ON vs.account_id = a.id
+      LEFT JOIN comments_threads ct ON a.comments_thread_id = ct.id
+      LEFT JOIN comments c ON ct.id = c.comments_thread_id
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE m.type = ?
+      ORDER BY c.datetime DESC
+    ) m
+    $where
+  ) AS q
+  GROUP BY id
+  ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
+  LIMIT " . intval($limit_from) . ", " . intval($limit_results) . "
+", self::TYPE_APPLICANT);
 	}
 
 	/**
@@ -602,13 +613,13 @@ class Member_Model extends ORM
 					FROM
 					(
 						SELECT
-							m.id, m.registration, m.name, m.applicant_connected_from,
-							s.street, ap.street_number, t.town, t.quarter,
-							vs.variable_symbol, a.id AS aid,
-							a.balance, m.applicant_registration_datetime,
-							CONCAT(u.surname,' ',u.name,' (',SUBSTRING(c.datetime,1,10),'):\n',c.text) AS a_comment,
-							a.comments_thread_id AS a_comments_thread_id,
-							m.type, m.entrance_date, m.leaving_date, m.comment
+							m.id, m.registration, m.registration_target_type, m.name, m.applicant_connected_from,
+  						s.street, ap.street_number, t.town, t.quarter,
+  						vs.variable_symbol, a.id AS aid,
+  						a.balance, m.applicant_registration_datetime,
+  						CONCAT(u.surname,' ',u.name,' (',SUBSTRING(c.datetime,1,10),'):\n',c.text) AS a_comment,
+  						a.comments_thread_id AS a_comments_thread_id,
+ 						  m.type, m.entrance_date, m.leaving_date, m.comment
 						FROM members m
 						LEFT JOIN address_points ap ON m.address_point_id = ap.id
 						LEFT JOIN streets s ON ap.street_id = s.id
@@ -1873,5 +1884,30 @@ class Member_Model extends ORM
         WHERE id = $member_id
         LIMIT 1
     ");
+	}
+
+	public static function generate_unique_oku_code(int $member_id): string
+	{
+		if ($member_id < 0 || $member_id > 99999) {
+			throw new Exception('member_id out of range for OKU format (0..99999)');
+		}
+
+		$db = Database::instance();
+
+		for ($i = 0; $i < 50; $i++) {
+			$id_part   = str_pad((string)$member_id, 5, '0', STR_PAD_LEFT);
+			$rand_part = str_pad((string) random_int(0, 9999999), 7, '0', STR_PAD_LEFT);
+
+			$code = '12' . $id_part . $rand_part;
+
+			$exists = $db->query(
+				"SELECT 1 FROM members WHERE oku_code = ? LIMIT 1",
+				array($code)
+			)->count() > 0;
+
+			if (!$exists) return $code;
+		}
+
+		throw new Exception('Unable to generate unique OKU code.');
 	}
 }

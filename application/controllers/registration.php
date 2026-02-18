@@ -27,115 +27,119 @@ class Registration_Controller extends Controller
 	public function index()
 	{
 		// if self-registration is not allow, redirect to login page
-		if (!$this->settings->get('self_registration') || $this->session->get('user_id', 0))
-		{
+		if (!$this->settings->get('self_registration') || $this->session->get('user_id', 0)) {
 			url::redirect('login');
 		}
-		
+
 		// countries
 		$country_model = new Country_Model();
 		$arr_countries = $country_model->where('enabled', 1)->select_list('id', 'country_name');
-		
+
 		// streets
-		$arr_streets = array
-		(
+		$arr_streets = array(
 			NULL => '--- ' . __('Without street') . ' ---'
 		) + ORM::factory('street')->select_list('id', 'street');
-		
+
 		// towns with zip code and quarter
-		$arr_towns = array
-		(
+		$arr_towns = array(
 			NULL => '--- ' . __('Select town') . ' ---'
 		) + ORM::factory('town')->select_list_with_quater();
-		
+
 		// list for phone prefixes
 		$phone_prefixes = $country_model->select_country_code_list();
 
 		// registration form
 		$form = new Forge('registration');
-		
+
+		$form->dropdown('registration_target_type')
+			->label('Chci se stát')
+			->rules('required')
+			->options(array(
+				'2'  => 'Zákazník',
+				'90' => 'Člen',
+			))
+			->selected('2')
+			->help('Pokud si nejste jistí, zavolejte nám na 588 207 234.');
+
+
 		$form->group('Login data');
-		
+
 		$form->input('login')
-				->label('Username')
-				->help(help::hint('login_name'))
-				->rules('required|length[5,20]')
-				->callback(array($this, 'valid_username'));
-		
+			->label('Username')
+			->help(help::hint('login_name'))
+			->rules('required|length[5,20]')
+			->callback(array($this, 'valid_username'));
+
 		$pass_min_len = Settings::get('security_password_length');
-		
+
 		$form->password('password')
-				->help(help::hint('password'))
-				->rules('required|length['.$pass_min_len.',50]')
-				->class('main_password');
-		
+			->help(help::hint('password'))
+			->rules('required|length[' . $pass_min_len . ',50]')
+			->class('main_password');
+
 		$form->password('confirm_password')
-				->rules('required|length['.$pass_min_len.',50]')
-				->matches($form->password);
-		
+			->rules('required|length[' . $pass_min_len . ',50]')
+			->matches($form->password);
+
 		$form->group('Basic information');
-		
+
 		$form->input('title1')
-				->label('Pre title')
-				->rules('length[3,40]');
-		
+			->label('Pre title')
+			->rules('length[3,40]');
+
 		$form->input('name')
-				->rules('required|length[3,30]');
-		
+			->rules('required|length[3,30]');
+
 		$form->input('middle_name')
-				->rules('length[3,30]');
-		
+			->rules('length[3,30]');
+
 		$form->input('surname')
-				->rules('required|length[3,60]');
-		
+			->rules('required|length[3,60]');
+
 		$form->input('title2')
-				->label('Post title')
-				->rules('length[3,30]');
-		
-		if (!Settings::get('users_birthday_empty_enabled'))
-		{
+			->label('Post title')
+			->rules('length[3,30]');
+
+		if (!Settings::get('users_birthday_empty_enabled')) {
 			$form->date('birthday')
-					->label('Birthday')
-					->years(date('Y')-100, date('Y'))
-					->rules('required');
-		}
-		else
-		{
+				->label('Birthday')
+				->years(date('Y') - 100, date('Y'))
+				->rules('required');
+		} else {
 			$form->date('birthday')
-					->label('Birthday')
-					->years(date('Y')-100, date('Y'))
-					->value('');
+				->label('Birthday')
+				->years(date('Y') - 100, date('Y'))
+				->value('');
 		}
-		
-		$legalp_group = $form->group('Legal person innformation')->visible(FALSE);
-		
+
+		$legalp_group = $form->group('Legal person innformation')->visible(true);
+
 		$legalp_group->input('membername')
-				->label('Name of organization')
-				->rules('length[1,60]');
-		
+			->label('Name of organization')
+			->rules('length[1,60]');
+
 		$legalp_group->input('organization_identifier')
-				->label('Organization identifier')
-				->rules('length[3,20]');
+			->label('Organization identifier')
+			->rules('length[3,20]');
 
 		$form->group('Address');
-		
+
 		$form->dropdown('country_id')
-				->label('Country')
-				->rules('required')
-				->options($arr_countries)
-				->selected(Settings::get('default_country'))
-				->style('width:200px');
-		
+			->label('Country')
+			->rules('required')
+			->options($arr_countries)
+			->selected(Settings::get('default_country'))
+			->style('width:200px');
+
 		$address_point_server_active = Address_points_Controller::is_address_point_server_active();
-		
+
 		// If address database application is set show new form
-		if ($address_point_server_active)
-		{	
+		if ($address_point_server_active) {
 			$form->input('town')
-				->label(__('Town').' - '.__('District'))
+				->label(__('Town') . ' - ' . __('District'))
 				->rules('required')
 				->class('join1');
-			
+
 			$form->input('district')
 				->class('join2')
 				->rules('required');
@@ -143,78 +147,78 @@ class Registration_Controller extends Controller
 			$form->input('street')
 				->label('Street')
 				->rules('required');
-						
+
 			$form->input('zip')
 				->label('Zip code')
 				->rules('required');
-		}
-		else
-		{
+		} else {
 			$form->dropdown('town_id')
 				->label('Town')
 				->rules('required')
 				->options($arr_towns)
 				->style('width:200px');
-		
+
 			$form->dropdown('street_id')
-					->label('Street')
-					->options($arr_streets)
-					->style('width:200px');
+				->label('Street')
+				->options($arr_streets)
+				->style('width:200px')
+				->rules('required');
 
 			$form->input('street_number')
-					->rules('length[1,50]');
+				->rules('length[1,50]')
+				->rules('required');
 		}
-		
+
 		$form->input('gpsx')
-				->label(__('GPS').'&nbsp;X:')
-				->help(help::hint('gps_coordinates'))
-				->rules('gps');
-		
+			->label(__('GPS') . '&nbsp;X:')
+			->help(help::hint('gps_coordinates'))
+			->rules('gps');
+
 		$form->input('gpsy')
-				->label(__('GPS').'&nbsp;Y:')
-				->help(help::hint('gps_coordinates'))
-				->rules('gps');
-		
+			->label(__('GPS') . '&nbsp;Y:')
+			->help(help::hint('gps_coordinates'))
+			->rules('gps');
+
 		$form->group('Contact information');
-		
+
 		$form->dropdown('phone_prefix')
-				->label('Phone')
-				->rules('required')
-				->options($phone_prefixes)
-				->selected(Settings::get('default_country'))
-				->class('join1')
-				->style('width:70px');
-		
+			->label('Phone')
+			->rules('required')
+			->options($phone_prefixes)
+			->selected(Settings::get('default_country'))
+			->class('join1')
+			->style('width:70px');
+
 		$form->input('phone')
-				->rules('required|length[9,40]')
-				->callback(array($this, 'valid_phone'))
-				->class('join2')
-				->style('width:180px');
-		
+			->rules('required|length[9,40]')
+			->callback(array($this, 'valid_phone'))
+			->class('join2')
+			->style('width:180px');
+
 		$form->input('email')
-				->rules('required|length[3,100]|valid_email')
-				->callback(array($this, 'valid_email'))
-				->style('width:250px');
-		
+			->rules('required|length[3,100]|valid_email')
+			->callback(array($this, 'valid_email'))
+			->style('width:250px');
+
 		$form->group('Additional information');
-		
+
 		$form->textarea('comment')
-				->class('comment_ta');
+			->class('comment_ta');
 
 		$form->submit('Register');
-		
+
 
 		// posted form
-		if ($form->validate())
-		{
+		if ($form->validate()) {
 			$user = new User_Model;
-			
+
 			$form_data = $form->as_array();
-			
+
 			$match = array();
-			
+
 			// validate address
-			if ($address_point_server_active &&
+			if (
+				$address_point_server_active &&
 				(
 					!Address_points_Controller::is_address_point_valid(
 						$form_data['country_id'],
@@ -224,21 +228,17 @@ class Registration_Controller extends Controller
 						$form_data['zip']
 					) ||
 					!preg_match('((ev\.č\.)?[0-9][0-9]*(/[0-9][0-9]*[a-zA-Z]*)*)', $form_data['street'], $match)
-				))
-			{
+				)
+			) {
 				$form->street->add_error('required', __('Invalid address point.'));
-			}
-			else
-			{
-				if ($address_point_server_active)
-				{
+			} else {
+				if ($address_point_server_active) {
 					$street = trim(preg_replace(' ((ev\.č\.)?[0-9][0-9]*(/[0-9][0-9]*[a-zA-Z]*)*)', '', $form_data['street']));
-					
+
 					$number = $match[0];
 				}
-				
-				try
-				{
+
+				try {
 					// start transaction
 					$user->transaction_start();
 
@@ -248,18 +248,15 @@ class Registration_Controller extends Controller
 					$gpsx = NULL;
 					$gpsy = NULL;
 
-					if (!empty($form_data['gpsx']) && !empty($form_data['gpsy']))
-					{
+					if (!empty($form_data['gpsx']) && !empty($form_data['gpsy'])) {
 						$gpsx = doubleval($form_data['gpsx']);
 						$gpsy = doubleval($form_data['gpsy']);
 
-						if (gps::is_valid_degrees_coordinate($form_data['gpsx']))
-						{
+						if (gps::is_valid_degrees_coordinate($form_data['gpsx'])) {
 							$gpsx = gps::degrees2real($form_data['gpsx']);
 						}
 
-						if (gps::is_valid_degrees_coordinate($form_data['gpsy']))
-						{
+						if (gps::is_valid_degrees_coordinate($form_data['gpsy'])) {
 							$gpsy = gps::degrees2real($form_data['gpsy']);
 						}
 					}
@@ -278,12 +275,9 @@ class Registration_Controller extends Controller
 					$user->application_password = '';
 					$user->settings = '';
 
-					if (empty($form_data['birthday']))
-					{
+					if (empty($form_data['birthday'])) {
 						$user->birthday	= NULL;
-					}
-					else
-					{
+					} else {
 						$user->birthday	= date("Y-m-d", $form_data['birthday']);
 					}
 
@@ -291,58 +285,52 @@ class Registration_Controller extends Controller
 					$fee_model = new Fee_Model();
 					$fee = $fee_model->get_by_date_type(date('Y-m-d'), 'entrance fee');
 
-					if (is_object($fee) && $fee->id)
-					{
+					if (is_object($fee) && $fee->id) {
 						$entrance_fee = $fee->fee;
-					}
-					else
-					{
+					} else {
 						$entrance_fee = 0;
 					}
 
 					$address_point_model = new Address_point_Model();
 
-					if ($address_point_server_active)
-					{
+					if ($address_point_server_active) {
 						$t = new Town_Model();
 						$s = new Street_Model();
 						$ap = new Address_point_Model();
 						$district = $form_data['district'];
-						
-						if ($form_data['town'] == $form_data['district'])
-						{
+
+						if ($form_data['town'] == $form_data['district']) {
 							$district = '';
 						}
-						
+
 						$t_id = $t->get_town($form_data['zip'], $form_data['town'], $district)->id;
 						$s_id = $s->get_street($street, $t_id)->id;
-						
+
 						$address_point = $ap->get_address_point($form_data['country_id'], $t_id, $s_id, $number);
-					}
-					else
-					{
+					} else {
 						$address_point = $address_point_model->get_address_point(
-							$form_data['country_id'], $form_data['town_id'],
-							$form_data['street_id'], $form_data['street_number'],
-							$gpsx, $gpsy
+							$form_data['country_id'],
+							$form_data['town_id'],
+							$form_data['street_id'],
+							$form_data['street_number'],
+							$gpsx,
+							$gpsy
 						);
 					}
 
 					// address point doesn't exist exist, create it
-					if (!$address_point->id)
-					{
+					if (!$address_point->id) {
 						$address_point->save_throwable();
 					}
 
 					// add GPS
-					if (!empty($gpsx) && !empty($gpsy))
-					{ // save
+					if (!empty($gpsx) && !empty($gpsy)) { // save
 						$address_point->update_gps_coordinates(
-								$address_point->id, $gpsx, $gpsy
+							$address_point->id,
+							$gpsx,
+							$gpsy
 						);
-					}
-					else
-					{ // delete gps
+					} else { // delete gps
 						$address_point->gps = NULL;
 						$address_point->save_throwable();
 					}
@@ -351,14 +339,14 @@ class Registration_Controller extends Controller
 					$speed_class_model = new Speed_class_Model();
 					$default_speed_class = $speed_class_model->get_applicants_default_class();
 
-					if ($default_speed_class)
-					{
+					if ($default_speed_class) {
 						$member->speed_class_id = $default_speed_class->id;
 					}
 
 					$member->name = ($form_data['membername'] != '') ?
-							$form_data['membername'] : $user->name . ' ' . $user->surname;
+						$form_data['membername'] : $user->name . ' ' . $user->surname;
 					$member->address_point_id = $address_point->id;
+					$member->registration_target_type = (int)$form_data['registration_target_type'];
 					$member->type = Member_Model::TYPE_APPLICANT;
 					$member->organization_identifier = $form_data['organization_identifier'];
 					$member->entrance_fee = $entrance_fee;
@@ -417,10 +405,14 @@ class Registration_Controller extends Controller
 					// commit transaction
 					$user->transaction_commit();
 
+					// pokud je to zákazník -> pošli Shrnutí smlouvy
+					$target = (int)($member->registration_target_type ?? 2);
+					if ($target === 2) {
+						self::send_customer_summary_email($member, (string)$form_data['email']);
+					}
+
 					url::redirect('registration/complete');
-				}
-				catch (Exception $ex)
-				{
+				} catch (Exception $ex) {
 					$user->transaction_rollback();
 					status::error('Cannot complete registration.', $ex);
 					Log::add_exception($ex);
@@ -433,7 +425,7 @@ class Registration_Controller extends Controller
 		$view->form = $form->html();
 		$view->render(TRUE);
 	}
-	
+
 	/**
 	 * Info about registration after correct sending
 	 * 
@@ -444,7 +436,7 @@ class Registration_Controller extends Controller
 		$view = new View('registration/done');
 		$view->render(TRUE);
 	}
-	
+
 	/**
 	 * Check if username is valid
 	 *
@@ -453,22 +445,19 @@ class Registration_Controller extends Controller
 	public static function valid_username($input = NULL)
 	{
 		// validators cannot be accessed
-		if (empty($input) || !is_object($input))
-		{
+		if (empty($input) || !is_object($input)) {
 			self::error(PAGE);
 		}
-		
+
 		$user_model = new User_Model();
 		$username_regex = Settings::get('username_regex');
-		
-		if ($user_model->username_exist($input->value) && !trim($input->value) == '')
-		{
+
+		if ($user_model->username_exist($input->value) && !trim($input->value) == '') {
 			$input->add_error('required', __('Username already exists in database'));
-		}
-		else if (preg_match($username_regex, $input->value) == 0)
-		{
+		} else if (preg_match($username_regex, $input->value) == 0) {
 			$input->add_error(
-					'required', __('Login must contains only a-z and 0-9 and starts with literal.')
+				'required',
+				__('Login must contains only a-z and 0-9 and starts with literal.')
 			);
 		}
 	}
@@ -481,15 +470,13 @@ class Registration_Controller extends Controller
 	public static function valid_phone($input = NULL)
 	{
 		// validators cannot be accessed
-		if (empty($input) || !is_object($input))
-		{
+		if (empty($input) || !is_object($input)) {
 			self::error(PAGE);
 		}
-		
+
 		$user_model = new User_Model();
-		
-		if ($user_model->phone_exist($input->value) && !trim($input->value) == '')
-		{
+
+		if ($user_model->phone_exist($input->value) && !trim($input->value) == '') {
 			$input->add_error('required', __('Phone already exists in database.'));
 		}
 	}
@@ -502,15 +489,54 @@ class Registration_Controller extends Controller
 	public static function valid_email($input = NULL)
 	{
 		// validators cannot be accessed
-		if (empty($input) || !is_object($input))
-		{
+		if (empty($input) || !is_object($input)) {
 			self::error(PAGE);
 		}
-		
+
 		$user_model = new User_Model();
-		if ($user_model->email_exist($input->value) && !trim($input->value) == '')
-		{
+		if ($user_model->email_exist($input->value) && !trim($input->value) == '') {
 			$input->add_error('required', __('Email already exists in database.'));
 		}
+	}
+
+	protected static function send_customer_summary_email(Member_Model $member, string $to): void
+	{
+		$to = trim($to);
+		if ($to === '') return;
+
+		$from = (string)Settings::get('noreply_email');
+		if ($from === '') $from = 'spravci@pvfree.net';
+
+		$subject = 'PVfree.net – Shrnutí smlouvy';
+
+		$body =
+			"Dobrý den,\n\n" .
+			"děkujeme za Vaši registraci.\n" .
+			"V příloze zasíláme Shrnutí smlouvy o poskytování služeb elektronických komunikací.\n\n" .
+			"ID žádosti: {$member->id}\n\n" .
+			"S pozdravem\n" .
+			"PVfree.net\n";
+
+		$data_dir = realpath(APPPATH . '../data');
+		if ($data_dir === false) {
+			Log::add('error', 'Cannot resolve data dir for attachments');
+			return;
+		}
+
+		$pdf_path = $data_dir . '/contracts/summary_services.pdf';
+
+		$attachments = [];
+		if (is_file($pdf_path) && is_readable($pdf_path)) {
+			$attachments[] = [
+				'path' => $pdf_path,
+				'name' => 'Shrnuti-smlouvy.pdf',
+				'mime' => 'application/pdf',
+			];
+		} else {
+			Log::add('error', 'Summary PDF missing or not readable: ' . $pdf_path);
+		}
+
+		$eq = new Email_queue_Model();
+		$eq->push($from, $to, $subject, $body, $attachments);
 	}
 }

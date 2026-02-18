@@ -19,12 +19,20 @@
 	</tr>
 	<?php if (!$is_association && isset($variable_symbols)) { ?>
 		<tr>
-			<th><?php echo __('Variable symbols') . ('/ OKU kód') . '&nbsp;' . help::hint('variable_symbol') ?></th>
+			<th><?php echo __('Variable symbols') . '&nbsp;' . help::hint('variable_symbol') ?></th>
 			<td>
 				<?php foreach ($variable_symbols as $i => $variable_s): ?>
-					<?php echo  $variable_s->variable_symbol ?><br />
+					<?php echo html::specialchars($variable_s->variable_symbol) ?><br />
 				<?php endforeach; ?>
+
+						<tr>			
+					<th><?php echo __('OKU kód') ?>:</th>
+					<td>
+					<?php echo html::specialchars($member->oku_code) ?>
+				</td>
+				</tr>
 			</td>
+
 		</tr>
 		<?php if ($this->acl_check_view('Variable_Symbols_Controller', 'variable_symbols') || ($member->id == $this->session->get('user_id') && $this->acl_check_view('Variable_Symbols_Controller', 'variable_symbols', $member->id))) { ?>
 			<tr>

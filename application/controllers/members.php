@@ -357,6 +357,12 @@ class Members_Controller extends Controller
 			->type('date')
 			->label('Registration time');
 
+		$filter_form->add('registration_target_type')
+			->type('select')
+			->label('Wants to become')
+			->values(array('' => '---', '2' => __('Customer'), '90' => __('Member')));
+
+
 		$filter_form->add('comment');
 
 		$filter_form->add('registration')
@@ -388,6 +394,7 @@ class Members_Controller extends Controller
 			'town',
 			'applicant_connected_from',
 			'applicant_registration_datetime',
+			'registration_target_type',
 			'comment'
 		);
 
@@ -471,6 +478,10 @@ class Members_Controller extends Controller
 
 		$grid->order_callback_field('comment')
 			->callback('callback::limited_text');
+
+		$grid->order_field('wants_to_become')
+			->label(__('Chce se stát'));
+
 
 		$actions = $grid->grouped_action_field();
 
@@ -699,12 +710,24 @@ class Members_Controller extends Controller
 				}
 
 				// set speed class
-
+				// OKU: vygeneruj při přijetí (jen pokud ještě není)
+				if (empty($member->oku_code)) {
+					$member->oku_code = Member_Model::generate_unique_oku_code((int)$member->id);
+				}
 				// unlock and set to Regular member
-				$member->type = Member_Model::TYPE_REGULAR;
+				$target = (int)$member->registration_target_type;
+				if ($target !== 2 && $target !== 90) {
+					$target = 2; // default zákazník
+				}
+				$member->type = $target;
+
 				$member->locked = 0;
 
 				$member->save_throwable();
+
+				if ($target === 90) {
+					self::ensure_member_fee_10_for_20_years((int)$member->id);
+				}
 
 				// access rights
 				$group_aro_map = new Groups_aro_map_Model();
@@ -951,10 +974,28 @@ class Members_Controller extends Controller
 					$member->speed_class_id = $form_data['speed_class'];
 				}
 
-				$member->type = Member_Model::TYPE_REGULAR;
+				// OKU: vygeneruj při přijetí (jen pokud ještě není)
+				if (empty($member->oku_code)) {
+					$member->oku_code = Member_Model::generate_unique_oku_code((int)$member->id);
+				}
+
+				// cílový typ z registrace: 2 zákazník / 90 člen
+				$target = (int)$member->registration_target_type;
+
+				// fallback (kdyby nebyl vyplněn)
+				if ($target !== 2 && $target !== 90) {
+					$target = 2; // default zákazník
+				}
+
+				$member->type = $target;
+
 				$member->locked = 0;
 
 				$member->save_throwable();
+
+				if ($target === 90) {
+					self::ensure_member_fee_10_for_20_years((int)$member->id);
+				}
 
 				// access rights
 				$group_aro_map = new Groups_aro_map_Model();
@@ -5913,5 +5954,33 @@ class Members_Controller extends Controller
 			//login failed
 			throw new Exception(__('Connection to vtiger server has failed'));
 		}
+	}
+
+	protected static function ensure_member_fee_10_for_20_years(int $member_id): void
+	{
+		$db = Database::instance();
+
+		// pojistka: pokud už fee_id=10 existuje aktivní, nevkládej duplicitně
+		$exists = $db->query("
+    SELECT id
+    FROM members_fees
+    WHERE member_id = ?
+      AND fee_id = 10
+      AND activation_date <= CURDATE()
+      AND deactivation_date >= CURDATE()
+    LIMIT 1
+  ", array($member_id))->current();
+
+		if ($exists && !empty($exists->id)) {
+			return;
+		}
+
+		// vlož nový řádek: aktivace dnes, deaktivace +20 let
+		$db->query("
+    INSERT INTO members_fees
+      (fee_id, member_id, activation_date, deactivation_date, priority, comment)
+    VALUES
+      (10, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 20 YEAR), 1, '')
+  ", array($member_id));
 	}
 }
