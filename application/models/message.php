@@ -225,6 +225,7 @@ class Message_Model extends ORM
 		self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT                                          => 'Former member message return payment',
 		self::DEBTOR_MESSAGE_CLEN	=> 'Dlužník člen',
 		self::PAYMENT_NOTICE_MESSAGE_CLEN => 'Upozornění na placení člen',
+		self::APPLICANT_APPROVE_CUSTOMER => 'Žádost schválena',
 	);
 
 	/**
@@ -331,7 +332,8 @@ class Message_Model extends ORM
 			$type == self::MONITORING_HOST_UP ||
 			$type == self::CONNECTION_TEST_EXPIRED ||
 			$type == self::INTERRUPTED_MEMBERSHIP_BEGIN_NOTIFY_MESSAGE ||
-			$type == self::INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE
+			$type == self::INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE ||
+			$type == self::APPLICANT_APPROVE_CUSTOMER
 		);
 	}
 
@@ -372,7 +374,8 @@ class Message_Model extends ORM
 			$type != self::MONITORING_HOST_DOWN &&
 			$type != self::MONITORING_HOST_UP &&
 			$type != self::INTERRUPTED_MEMBERSHIP_BEGIN_NOTIFY_MESSAGE &&
-			$type != self::INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE
+			$type != self::INTERRUPTED_MEMBERSHIP_END_NOTIFY_MESSAGE &&
+			$type != self::APPLICANT_APPROVE_CUSTOMER
 		);
 	}
 
@@ -406,7 +409,8 @@ class Message_Model extends ORM
 			$type == self::FORMER_MEMBER_NOMESSAGE ||
 			$type == self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT ||
 			$type == self::DEBTOR_MESSAGE_CLEN	||
-			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN
+			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN ||
+			$type == self::APPLICANT_APPROVE_CUSTOMER
 		);
 	}
 
@@ -467,7 +471,8 @@ class Message_Model extends ORM
 			$type != self::FORMER_MEMBER_MESSAGE &&
 			$type != self::FORMER_MEMBER_MESSAGE_NOPAYMENT &&
 			$type != self::FORMER_MEMBER_NOMESSAGE &&
-			$type != self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT
+			$type != self::FORMER_MEMBER_MESSAGE_RETURN_PAYMENT &&
+			$type != self::APPLICANT_APPROVE_CUSTOMER
 		);
 	}
 
@@ -482,7 +487,7 @@ class Message_Model extends ORM
 		return (
 			$type == self::DEBTOR_MESSAGE ||
 			$type == self::BIG_DEBTOR_MESSAGE ||
-			$type == self::PAYMENT_NOTICE_MESSAGE || 
+			$type == self::PAYMENT_NOTICE_MESSAGE ||
 			$type == self::DEBTOR_MESSAGE_CLEN	||
 			$type == self::PAYMENT_NOTICE_MESSAGE_CLEN
 		);
@@ -657,6 +662,7 @@ class Message_Model extends ORM
 
 		if (!Settings::get('self_registration')) {
 			$where[] = "m.type <> " . intval(self::APPLICANT_APPROVE_MEMBERSHIP);
+			$where[] = "m.type <> " . intval(self::APPLICANT_APPROVE_CUSTOMER);
 			$where[] = "m.type <> " . intval(self::APPLICANT_REFUSE_MEMBERSHIP);
 			$where[] = "m.type <> " . intval(self::CONNECTION_TEST_EXPIRED);
 		} else if (Settings::get('applicant_connection_test_duration') <= 0) {
