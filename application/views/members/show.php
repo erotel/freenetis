@@ -30,7 +30,9 @@
 		<tr>
 			<th><?php echo __('OKU kód') ?>:</th>
 			<td>
-				<?php echo !empty($member->oku_code) ? html::specialchars($member->oku_code) : '—'; ?>
+				<?php foreach ($variable_symbols as $i => $variable_s): ?>
+				<?php echo !empty($variable_s->variable_symbol) ? html::specialchars($variable_s->variable_symbol) : '—'; ?>
+				<?php endforeach; ?>
 			</td>
 		</tr>
 
