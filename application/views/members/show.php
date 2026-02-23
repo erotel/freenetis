@@ -17,13 +17,12 @@
 		<th><?php echo __('Member name') ?></th>
 		<td><?php echo $member->name ?></td>
 	</tr>
-	<?php if (!$is_association && !empty($variable_symbols)) { ?>
-
+	<?php if (!$is_association && isset($variable_symbols)) { ?>
 		<tr>
 			<th><?php echo __('Variable symbols') . '&nbsp;' . help::hint('variable_symbol') ?></th>
 			<td>
-				<?php foreach ($variable_symbols as $vs): ?>
-					<?php echo html::specialchars($vs->variable_symbol) ?><br />
+				<?php foreach ($variable_symbols as $i => $variable_s): ?>
+					<?php echo html::specialchars($variable_s->variable_symbol) ?><br />
 				<?php endforeach; ?>
 			</td>
 		</tr>
@@ -31,7 +30,7 @@
 		<tr>
 			<th><?php echo __('OKU kód') ?>:</th>
 			<td>
-				<?php echo html::specialchars($variable_symbols[0]->variable_symbol); ?>
+				<?php echo !empty($member->oku_code) ? html::specialchars($member->oku_code) : '—'; ?>
 			</td>
 		</tr>
 
