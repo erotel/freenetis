@@ -843,21 +843,11 @@ class Member_Model extends ORM
 	}
 
 	/**
-	 * Returns all members sccording to the type of message.
-	 * This method does not handle whitelists. (members with witelists are
-	 * returned anyway and they must be filtered after).
-	 * 
-	 * THIS IS ONE OF THE MOST IMPORTANT SQL QUERY IN THE WHOLE SYSTEM
-	 * PLEASE BE VERY CAREFUL WITH EDITING OF IT.
-	 * 
-	 * @author Michal Kliment, Ondrej Fibich
-	 * @param string $order_by
-	 * @param string $order_by_direction
-	 * @return MySQL Result 
+	 * Returns all members according to the type of message.
+	 * IMPORTANT QUERY - be careful.
 	 */
 	public function get_members_to_messages($type)
 	{
-
 		// --- rozlišení zákazník / člen ---
 		$member_type_filter = null;
 		$base_type = $type;
@@ -877,6 +867,10 @@ class Member_Model extends ORM
 			$base_type = 6;           // chová se jako payment notice
 		}
 
+		// datum, ke kterému bereme tarif "na další měsíc"
+		// (stejná logika jako helper: fee platné k danému dni)
+		$nm_first = date('Y-m-01', strtotime('first day of next month'));
+
 		switch ($base_type) {
 			case Message_Model::INTERRUPTED_MEMBERSHIP_MESSAGE:
 				$where = "AND mi.id IS NOT NULL";
@@ -884,7 +878,6 @@ class Member_Model extends ORM
 				break;
 
 			case Message_Model::BIG_DEBTOR_MESSAGE:
-				// without interrupted members, former members, applicants
 				$where = "AND mi.id IS NULL "
 					. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
 					. " AND m.type <> " . Member_Model::TYPE_FORMER
@@ -894,7 +887,6 @@ class Member_Model extends ORM
 				break;
 
 			case Message_Model::DEBTOR_MESSAGE:
-				// without interrupted members, former members, applicants, big debtors (if enabled)
 				$where = "AND mi.id IS NULL "
 					. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
 					. " AND m.type <> " . Member_Model::TYPE_FORMER;
@@ -907,23 +899,24 @@ class Member_Model extends ORM
 				break;
 
 			case Message_Model::PAYMENT_NOTICE_MESSAGE:
-				// without interrupted members, former members, applicants, debtors
+				// NOTICE: místo fixní 320 (payment_notice_boundary) použijeme tarif člena
+				// fallback = default tarif z member_id=1
 				$where = "AND mi.id IS NULL "
 					. " AND m.type <> " . intval(Member_Model::TYPE_APPLICANT)
 					. " AND m.type <> " . Member_Model::TYPE_FORMER
-					. " AND a.balance < " . intval(Settings::get('payment_notice_boundary')) . "
-							AND
-							(
-								DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_debtor_immunity')) . "
-								AND a.balance >= " . intval(Settings::get('debtor_boundary')) . "
-								OR DATEDIFF(CURDATE(), m.entrance_date) < " . intval(Settings::get('initial_debtor_immunity')) . "
-								AND DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_immunity')) . "
-							)";
+					. " AND COALESCE(t.tariff_fee, d.default_fee, 0) > 0 "
+					. " AND a.balance < COALESCE(t.tariff_fee, d.default_fee, 0) "
+					. " AND
+						(
+							DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_debtor_immunity')) . "
+							AND a.balance >= " . intval(Settings::get('debtor_boundary')) . "
+							OR DATEDIFF(CURDATE(), m.entrance_date) < " . intval(Settings::get('initial_debtor_immunity')) . "
+							AND DATEDIFF(CURDATE(), m.entrance_date) >= " . intval(Settings::get('initial_immunity')) . "
+						)";
 				$order_by = "whitelisted ASC, balance ASC, m.id ASC";
 				break;
 
 			case Message_Model::USER_MESSAGE:
-				// no former or interrupted members for user message
 				$where = "AND mi.id IS NULL "
 					. " AND m.type <> " . Member_Model::TYPE_FORMER;
 				$order_by = 'm.id';
@@ -937,48 +930,97 @@ class Member_Model extends ORM
 			$where .= " AND m.type = " . intval($member_type_filter);
 		}
 
-		return $this->db->query("
+		return $this->db->query(
+			"
+		SELECT
+			m.*, m.id AS member_id, m.name AS member_name,
+			a.id AS aid, a.balance, a.comments_thread_id AS a_comments_thread_id,
+			a_comment, w.whitelisted,
+			IFNULL(mi.id, 0) AS interrupt,
+			COALESCE(t.tariff_fee, d.default_fee, 0) AS required_next_month,
+			1 AS redirection, 1 AS email, 1 AS sms
+		FROM members m
+		JOIN accounts a ON a.member_id = m.id AND account_attribute_id = ?
+
+		
+		LEFT JOIN (
+  SELECT x.member_id, f.fee AS tariff_fee
+  FROM (
+    SELECT mf.member_id, MIN(mf.priority) AS p
+    FROM members_fees mf
+    JOIN fees f ON f.id = mf.fee_id
+    WHERE f.type_id = 35
+      AND mf.activation_date <= ?
+      AND mf.deactivation_date >= ?
+    GROUP BY mf.member_id
+  ) x
+  JOIN members_fees mf
+    ON mf.member_id = x.member_id
+   AND mf.priority = x.p
+   AND mf.activation_date <= ?
+   AND mf.deactivation_date >= ?
+  JOIN fees f
+    ON f.id = mf.fee_id
+   AND f.type_id = 35
+) t ON t.member_id = m.id
+
+		
+		LEFT JOIN (
+			SELECT f.fee AS default_fee
+			FROM members_fees mf
+			JOIN fees f ON f.id = mf.fee_id
+			WHERE mf.member_id = 1
+			  AND f.type_id = 35
+			  AND mf.activation_date <= ?
+			  AND mf.deactivation_date >= ?
+			ORDER BY mf.priority
+			LIMIT 1
+		) d ON 1=1
+
+		LEFT JOIN (
 			SELECT
-				m.*, m.id AS member_id, m.name AS member_name, 
-				a.id AS aid, a.balance, a.comments_thread_id AS a_comments_thread_id,
-				a_comment, w.whitelisted,
-				IFNULL(mi.id, 0) AS interrupt,
-				1 AS redirection, 1 AS email, 1 AS sms
-			FROM members m
-			JOIN accounts a ON a.member_id = m.id AND account_attribute_id = ?
-			LEFT JOIN
-			(
-				SELECT
 				comments_thread_id,
 				GROUP_CONCAT(
 					CONCAT(
 						u.surname,' ',u.name,
-						' (',SUBSTRING(c.datetime,1,10),'):\n',c.text)
+						' (',SUBSTRING(c.datetime,1,10),'):\n',c.text
+					)
 					ORDER BY c.datetime DESC
-					SEPARATOR '\n\n') AS a_comment
-				FROM comments c
-				JOIN users u ON c.user_id = u.id
-				GROUP BY comments_thread_id
-			) c ON c.comments_thread_id = a.comments_thread_id
-			LEFT JOIN
-			(
-				SELECT mi.id, mi.member_id
-				FROM membership_interrupts mi
-				JOIN members_fees mf ON mi.members_fee_id = mf.id
-					AND mf.activation_date <= CURDATE()
-					AND mf.deactivation_date >= CURDATE()
-			) mi ON mi.member_id = m.id
-			LEFT JOIN
-			(
-				SELECT m2.id AS member_id, IF(mw.member_id IS NULL, 0, 2 - mw.permanent) AS whitelisted
-				FROM members m2
-				LEFT JOIN members_whitelists mw ON mw.member_id = m2.id
-					AND mw.since <= CURDATE() AND mw.until >= CURDATE()
-			) w ON w.member_id = m.id
-			WHERE m.id <> ? $where
-			GROUP BY m.id
-			ORDER BY $order_by
-		", Account_attribute_Model::CREDIT, Member_Model::ASSOCIATION);
+					SEPARATOR '\n\n'
+				) AS a_comment
+			FROM comments c
+			JOIN users u ON c.user_id = u.id
+			GROUP BY comments_thread_id
+		) c ON c.comments_thread_id = a.comments_thread_id
+
+		LEFT JOIN (
+			SELECT mi.id, mi.member_id
+			FROM membership_interrupts mi
+			JOIN members_fees mf ON mi.members_fee_id = mf.id
+				AND mf.activation_date <= CURDATE()
+				AND mf.deactivation_date >= CURDATE()
+		) mi ON mi.member_id = m.id
+
+		LEFT JOIN (
+			SELECT m2.id AS member_id, IF(mw.member_id IS NULL, 0, 2 - mw.permanent) AS whitelisted
+			FROM members m2
+			LEFT JOIN members_whitelists mw ON mw.member_id = m2.id
+				AND mw.since <= CURDATE() AND mw.until >= CURDATE()
+		) w ON w.member_id = m.id
+
+		WHERE m.id <> ? $where
+		GROUP BY m.id
+		ORDER BY $order_by
+	",
+			Account_attribute_Model::CREDIT,
+			$nm_first,
+			$nm_first,
+			$nm_first,
+			$nm_first,
+			$nm_first,
+			$nm_first,
+			Member_Model::ASSOCIATION
+		);
 	}
 
 	/**
