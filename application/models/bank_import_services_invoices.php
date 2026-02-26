@@ -179,7 +179,9 @@ WHERE a.member_id = ? LIMIT 1",
     $item_code = sprintf('BANK-%s', $period_tag);
 
     // cena bez DPH (vždy 21 %)
-    $price_no_vat = round($total_amount / (1 + $vat_rate), 2);
+    // cena bez DPH tak, aby (základ + DPH) == total_amount přesně na haléře
+    $vat_amount   = round($total_amount * ($vat_rate / (1 + $vat_rate)), 2);
+    $price_no_vat = round($total_amount - $vat_amount, 2);
 
     $db->query(
       "INSERT INTO invoice_items

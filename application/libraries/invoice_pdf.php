@@ -68,27 +68,27 @@ class Invoice_Pdf
             $price   = (float)$it->price;
             $vatRate = max(0.0, (float)$it->vat);
 
-            $line_net   = $qty * $price;
-            $line_vat   = $line_net * $vatRate;
-            $line_total = $line_net + $line_vat;
+            $line_net   = round($qty * $price, 2);
+            $line_vat   = round($line_net * $vatRate, 2);
+            $line_total = round($line_net + $line_vat, 2);
 
             $items_calculated[] = array(
-                'name'       => $it->name,
-                'net'        => $line_net,
-                'vat_rate'   => $vatRate,
-                'vat_value'  => $line_vat,
-                'total'      => $line_total,
+                'name'      => $it->name,
+                'net'       => $line_net,
+                'vat_rate'  => $vatRate,
+                'vat_value' => $line_vat,
+                'total'     => $line_total,
             );
 
-            $total_net += $line_net;
-            $total_vat += $line_vat;
+            $total_net = round($total_net + $line_net, 2);
+            $total_vat = round($total_vat + $line_vat, 2);
 
-            if (! isset($vat_totals[$vatRate])) {
+            if (!isset($vat_totals[$vatRate])) {
                 $vat_totals[$vatRate] = array('base' => 0.0, 'vat' => 0.0);
             }
 
-            $vat_totals[$vatRate]['base'] += $line_net;
-            $vat_totals[$vatRate]['vat']  += $line_vat;
+            $vat_totals[$vatRate]['base'] = round($vat_totals[$vatRate]['base'] + $line_net, 2);
+            $vat_totals[$vatRate]['vat']  = round($vat_totals[$vatRate]['vat']  + $line_vat, 2);
         }
 
         // údaje organizace z configu (můžeš doladit podle toho, co máš v Settings)
@@ -537,7 +537,7 @@ class Invoice_Pdf
                                             <?php foreach ($vat_totals as $rate => $values): ?>
                                                 <tr>
                                                     <td class="num"><?= $format_money($values['base']) ?></td>
-                                                    <td class="num"><?= number_format($item['vat_rate'] * 100, 0) ?>%</td>
+                                                    <td class="num"><?= number_format(((float)$rate) * 100, 0) ?>%</td>
                                                     <td class="num"><?= $format_money($values['vat']) ?></td>
                                                     <td class="num"><?= $format_money($values['base'] + $values['vat']) ?></td>
                                                 </tr>
