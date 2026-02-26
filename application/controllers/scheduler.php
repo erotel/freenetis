@@ -1064,6 +1064,10 @@ class Scheduler_Controller extends Controller
 					$bcc[] = 'ucdokl@pvfree.net';
 				}
 
+				if (strpos($subject, 'Vratka přeplatku') === 0) {
+					$bcc[] = 'rada@pvfree.net';
+				}
+
 				// --- Attachments (z DB) + bezpečnostní kontrola cesty ---
 				$attachments = array();
 				$atts = $email_queue_model->get_attachments($email->id);
