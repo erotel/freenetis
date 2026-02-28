@@ -537,7 +537,7 @@ class Invoice_Pdf
                                             <?php foreach ($vat_totals as $rate => $values): ?>
                                                 <tr>
                                                     <td class="num"><?= $format_money($values['base']) ?></td>
-                                                    <td class="num"><?= number_format(((float)$rate) * 100, 0) ?>%</td>
+                                                    <td> 21%</td>
                                                     <td class="num"><?= $format_money($values['vat']) ?></td>
                                                     <td class="num"><?= $format_money($values['base'] + $values['vat']) ?></td>
                                                 </tr>

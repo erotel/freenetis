@@ -211,6 +211,26 @@ WHERE a.member_id = ? LIMIT 1",
       )
     );
 
+    // --- korekce zaokrouhlení na haléře (aby součet vyšel přesně na přijatou platbu) ---
+    $computed_vat   = round($price_no_vat * $vat_rate, 2);
+    $computed_total = round($price_no_vat + $computed_vat, 2);
+    $diff = round($total_amount - $computed_total, 2); // typicky -0.01 nebo +0.01
+
+    if (abs($diff) >= 0.01) {
+      $db->query(
+        "INSERT INTO invoice_items
+      (invoice_id, name, code, quantity, author_fee, contractual_increase, service, price, vat)
+     VALUES
+      (?, ?, ?, 1, 0, 0, 1, ?, 0.0)",
+        array(
+          $invoice_id,
+          'Zaokrouhlení',
+          'ROUND',
+          $diff
+        )
+      );
+    }
+
     // --- PDF ---
     try {
       Invoice_Pdf::generate($invoice_id);
