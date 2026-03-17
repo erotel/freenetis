@@ -24,89 +24,72 @@ class Forgotten_password_Controller extends Controller
 	 */
 	public function index()
 	{
-		if (!Settings::get('forgotten_password') || $this->session->get('user_id', 0))
-		{
+		if (!Settings::get('forgotten_password') || $this->session->get('user_id', 0)) {
 			url::redirect('login');
 		}
-		
-		if ($this->input->get('request'))
-		{
+
+		if ($this->input->get('request')) {
 			self::change_password($this->input->get('request'));
 			exit();
 		}
-		
+
 		$message = __('New password into the information system can be obtained via e-mail') . '.<br />';
-		$message .= __('Please insert username or e-mail which you had filled in previously in FreenetIS or which you filled in your application').'.';
-		$message_error = NULL; 
-		
+		$message .= __('Please insert username or e-mail which you had filled in previously in FreenetIS or which you filled in your application') . '.';
+		$message_error = NULL;
+
 		$form = new Forge();
 
 		$form->input('data')
-				->label('Username or e-mail')
-				->rules('required');
+			->label('Username or e-mail')
+			->rules('required');
 
 		// submit button
 		$form->submit('Send');
 
 		$form_html = $form->html();
 
-		if ($form->validate())
-		{
+		if ($form->validate()) {
 			$form_data = $form->as_array();
 
 			$user = new User_Model();
 			$user_contact = new Users_contacts_Model();
 			$contact = new Contact_Model();
 
-			if (valid::email($form_data['data']))
-			{
-				$contact->where(array
-				(
+			if (valid::email($form_data['data'])) {
+				$contact->where(array(
 					'type'	=> Contact_Model::TYPE_EMAIL,
 					'value'	=> $form_data['data']
 				))->find();
 
-				if ($contact->id)
-				{
+				if ($contact->id) {
 					$user_id = $user_contact->get_user_of_contact($contact->id);
 
-					if ($user_id)
-					{
+					if ($user_id) {
 						$user->find($user_id);
 					}
 				}
-			}
-			else
-			{
+			} else {
 				$user->where('login', $form_data['data'])->find();
 			}
 
 			// if login was not found
-			if (!$user->id)
-			{
-				$message_error = __('Login or e-mail do not match with data in information system').'. ';
-				$message_error .= __('Please contact support.').'.';
+			if (!$user->id) {
+				$message_error = __('Login or e-mail do not match with data in information system') . '. ';
+				$message_error .= __('Please contact support.') . '.';
 			}
 			// if user has no e-mail addresses
-			else if (!$contact->count_all_users_contacts($user->id, Contact_Model::TYPE_EMAIL))
-			{
-				$message_error = __('There is no e-mail filled in your account').'. ';
-				$message_error .= __('Please contact support.').'.';
-			}
-			else
-			{
+			else if (!$contact->count_all_users_contacts($user->id, Contact_Model::TYPE_EMAIL)) {
+				$message_error = __('There is no e-mail filled in your account') . '. ';
+				$message_error .= __('Please contact support.') . '.';
+			} else {
 				// e-mail address
-				if ($contact->id)
-				{
-					$to = array($contact->value); 
-				}
-				else
-				{
+				if ($contact->id) {
+					$to = array($contact->value);
+				} else {
 					$to = array();
 					$contacts = $contact->find_all_users_contacts($user->id, Contact_Model::TYPE_EMAIL);
 
-					foreach ($contacts as $c)
-					{
+					foreach ($contacts as $c) {
 						$to[] = $c->value;
 					}
 				}
@@ -118,37 +101,38 @@ class Forgotten_password_Controller extends Controller
 
 				// From, subject and HTML message
 				$from = Settings::get('email_default_email');
-				$subject = Settings::get('title') . ' - '.__('Forgotten password');
+				$subject = Settings::get('title') . ' - ' . __('Forgotten password');
 
 				$e_message = '<html><body>';
-				$e_message .= __('Hello').' ';
-				$e_message .= $user->get_full_name().',<br /><br />';
-				$e_message .= __('Someone from the IP address %s, probably you, requested to change the password for account with login %s',
-						array(server::remote_addr(), '<b>' . $user->login . '</b>')).'. ';
-				$e_message .= __('New password can be changed at the following link').':<br /><br />';
-				$e_message .= html::anchor('forgotten_password?request='.$hash);
-				$e_message .= '<br /><br />'.url_lang::lang('mail.welcome').'<br />';
+				$e_message .= __('Hello') . ' ';
+				$e_message .= $user->get_full_name() . ',<br /><br />';
+				$e_message .= __(
+					'Someone from the IP address %s, probably you, requested to change the password for account with login %s',
+					array(server::remote_addr(), '<b>' . $user->login . '</b>')
+				) . '. ';
+				$e_message .= __('New password can be changed at the following link') . ':<br /><br />';
+				$e_message .= html::anchor('forgotten_password?request=' . $hash);
+				$e_message .= '<br /><br />' . url_lang::lang('mail.welcome') . '<br />';
 				$e_message .= '</body></html>';
 
 				$sended = TRUE;
+				$mailer = new Mailer_Wrapper();
 
-				foreach ($to as $email)
-				{
-					if (!email::send($email, $from, $subject, $e_message, true))
-					{
+				foreach ($to as $email) {
+					try {
+						$mailer->sendHtml($from, $email, $subject, $e_message);
+					} catch (Exception $e) {
+						Log::add_exception($e);
 						$sended = FALSE;
 					}
 				}
 
-				if ($sended)
-				{
-					$message = '<b>'.__('The request has been sent to your e-mail').' (';
+				if ($sended) {
+					$message = '<b>' . __('The request has been sent to your e-mail') . ' (';
 					$message .= implode(', ', $to) . ').</b><br />';
-					$message .= __('Please check your e-mail box').'. ';
-					$message .= __('If message does not arrive in 20 minutes, please contact support').'.';
-				}
-				else
-				{
+					$message .= __('Please check your e-mail box') . '. ';
+					$message .= __('If message does not arrive in 20 minutes, please contact support') . '.';
+				} else {
 					$message_error = __('Sending message failed. Please contact support.');
 				}
 
@@ -171,53 +155,46 @@ class Forgotten_password_Controller extends Controller
 	private function change_password($hash)
 	{
 		$user = ORM::factory('user')->where('password_request', $hash)->find();
-		
-		if (!$user->id)
-		{
+
+		if (!$user->id) {
 			$view = new View('forgotten_password/index');
 			$view->title = __('Forgotten password');
-			$view->message = __('Reguest is invalid or expired').'.';
+			$view->message = __('Reguest is invalid or expired') . '.';
 			$view->form = null;
 			$view->render(TRUE);
-		}
-		else
-		{
+		} else {
 			$pass_min_len = Settings::get('security_password_length');
-			
-			$form = new Forge('forgotten_password?request='.htmlspecialchars($hash));
+
+			$form = new Forge('forgotten_password?request=' . htmlspecialchars($hash));
 
 			$form->password('password')
-					->label(__('New password') . ':&nbsp;' . help::hint('password'))
-					->rules('required|length['.$pass_min_len.',50]')
-					->class('main_password');
-			
+				->label(__('New password') . ':&nbsp;' . help::hint('password'))
+				->rules('required|length[' . $pass_min_len . ',50]')
+				->class('main_password');
+
 			$form->password('confirm_password')
-					->label('Confirm new password')
-					->rules('required|length['.$pass_min_len.',50]')
-					->matches($form->password);
+				->label('Confirm new password')
+				->rules('required|length[' . $pass_min_len . ',50]')
+				->matches($form->password);
 
 			// submit button
 			$form->submit('Send');
 
-			$message = __('Enter new password please').'.';
+			$message = __('Enter new password please') . '.';
 
-			if ($form->validate())
-			{
+			if ($form->validate()) {
 				$form_data = $form->as_array(FALSE);
-				
+
 				$user->password = sha1($form_data['password']);
 				$user->password_request = null;
 				$user->save();
 
 				$view = new View('forgotten_password/index');
 				$view->title = __('Forgotten password');
-				$view->message = '<b>'.__('Password has been successfully changed.').'</b>';
+				$view->message = '<b>' . __('Password has been successfully changed.') . '</b>';
 				$view->form = null;
 				$view->render(TRUE);
-
-			}
-			else
-			{
+			} else {
 				$view = new View('forgotten_password/index');
 				$view->title = __('Forgotten password');
 				$view->message = $message;
@@ -226,22 +203,4 @@ class Forgotten_password_Controller extends Controller
 			}
 		}
 	}
-	
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
