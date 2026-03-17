@@ -13,8 +13,12 @@ class Mailer_Wrapper
   {
     // Default: sendmail (nejméně nastavování)
     // Alternativa: smtp://localhost:25
-    $dsn = $dsn ?: (string)Config::get('mailer_dsn', 'sendmail://default');
+    $config_dsn = Config::get('mailer_dsn');
+    $dsn = $dsn ?: trim((string) $config_dsn);
 
+    if ($dsn === '') {
+      $dsn = 'sendmail://default';
+    }
     $transport = Transport::fromDsn($dsn);
     $this->mailer = new Mailer($transport);
   }
@@ -65,6 +69,4 @@ class Mailer_Wrapper
     $h = preg_replace("/\n{3,}/", "\n\n", $h);
     return trim($h);
   }
-
-
-  }
+}
