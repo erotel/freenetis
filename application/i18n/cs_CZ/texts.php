@@ -2069,6 +2069,7 @@ $lang = array(
 	'please enter the code you received in an sms message' => 'Prosím vložte kód, který jste obdrželi v SMS zprávě',
 	'please fill in the form with information about your association' => 'Prosím, vyplňte formulář údaji o vašem spolku',
 	'please insert username or e-mail which you had filled in previously in freenetis or which you filled in your application' => 'Vložte prosím přihlašovací jméno nebo e-mail, který jste vyplnil(a) v systému FreenetIS nebo ty které jste vložili na Vaši přihlášku',
+	'please insert username, e-mail or variable symbol which is assigned to your account' => 'Vložte prosím přihlašovací jméno, e-mail nebo variabilní symbol',
 	'please select a method of obtaining a password and follow the instructions' => 'Prosím zvolte způsob získání hesla a pokračujte dle instrukcí',
 	'please use button to save form' => 'Použijte prosím tlačítko pro uložení formuláře',
 	'pn' => 'UP',
