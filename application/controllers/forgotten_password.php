@@ -34,13 +34,13 @@ class Forgotten_password_Controller extends Controller
 		}
 
 		$message = __('New password into the information system can be obtained via e-mail') . '.<br />';
-		$message .= __('Please insert username or e-mail which you had filled in previously in FreenetIS or which you filled in your application') . '.';
+		$message .= __('Please insert username, e-mail or variable symbol which is assigned to your account') . '.';
 		$message_error = NULL;
 
 		$form = new Forge();
 
 		$form->input('data')
-			->label('Username or e-mail')
+			->label('Username, e-mail or variable symbol')
 			->rules('required');
 
 		// submit button
@@ -55,10 +55,12 @@ class Forgotten_password_Controller extends Controller
 			$user_contact = new Users_contacts_Model();
 			$contact = new Contact_Model();
 
-			if (valid::email($form_data['data'])) {
+			$input = trim($form_data['data']);
+
+			if (valid::email($input)) {
 				$contact->where(array(
-					'type'	=> Contact_Model::TYPE_EMAIL,
-					'value'	=> $form_data['data']
+					'type'  => Contact_Model::TYPE_EMAIL,
+					'value' => $input
 				))->find();
 
 				if ($contact->id) {
@@ -69,7 +71,28 @@ class Forgotten_password_Controller extends Controller
 					}
 				}
 			} else {
-				$user->where('login', $form_data['data'])->find();
+				// 1) zkus login
+				$user->where('login', $input)->find();
+
+				// 2) když login nenalezen, zkus variabilní symbol
+				if (!$user->id && ctype_digit($input)) {
+					$db = Database::instance();
+
+					$row = $db->query(
+						"SELECT u.id
+			   FROM variable_symbols vs
+			   JOIN accounts a ON a.id = vs.account_id
+			   JOIN members m ON m.id = a.member_id
+			   JOIN users u ON u.member_id = m.id
+			  WHERE vs.variable_symbol = ?
+			  LIMIT 1",
+						array($input)
+					)->current();
+
+					if ($row && !empty($row->id)) {
+						$user->find((int) $row->id);
+					}
+				}
 			}
 
 			// if login was not found
