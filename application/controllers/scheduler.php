@@ -1047,10 +1047,10 @@ class Scheduler_Controller extends Controller
 					$bcc[] = 'ucdokl@pvfree.net';
 				}
 
-				if (strpos($subject, 'Ukončení členství podle Stanov') !== FALSE) {
+				if (strpos($subject, 'Ukončení podle Stanov') !== FALSE) {
 					$bcc[] = 'rada@pvfree.net';
 				}
-				if (strpos($subject, 'Ukončení členství na vlastní žádost') !== FALSE) {
+				if (strpos($subject, 'Ukončení na vlastní žádost') !== FALSE) {
 					$bcc[] = 'rada@pvfree.net';
 				}
 				if (strpos($subject, 'Oznámení o započetí přerušení členství') !== FALSE) {
