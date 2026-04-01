@@ -20,15 +20,18 @@ abstract class Sms
 {
 	// prefix for drivers classes
 	const DRIVER_CLASS_PREFIX = 'Sms_';
-	
+
 	// state of driver (these are used in database table config)
 	const DRIVER_INACTIVE = 1;
 	const DRIVER_ACTIVE = 2;
-	
+
 	// ids of drivers (these are used in database table sms_messages)
 	const SOUNDWINV100 = 2;
 	const KLIKNIAVOLEJ = 3;
-	
+	const ARTIO = 4;
+	const SMSMANAGER = 5;
+
+
 	/**
 	 * Array of availables drivers for factory method.
 	 * Keys:
@@ -42,10 +45,8 @@ abstract class Sms
 	 *
 	 * @var array
 	 */
-	private static $DRIVERS = array
-	(
-		'SOUNDWINV100' => array
-		(
+	private static $DRIVERS = array(
+		'SOUNDWINV100' => array(
 			'id'				=> self::SOUNDWINV100,
 			'name'				=> 'Soundwin V100',
 			'class'				=> 'Soudvinv100',
@@ -53,8 +54,7 @@ abstract class Sms
 			'help'				=> 'sms_driver_soudvinv100',
 			'test_mode_enabled'	=> FALSE,
 		),
-		'KLIKNIAVOLEJ' => array
-		(
+		'KLIKNIAVOLEJ' => array(
 			'id'				=> self::KLIKNIAVOLEJ,
 			'name'				=> 'KlikniaVolej.cz',
 			'class'				=> 'Klikniavolej',
@@ -63,36 +63,54 @@ abstract class Sms
 			'help'				=> 'sms_driver_klikniavolej',
 			'test_mode_enabled'	=> TRUE,
 		),
+		'ARTIO' => array(
+			'id'				=> self::ARTIO,
+			'name'				=> 'ARTIO SMS Services',
+			'class'				=> 'Artio',
+			'description'		=> 'SMS',
+			'hostname'			=> 'http://www.artio.net/index.php?option=com_artiosms&controller=api',
+			'help'				=> 'sms_driver_artio',
+			'test_mode_enabled'	=> TRUE,
+		),
+		'SMSMANAGER' => array(
+			'id'				=> self::SMSMANAGER,
+			'name'				=> 'SmsManager JSON API v2',
+			'class'				=> 'Smsmanager',
+			'description'		=> 'SMS',
+			'hostname'			=> 'https://api.smsmngr.com/v2',
+			'help'				=> 'sms_driver_smsmanager',
+			'test_mode_enabled'	=> FALSE,
+		),
 	);
-	
+
 	/**
 	 * ID of loaded driver (loaded automaticly in factory method)
 	 *
 	 * @var integer
 	 */
 	private $driver = FALSE;
-	
+
 	/**
 	 * Hostname of gate
 	 *
 	 * @var string
 	 */
 	protected $hostname;
-	
+
 	/**
 	 * User for connecting to the gate
 	 *
 	 * @var string
 	 */
 	protected $user;
-	
+
 	/**
 	 * Password for connecting to the gate
 	 *
 	 * @var string
 	 */
 	protected $password;
-	
+
 	/**
 	 * Factory for SMS drivers
 	 *
@@ -102,26 +120,24 @@ abstract class Sms
 	public static function factory($driver)
 	{
 		$selected_driver = self::_get_driver_index($driver);
-		
-		if ($selected_driver)
-		{
+
+		if ($selected_driver) {
 			$driver = self::$DRIVERS[$selected_driver];
 			$class_name = self::DRIVER_CLASS_PREFIX . $driver['class'];
-			
-			if (Kohana::auto_load($class_name))
-			{
+
+			if (Kohana::auto_load($class_name)) {
 				/* @var $sms_driver_instance Sms */
 				$sms_driver_instance = new $class_name;
 				$sms_driver_instance->driver = $driver['id'];
 				$sms_driver_instance->hostname = @$driver['hostname'];
-				
+
 				return $sms_driver_instance;
 			}
 		}
-			
+
 		return NULL;
 	}
-	
+
 	/**
 	 * Gets index of driver
 	 *
@@ -130,24 +146,19 @@ abstract class Sms
 	 */
 	private static function _get_driver_index($driver)
 	{
-		if (array_key_exists($driver, self::$DRIVERS))
-		{
+		if (array_key_exists($driver, self::$DRIVERS)) {
 			return $driver;
-		}
-		else
-		{
-			foreach (self::$DRIVERS as $key => $available_driver)
-			{
-				if ($available_driver['id'] == $driver)
-				{
+		} else {
+			foreach (self::$DRIVERS as $key => $available_driver) {
+				if ($available_driver['id'] == $driver) {
 					return $key;
 				}
 			}
 		}
-		
+
 		return FALSE;
 	}
-	
+
 	/**
 	 * Gets name of driver
 	 *
@@ -158,25 +169,23 @@ abstract class Sms
 	public static function get_driver_name($driver, $with_help = FALSE)
 	{
 		$selected_driver = self::_get_driver_index($driver);
-		
-		if ($selected_driver)
-		{
+
+		if ($selected_driver) {
 			$d = self::$DRIVERS[$selected_driver];
-			
+
 			$name = $d['description'] . ' ' . __('Gateway') . ' ' . $d['name'];
-			
+
 			// help available?
-			if ($with_help && isset($d['help']))
-			{
+			if ($with_help && isset($d['help'])) {
 				$name .= ' ' . help::hint($d['help']);
 			}
-			
+
 			return $name;
 		}
-		
+
 		return __('Inactive');
 	}
-	
+
 	/**
 	 * Gets drivers array
 	 *
@@ -186,7 +195,7 @@ abstract class Sms
 	{
 		return self::$DRIVERS;
 	}
-	
+
 	/**
 	 * Gets list of active drivers for selectboxes.
 	 * Key is id of driver and value is name.
@@ -197,20 +206,18 @@ abstract class Sms
 	{
 		$available_drivers = self::get_drivers();
 		$active_drivers = array();
-		
-		foreach ($available_drivers as $driver)
-		{
+
+		foreach ($available_drivers as $driver) {
 			$key = $driver['id'];
-			
-			if (Settings::get('sms_driver_state' . $key) == Sms::DRIVER_ACTIVE)
-			{
+
+			if (Settings::get('sms_driver_state' . $key) == Sms::DRIVER_ACTIVE) {
 				$active_drivers[$key] = Sms::get_driver_name($key);
 			}
 		}
-		
+
 		return $active_drivers;
 	}
-	
+
 	/**
 	 * Check if there are any active drivers
 	 *
@@ -220,7 +227,7 @@ abstract class Sms
 	{
 		return count(self::get_active_drivers());
 	}
-	
+
 	/**
 	 * Checks if SMS are enabled on server
 	 *
@@ -234,10 +241,8 @@ abstract class Sms
 	/**
 	 * Construct cannot be called from outside
 	 */
-	protected function __construct()
-	{
-	}
-	
+	protected function __construct() {}
+
 	/**
 	 * Sets hostname of gate
 	 *
@@ -267,16 +272,14 @@ abstract class Sms
 	{
 		$this->password = $password;
 	}
-	
+
 	/**
 	 * Sets test (no SMS are sended, just states are made).
 	 * Do nothing by default.
 	 *
 	 * @param bool $test
 	 */
-    public function set_test($test)
-    {
-    }
+	public function set_test($test) {}
 
 	/**
 	 * Gets state of message
@@ -315,12 +318,11 @@ abstract class Sms
 	 * @return boolean		FALSE on error TRUE on success 
 	 */
 	abstract public function receive();
-	
+
 	/**
 	 * Gets recieved messages after receive
 	 * 
 	 * @return array
 	 */
 	abstract public function get_received_messages();
-
 }
