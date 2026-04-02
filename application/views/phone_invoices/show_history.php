@@ -1,7 +1,7 @@
 <h2><?php
     echo __('History of phone services between') ?> <?php
-    echo $user->name; ?> <?php
-    echo $user->surname; ?> <?php
+    echo e($user->name); ?> <?php
+    echo e($user->surname); ?> <?php
     echo __('and') ?> <?php
     echo $number; ?></h2>
 

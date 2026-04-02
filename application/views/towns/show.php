@@ -11,12 +11,12 @@ if ($this->acl_check_edit('Address_points_Controller', 'town'))
 	</tr>
 	<tr>
 		<th><?php echo __('Town') ?></th>
-		<td><?php echo $town->town ?></td>
+		<td><?php echo e($town->town) ?></td>
 	</tr>
 	<?php if ($town->quarter != ''): ?>
 		<tr>
 			<th><?php echo __('Quarter') ?></th>
-			<td><?php echo $town->quarter ?></td>
+			<td><?php echo e($town->quarter) ?></td>
 		</tr>
 	<?php endif ?>
 	<tr>

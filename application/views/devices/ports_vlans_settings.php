@@ -2,7 +2,7 @@
 <?php echo $form ?>
 <?php if (isset($ports)): ?>
 <br><br>
-<h3><?php echo $vlan->name ?></h3>
+<h3><?php echo e($vlan->name) ?></h3>
 <br>
 <?php echo form::open('', array('id' => 'ports-vlans-form')) ?>
 <table cellspacing="0" class="form" style="width: 100%">

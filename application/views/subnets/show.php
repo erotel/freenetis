@@ -47,7 +47,7 @@ echo implode(' | ', $links);
 	</tr>
 	<tr>
 		<th><?php echo __('Subnet name') ?></th>
-		<td><?php echo $subnet->name ?></td>
+		<td><?php echo e($subnet->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Network address') ?></th>

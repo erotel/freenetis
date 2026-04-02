@@ -75,7 +75,7 @@
 		<th colspan="2"><?php echo  __('Note') ?></th>
 	</tr>
 	<tr>
-		<td colspan="2"><?php echo $invoice->note ?></th>
+		<td colspan="2"><?php echo e($invoice->note) ?></th>
 	</tr>
 </table>
 
@@ -88,7 +88,7 @@
 		if (!empty($invoice->partner_company)) { ?>
 			<tr>
 				<th><?php echo __('Company') ?></th>
-				<td><?php echo ($invoice->partner_company) ?></td>
+				<td><?php echo e($invoice->partner_company) ?></td>
 			</tr>
 		<?php
 		}
@@ -97,42 +97,42 @@
 		if (!empty($invoice->partner_name)) { ?>
 			<tr>
 				<th><?php echo __('Name') ?></th>
-				<td><?php echo ($invoice->partner_name) ?></td>
+				<td><?php echo e($invoice->partner_name) ?></td>
 			</tr>
 		<?php
 		}
 		?>
 		<tr>
 			<th><?php echo __('Street') ?></th>
-			<td><?php echo ($invoice->partner_street) ?></td>
+			<td><?php echo e($invoice->partner_street) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo __('Street number') ?></th>
-			<td><?php echo ($invoice->partner_street_number) ?></td>
+			<td><?php echo e($invoice->partner_street_number) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo __('Town') ?></th>
-			<td><?php echo ($invoice->partner_town) ?></td>
+			<td><?php echo e($invoice->partner_town) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo __('Zip code') ?></th>
-			<td><?php echo ($invoice->partner_zip_code) ?></td>
+			<td><?php echo e($invoice->partner_zip_code) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo __('Country') ?></th>
-			<td><?php echo ($invoice->partner_country) ?></td>
+			<td><?php echo e($invoice->partner_country) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo __('Organization identifier') ?></th>
-			<td><?php echo ($invoice->organization_identifier) ?></td>
+			<td><?php echo e($invoice->organization_identifier) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo __('Phone') ?></th>
-			<td><?php echo ($invoice->phone_number) ?></td>
+			<td><?php echo e($invoice->phone_number) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo __('Email') ?></th>
-			<td><?php echo ($invoice->email) ?></td>
+			<td><?php echo e($invoice->email) ?></td>
 		</tr>
 	</table><br />
 <?php	} ?>

@@ -32,7 +32,7 @@ if (count($links))
 	</tr>
 	<tr>
 		<th><?php echo __('Description') ?></th>
-		<td><?php echo $log_queue->description ?></td>
+		<td><?php echo e($log_queue->description) ?></td>
 	</tr>
 	<?php if ($log_queue->exception_backtrace): ?>
 	<tr>

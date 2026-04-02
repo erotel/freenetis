@@ -18,7 +18,7 @@ if ($this->acl_check_delete('Vlans_Controller', 'vlan'))
 	</tr>
 	<tr>
 		<th><?php echo __('Vlan name') ?></th>
-		<td><?php echo $vlan->name ?></td>
+		<td><?php echo e($vlan->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('tag_802_1q') ?></th>
@@ -27,7 +27,7 @@ if ($this->acl_check_delete('Vlans_Controller', 'vlan'))
 
 	<tr>
 		<th><?php echo __('Comment') ?></th>
-		<td><?php echo $vlan->comment ?></td>
+		<td><?php echo e($vlan->comment) ?></td>
 	</tr>
 
 </table><br /><br />

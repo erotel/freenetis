@@ -63,7 +63,7 @@ if ($this->acl_check_view('Accounts_Controller', 'transfers')):
 	</tr>
 	<tr>
 		<th><?php echo __('Text') ?></th>
-		<td><?php echo $transfer->text; ?></td>
+		<td><?php echo e($transfer->text); ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Amount') ?></th>
@@ -78,7 +78,7 @@ if ($this->acl_check_view('Accounts_Controller', 'transfers')):
 			if ($this->acl_check_view('Users_Controller', 'users', $user->member_id))
 				echo html::anchor('users/show/'.$transfer->user_id, $transfer->name.' '.$transfer->surname);
 			else
-				echo $transfer->name.' '.$transfer->surname;
+				echo e($transfer->name).' '.e($transfer->surname);
 			?>
 		</td>
 	</tr>

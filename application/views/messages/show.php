@@ -7,7 +7,7 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Message name') ?></th>
-		<td><?php echo $message->name ?></td>
+		<td><?php echo e($message->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('User-cancelable') ?></th>

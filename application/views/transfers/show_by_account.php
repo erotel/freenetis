@@ -20,7 +20,7 @@ echo implode(' | ', $links); ?>
 	</tr>
 	<tr>
 		<th><?php echo __('Account name')?></th>
-		<td><?php echo $account->name ?></td>
+		<td><?php echo e($account->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Owner of account')?></th>

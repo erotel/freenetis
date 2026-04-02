@@ -97,6 +97,11 @@ unset($kohana_application, $kohana_system);
 (is_dir(SYSPATH) and file_exists(SYSPATH . '/core/' . 'Bootstrap' . EXT)) or die('Your <code>$kohana_system</code> directory does not exist. ' .
 	'Set a valid <code>$kohana_system</code> in <tt>' . KOHANA . '</tt> and refresh the page.');
 
+// Load global e() helper for XSS-safe output in all views and controllers.
+// Kohana 2 does not auto-load plain-function helper files, so we require it
+// explicitly here — after APPPATH and EXT are defined but before bootstrap.
+require_once APPPATH . 'helpers/xss' . EXT;
+
 // Mail to developers
 define('DEVELOPER_EMAIL_ADDRESS', 'bugs@freenetis.org');
 

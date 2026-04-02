@@ -1,4 +1,4 @@
-<h2><?php echo __('Device template') ?> - <?php echo $device_template->name ?></h2><br />
+<h2><?php echo __('Device template') ?> - <?php echo e($device_template->name) ?></h2><br />
 <?php
 
 $arr_links = array();
@@ -18,7 +18,7 @@ echo implode(' | ', $arr_links);
 <table class="extended" cellspacing="0">
 	<tr>
 		<th><?php echo __('Trade name') ?></th>
-		<td><?php echo $device_template->name ?></td>
+		<td><?php echo e($device_template->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Type') ?></th>
@@ -43,7 +43,7 @@ echo implode(' | ', $arr_links);
 	</tr>
 	<tr>
 		<th><?php echo __('Names') ?></th>
-		<td><?php foreach ($ivals[Iface_Model::TYPE_ETHERNET]['items'] as $item) echo ($item['name']) ? $item['name'] . ', ' : '' ?></td>
+		<td><?php foreach ($ivals[Iface_Model::TYPE_ETHERNET]['items'] as $item) echo ($item['name']) ? e($item['name']) . ', ' : '' ?></td>
 	</tr>
 </table>
 
@@ -70,7 +70,7 @@ echo implode(' | ', $arr_links);
 	</tr>
 	<?php foreach ($ivals[Iface_Model::TYPE_WIRELESS]['items'] as $item): ?>
 	<tr>
-		<td><?php echo $item['name'] ?></td>
+		<td><?php echo e($item['name']) ?></td>
         <td><?php echo Iface_Model::get_wireless_mode(@$item['wireless_mode']) ?></td>
 		<td><?php echo Iface_Model::get_wireless_antenna(@$item['wireless_antenna']) ?></td>
 	</tr>
@@ -96,7 +96,7 @@ echo implode(' | ', $arr_links);
 	</tr>
 	<?php foreach ($ivals[Iface_Model::TYPE_PORT]['items'] as $item): ?>
 	<tr>
-		<td><?php echo $item['name'] ?></td>
+		<td><?php echo e($item['name']) ?></td>
 		<td><?php echo __('Port') ?> <?php echo $item['number'] ?></td>
         <td><?php echo Iface_Model::get_port_mode($item['port_mode']) ?></td>
 	</tr>
@@ -112,7 +112,7 @@ echo implode(' | ', $arr_links);
 	</tr>
 	<tr>
 		<th><?php echo __('Names') ?></th>
-		<td><?php foreach ($ivals[Iface_Model::TYPE_INTERNAL]['items'] as $item) echo ($item['name']) ? $item['name'] . ', ' : '' ?></td>
+		<td><?php foreach ($ivals[Iface_Model::TYPE_INTERNAL]['items'] as $item) echo ($item['name']) ? e($item['name']) . ', ' : '' ?></td>
 	</tr>
 </table>
 

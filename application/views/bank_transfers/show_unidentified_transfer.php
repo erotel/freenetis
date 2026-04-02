@@ -18,7 +18,7 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Text') ?></th>
-		<td><?php echo $mt->text ?></td>
+		<td><?php echo e($mt->text) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Amount') ?></th>

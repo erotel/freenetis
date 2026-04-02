@@ -30,15 +30,15 @@ foreach ($invoices as $invoice) { ?>
 				<typ:address>
 					<typ:company><?php echo $invoice->company ?></typ:company>
 					<typ:name><?php echo $invoice->partner ?></typ:name>
-					<typ:city><?php echo $invoice->town ?></typ:city>
+					<typ:city><?php echo e($invoice->town) ?></typ:city>
 					<typ:street><?php echo address::street_join($invoice->street, $invoice->street_number) ?></typ:street>
 				<typ:zip><?php echo $invoice->zip_code ?></typ:zip>
 				<typ:ico><?php echo $invoice->organization_identifier ?></typ:ico>
 				<typ:country>
-					<typ:ids><?php echo $invoice->country ?></typ:ids>
+					<typ:ids><?php echo e($invoice->country) ?></typ:ids>
 				</typ:country>
-				<typ:phone><?php echo $invoice->phone ?></typ:phone>
-				<typ:email><?php echo $invoice->email ?></typ:email>
+				<typ:phone><?php echo e($invoice->phone) ?></typ:phone>
+				<typ:email><?php echo e($invoice->email) ?></typ:email>
 				</typ:address>
 			</inv:partnerIdentity>
 			<inv:numberOrder><?php if(!empty($invoice->order_nr)) echo $invoice->order_nr; ?></inv:numberOrder>
@@ -55,7 +55,7 @@ foreach ($invoices as $invoice) { ?>
 				<typ:bankCode><?php echo $bank_code ?></typ:bankCode>
 			</inv:account>
 <?php } ?>
-			<inv:note><?php echo $invoice->note ?></inv:note>
+			<inv:note><?php echo e($invoice->note) ?></inv:note>
 		</inv:invoiceHeader>
 		<inv:invoiceDetail>
 <?php 
@@ -75,7 +75,7 @@ foreach ($invoices as $invoice) { ?>
 			$item_price = $item->quantity * $item->price;
 			$item_price_vat = $item->quantity * $item->price * (1 + $item->vat); ?>
 			<inv:invoiceItem>
-				<inv:text><?php echo $item->name ?></inv:text>
+				<inv:text><?php echo e($item->name) ?></inv:text>
 				<inv:quantity><?php echo $item->quantity ?></inv:quantity>
 	<?php	$vat_value = intval($item->vat * 1000);
 			if (array_key_exists($vat_value, $vat_var['export'])) {
@@ -111,7 +111,7 @@ foreach ($invoices as $invoice) { ?>
 	<?php	} else { ?>
 				</inv:homeCurrency>
 	<?php	} ?>
-				<inv:code><?php echo $item->code ?></inv:code>
+				<inv:code><?php echo e($item->code) ?></inv:code>
 			</inv:invoiceItem>	
 	<?php } ?>
 		</inv:invoiceDetail>

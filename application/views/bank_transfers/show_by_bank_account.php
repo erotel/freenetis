@@ -17,7 +17,7 @@
 <table class="extended" style="float:left; margin-left:10px">
 	<tr>
 		<th><?php echo __('Account name')?></th>
-		<td><?php echo $ba->name ?></td>
+		<td><?php echo e($ba->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('IBAN')?></th>

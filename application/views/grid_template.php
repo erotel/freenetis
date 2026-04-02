@@ -33,7 +33,7 @@
 							if ($field instanceof Order_Field) {
 						?>
 								<th class="{sorter: false}">
-									<?php echo  html::anchor($field->return_link, $field->label) ?><?php if ($field->help != '') echo $field->help ?>
+									<?php echo html::anchor($field->return_link, SafeHtml::make($field->label)) ?><?php if ($field->help != '') echo $field->help ?>
 								</th>
 							<?php
 							} else if ($field instanceof Callback_Field) {
@@ -130,7 +130,7 @@
 
 								$output[] = '<td>' . html::anchor(
 									$action_field->url . '/' . $item->$property,
-									$action_field->render(),
+									SafeHtml::make($action_field->render()),
 									array(
 										'title'		=> $action_field->label,
 										'class'		=> implode(' ', $class),

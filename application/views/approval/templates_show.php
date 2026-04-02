@@ -18,11 +18,11 @@ echo implode(' | ', $links);
 	</tr>
 	<tr>
 		<th><?php echo __('Name') ?></th>
-		<td><?php echo $approval_template->name ?></td>
+		<td><?php echo e($approval_template->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Comment') ?></th>
-		<td><?php echo $approval_template->comment ?></td>
+		<td><?php echo e($approval_template->comment) ?></td>
 	</tr>
 </table>
 <br /><br />

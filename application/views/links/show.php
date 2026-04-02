@@ -9,7 +9,7 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Name') ?></th>
-		<td><?php echo $link->name ?></td>
+		<td><?php echo e($link->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Medium') ?></th>
@@ -27,7 +27,7 @@
 	<?php endif ?>
 	<tr>
 		<th><?php echo __('Comment') ?></th>
-		<td><?php echo $link->comment ?></td>
+		<td><?php echo e($link->comment) ?></td>
 	</tr>
 </table>
 
@@ -39,7 +39,7 @@
 		<?php if ($link->wireless_ssid != ''): ?>
 		<tr>
 			<th><?php echo __('SSID') ?></th>
-			<td><b><?php echo $link->wireless_ssid ?></b></td>
+			<td><b><?php echo e($link->wireless_ssid) ?></b></td>
 		</tr>
 		<?php endif ?>
 		<?php if ($link->wireless_norm != ''): ?>

@@ -13,11 +13,11 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Name') ?></th>
-		<td><?php echo $invoice_item->name ?></td>
+		<td><?php echo e($invoice_item->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Code') ?></th>
-		<td><?php echo $invoice_item->code ?></td>
+		<td><?php echo e($invoice_item->code) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Quantity') ?></th>

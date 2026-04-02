@@ -490,7 +490,7 @@ class callback
 				($item->a_comments_thread_id) ?
 					'comments/add/' . $item->a_comments_thread_id :
 					'comments/add_thread/account/' . $item->aid,
-				html::image('media/images/icons/ico_add.gif'),
+				SafeHtml::make(html::image('media/images/icons/ico_add.gif')),
 				array(
 					'title' => __('Add comment to financial state of member')
 				)
@@ -916,7 +916,7 @@ class callback
 				'comments/add/' . $item->a_comments_thread_id :
 				'comments/add_thread/connection_request/' . $item->id;
 
-			echo html::anchor($url, html::image('media/images/icons/ico_add.gif'), array(
+			echo html::anchor($url, SafeHtml::make(html::image('media/images/icons/ico_add.gif')), array(
 				'title' => __('Add comment to connection request'),
 				'class'	=> 'popup_link'
 			));
@@ -947,12 +947,12 @@ class callback
 		}
 
 		if (isset($args[0]) && $args[0] != '') {
-			echo html::anchor($args[0] . $item->id, html::image(
+			echo html::anchor($args[0] . $item->id, SafeHtml::make(html::image(
 				array(
 					'src'	=> 'media/images/states/' . $state . '.png',
 					'title'	=> __('' . $state)
 				)
-			));
+			)));
 		} else {
 			echo html::image(array(
 				'src'	=> 'media/images/states/' . $state . '.png',
@@ -1983,7 +1983,7 @@ class callback
 				'comments/add/' . $item->a_comments_thread_id :
 				'comments/add_thread/log_queue/' . $item->id;
 
-			echo ' ' . html::anchor($url, html::image('media/images/icons/ico_add.gif'), array(
+			echo ' ' . html::anchor($url, SafeHtml::make(html::image('media/images/icons/ico_add.gif')), array(
 				'title' => __('Add comment'),
 				'class'	=> 'popup_link'
 			));
@@ -2247,10 +2247,10 @@ class callback
 		if ($user->id) {
 			echo html::anchor('users/show/' . $user->id, $user->get_full_name());
 			echo ' ';
-			echo html::anchor('logs/show_by_user/' . $user->id, html::image(array(
+			echo html::anchor('logs/show_by_user/' . $user->id, SafeHtml::make(html::image(array(
 				'src' => 'media/images/icons/history.png',
 				'title' => __('Show user actions')
-			)));
+			))));
 		} else {
 			echo $item->user_id;
 		}

@@ -1,4 +1,4 @@
-<h2><?php echo __('Device') ?> <?php echo $device->name ?></h2>
+<h2><?php echo __('Device') ?> <?php echo e($device->name) ?></h2>
 <br />
 <?php
 
@@ -73,13 +73,13 @@ echo implode(' | ', $links)
 	<?php if ($this->acl_check_view('Devices_Controller', 'login')): ?>
     <tr>
 		<th><?php echo __('Login name') ?></th>
-		<td><?php echo $device->login ?></td>
+		<td><?php echo e($device->login) ?></td>
 	</tr>
         <?php endif ?>
         <?php if ($this->acl_check_view('Devices_Controller', 'password')): ?>
 	<tr>
 		<th><?php echo __('Password') ?></th>
-		<td><?php echo $device->password ?></td>
+		<td><?php echo e($device->password) ?></td>
 	</tr>
 	<?php endif ?>
 	<?php if (Settings::get('finance_enabled') && $device->price): ?>
@@ -128,7 +128,7 @@ echo implode(' | ', $links)
 	<?php endif ?>
 	<tr>
 		<th><?php echo __('Comment') ?></th>
-		<td><?php echo $device->comment ?></td>
+		<td><?php echo e($device->comment) ?></td>
 	</tr>
 	<?php if ($this->acl_check_view('Device_active_links_Controller', 'display_device_active_links') && $active_links):?>
 	<tr>

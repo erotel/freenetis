@@ -27,11 +27,11 @@ echo implode(' | ', $links);
 	</tr>
 	<tr>
 		<th><?php echo  __('Interface name') ?></th>
-		<td><?php echo  $iface->name ?></td>
+		<td><?php echo e($iface->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo  __('Comment') ?></th>
-		<td><?php echo  $iface->comment ?></td>
+		<td><?php echo e($iface->comment) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo  __('Type') ?></th>
@@ -90,7 +90,7 @@ echo implode(' | ', $links);
 		<?php if ($this->acl_check_view('Links_Controller', 'link')): ?>
 		<td><?php echo html::anchor('links/show/'.$iface->link->id, $iface->link->name) ?></td>
 		<?php else: ?>
-		<td><?php echo $iface->link->name ?></td>
+		<td><?php echo e($iface->link->name) ?></td>
 		<?php endif ?>
 	</tr>
 	<tr>
@@ -100,7 +100,7 @@ echo implode(' | ', $links);
 	<?php if ($iface->link->medium == Link_Model::MEDIUM_AIR && !empty($iface->link->wireless_ssid)): ?>
 	<tr>
 		<th><?php echo __('SSID') ?></th>
-		<td><?php echo $iface->link->wireless_ssid ?></td>
+		<td><?php echo e($iface->link->wireless_ssid) ?></td>
 	</tr>
 	<?php endif; ?>
 	<?php endif; ?>

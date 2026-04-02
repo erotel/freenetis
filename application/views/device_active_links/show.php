@@ -27,11 +27,11 @@ echo implode(' | ', $links)
 	</tr>
 	<tr>
 		<th><?php echo __('Name') ?></th>
-		<td><?php echo $active_link->name ?></td>
+		<td><?php echo e($active_link->name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Title') ?></th>
-		<td><?php echo $active_link->title ?></td>
+		<td><?php echo e($active_link->title) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Send as form') ?></th>

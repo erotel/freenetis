@@ -121,12 +121,12 @@
 					$src = 'media/images/layout/inbox_warning.png';
 				}
 				
-				echo html::anchor('mail/inbox', html::image(array
+				echo html::anchor('mail/inbox', SafeHtml::make(html::image(array
 					(
 						'src'	=> $src,
 						'alt'	=> $caption,
 						'title'	=> $caption
-					)), array
+					))), array
 					(
 						'class' => 'action_field_icon'
 					)
@@ -152,12 +152,12 @@
 				// add to favourites page canot be added to favourites
 				if (url_lang::current() != 'user_favourite_pages/toggle')
 				{
-					echo html::anchor('user_favourite_pages/toggle?title=' . urlencode(strip_tags($title)) . '&page=' . urlencode(url_lang::current()) , html::image(array
+					echo html::anchor('user_favourite_pages/toggle?title=' . urlencode(strip_tags($title)) . '&page=' . urlencode(url_lang::current()) , SafeHtml::make(html::image(array
 						(
 							'src'	=> $src,
 							'alt'	=> $caption,
 							'title'	=> $caption
-						)), array
+						))), array
 						(
 							'class' => 'action_field_icon'
 						)

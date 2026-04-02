@@ -733,19 +733,19 @@ class Controller extends Controller_Core
 				
 				if ($as->enabled)
 				{
-					$this->ip_address_span .= ' ' . html::anchor($uri, html::image(array
+					$this->ip_address_span .= ' ' . html::anchor($uri, SafeHtml::make(html::image(array
 					(
 						'src'	=> 'media/images/states/active.png',
 						'title'	=> __('Disable this subnet')
-					)) . ' ' . __('Disable this subnet')) . ' ' . help::hint('allowed_subnets_enabled');
+					)) . ' ' . __('Disable this subnet'))) . ' ' . help::hint('allowed_subnets_enabled');
 				}
 				else
 				{
-					$this->ip_address_span .= ' ' . html::anchor($uri, html::image(array
+					$this->ip_address_span .= ' ' . html::anchor($uri, SafeHtml::make(html::image(array
 					(
 						'src'	=> 'media/images/states/inactive.png',
 						'title'	=> __('Enable this subnet')
-					)) . ' ' . __('Enable this subnet')) . ' ' . help::hint('allowed_subnets_disabled');
+					)) . ' ' . __('Enable this subnet'))) . ' ' . help::hint('allowed_subnets_disabled');
 				}
 			}
 		}

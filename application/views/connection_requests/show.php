@@ -29,7 +29,7 @@ if (count($links))
 		<?php if ($this->acl_check_view('Members_Controller', 'members', $connection_request->member_id)): ?>
 		<td><?php echo html::anchor('members/show/' . $connection_request->member_id, $connection_request->member->name) ?></td>
 		<?php else: ?>
-		<td><?php echo $connection_request->member->name ?></td>
+		<td><?php echo e($connection_request->member->name) ?></td>
 		<?php endif; ?>
 	</tr>
 	<tr>
@@ -37,7 +37,7 @@ if (count($links))
 		<?php if ($this->acl_check_view('Users_Controller', 'users', $connection_request->added_user->member_id)): ?>
 		<td><?php echo html::anchor('users/show/' . $connection_request->added_user_id, $connection_request->added_user->get_full_name()) ?> (<?php echo $connection_request->created_at ?>)</td>
 		<?php else: ?>
-		<td><?php echo $connection_request->member->name ?> (<?php echo $connection_request->created_at ?>)</td>
+		<td><?php echo e($connection_request->member->name) ?> (<?php echo $connection_request->created_at ?>)</td>
 		<?php endif; ?>
 	</tr>
 	<?php if ($connection_request->decided_user_id): ?>
@@ -61,7 +61,7 @@ if (count($links))
 		<?php if ($this->acl_check_view('Devices_Controller', 'devices', $connection_request->device->user->member_id)): ?>
 		<td><?php echo html::anchor('devices/show/' . $connection_request->device_id, $connection_request->device->name) ?></td>
 		<?php else: ?>
-		<td><?php echo $connection_request->device->name ?></td>
+		<td><?php echo e($connection_request->device->name) ?></td>
 		<?php endif; ?>
 	</tr>
 	<?php else: ?>
@@ -79,7 +79,7 @@ if (count($links))
 	<?php if (!empty($connection_request->device_template->name)): ?>
 	<tr>
 		<th><?php echo __('Device template') ?></th>
-		<td><?php echo $connection_request->device_template->name ?></td>
+		<td><?php echo e($connection_request->device_template->name) ?></td>
 	</tr>
 	<?php endif; ?>
 	<tr>
@@ -91,7 +91,7 @@ if (count($links))
 		<?php if ($this->acl_check_view('Subnets_Controller', 'subnet')): ?>
 		<td><?php echo html::anchor('subnets/show/' . $connection_request->subnet_id, $connection_request->subnet->name) ?></td>
 		<?php else: ?>
-		<td><?php echo $connection_request->subnet->name ?></td>
+		<td><?php echo e($connection_request->subnet->name) ?></td>
 		<?php endif; ?>
 	</tr>
 	<tr>
@@ -100,7 +100,7 @@ if (count($links))
 	</tr>
 	<tr>
 		<th><?php echo __('Note') ?></th>
-		<td><?php echo $connection_request->comment ?></td>
+		<td><?php echo e($connection_request->comment) ?></td>
 	</tr>
 </table>
 

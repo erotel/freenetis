@@ -18,7 +18,7 @@ else
 	</tr>
 	<tr>
 		<th><?php echo __('Country') ?></th>
-		<td><?php echo $address_point->country->country_name ?></td>
+		<td><?php echo e($address_point->country->country_name) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Town') ?></th>

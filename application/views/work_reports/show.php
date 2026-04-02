@@ -47,7 +47,7 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Description') ?></th>
-		<td><?php echo $work_report->description ?></td>
+		<td><?php echo e($work_report->description) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo __('Payment type') ?></th>

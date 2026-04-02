@@ -1,4 +1,4 @@
-<h2><?php echo $title ?></h2>
+<h2><?php echo e($title) ?></h2>
 <br />
 
 <?php echo $member_links ?>
@@ -15,7 +15,7 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Member name') ?></th>
-		<td><?php echo $member->name ?></td>
+		<td><?php echo e($member->name) ?></td>
 	</tr>
 	<?php if (!$is_association && isset($variable_symbols)) { ?>
 		<tr>
@@ -76,13 +76,13 @@
 	<?php if ($member->organization_identifier && $this->acl_check_view('Members_Controller', 'organization_id')) { ?>
 		<tr>
 			<th><?php echo __('Organization identifier') ?></th>
-			<td><?php echo trim($member->organization_identifier) ?></td>
+			<td><?php echo e(trim($member->organization_identifier)) ?></td>
 		</tr>
 	<?php } ?>
 	<?php if ($member->vat_organization_identifier && $this->acl_check_view('Members_Controller', 'vat_organization_identifier')) { ?>
 		<tr>
 			<th><?php echo __('VAT organization identifier') ?></th>
-			<td><?php echo trim($member->vat_organization_identifier) ?></td>
+			<td><?php echo e(trim($member->vat_organization_identifier)) ?></td>
 		</tr>
 	<?php } ?>
 	<tr>
@@ -124,20 +124,20 @@
 	</tr>
 	<tr>
 		<th><?php echo __('Street') ?></th>
-		<td><?php echo  $address ?></td>
+		<td><?php echo e($address) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo  __('Town') ?></th>
-		<td><?php echo  $town ?></td>
+		<td><?php echo e($town) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo  __('Country') ?></th>
-		<td><?php echo  $country ?></td>
+		<td><?php echo e($country) ?></td>
 	</tr>
 	<?php if (!empty($gps)): ?>
 		<tr>
 			<th><?php echo  __('GPS') ?></th>
-			<td><?php echo  $gps ?></td>
+			<td><?php echo SafeHtml::make($gps) ?></td>
 		</tr>
 	<?php endif ?>
 	<?php if (isset($domicile_address) && $domicile_address != ''): ?>
@@ -176,20 +176,20 @@
 		</tr>
 		<tr>
 			<th><?php echo __('Street') ?></th>
-			<td><?php echo  $domicile_address ?></td>
+			<td><?php echo e($domicile_address) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo  __('Town') ?></th>
-			<td><?php echo  $domicile_town ?></td>
+			<td><?php echo e($domicile_town) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo  __('Country') ?></th>
-			<td><?php echo  $domicile_country ?></td>
+			<td><?php echo e($domicile_country) ?></td>
 		</tr>
 		<?php if (!empty($domicile_gps)): ?>
 			<tr>
 				<th><?php echo  __('GPS') ?></th>
-				<td><?php echo  $domicile_gps ?></td>
+				<td><?php echo SafeHtml::make($domicile_gps) ?></td>
 			</tr>
 		<?php endif ?>
 	<?php endif ?>
@@ -215,7 +215,7 @@
 	<?php if ($this->acl_check_view('Members_Controller', 'comment', $member->id)) { ?>
 		<tr>
 			<th><?php echo  __('Comment') ?></th>
-			<td style="padding:0px;"><textarea rows="3" cols="100" readonly="readonly" style="border:0px;width:200px;"><?php echo  $member->comment ?></textarea></td>
+			<td style="padding:0px;"><textarea rows="3" cols="100" readonly="readonly" style="border:0px;width:200px;"><?php echo e($member->comment) ?></textarea></td>
 		</tr>
 	<?php } ?>
 </table>
@@ -230,16 +230,16 @@
 				<?php
 				$class = ($comments != '') ? 'help more' : '';
 
-				echo "<span class='" . $class . "' title='" . $comments . "'>" . number_format((float) $account->balance, 2, ',', ' ') . ' ' . $this->settings->get('currency') . "</span> ";
+				echo "<span class='" . e($class) . "' title='" . e($comments) . "'>" . number_format((float) $account->balance, 2, ',', ' ') . ' ' . e($this->settings->get('currency')) . "</span> ";
 
 				if ($this->acl_check_new('Accounts_Controller', 'transfers'))
-					echo html::anchor(url_lang::base() . 'transfers/add_member_fee_payment_by_cash/' . $member->id, html::image(array('src' => url::base() . 'media/images/icons/purse.png', 'width' => 16, 'height' => 16)), array('title' => __('Add member fee payment by cash'), 'class' => 'action-icon popup_link'));
+					echo html::anchor(url_lang::base() . 'transfers/add_member_fee_payment_by_cash/' . $member->id, SafeHtml::make(html::image(array('src' => url::base() . 'media/images/icons/purse.png', 'width' => 16, 'height' => 16))), array('title' => __('Add member fee payment by cash'), 'class' => 'action-icon popup_link'));
 				if ($member->type != Member_Model::TYPE_APPLICANT) {
-					echo html::anchor('transfers/payment_calculator/' . $account->id, html::image(array('src' => url::base() . 'media/images/icons/calculate.png')), array('title' => __('Calculate'), 'class' => 'action-icon popup_link'));
+					echo html::anchor('transfers/payment_calculator/' . $account->id, SafeHtml::make(html::image(array('src' => url::base() . 'media/images/icons/calculate.png'))), array('title' => __('Calculate'), 'class' => 'action-icon popup_link'));
 				}
 
 				if ($this->acl_check_view('Members_Controller', 'comment', $member->id))
-					echo html::anchor(($account->comments_thread_id ? (url_lang::base() . 'comments/add/' . $account->comments_thread_id) : (url_lang::base() . 'comments/add_thread/account/' . $account->id)), html::image(array('src' => url::base() . 'media/images/icons/comment_add.png', 'width' => 16, 'height' => 16)), array('title' => __('Add comment to financial state of member'), 'class' => 'action-icon popup_link'));
+					echo html::anchor(($account->comments_thread_id ? (url_lang::base() . 'comments/add/' . $account->comments_thread_id) : (url_lang::base() . 'comments/add_thread/account/' . $account->id)), SafeHtml::make(html::image(array('src' => url::base() . 'media/images/icons/comment_add.png', 'width' => 16, 'height' => 16))), array('title' => __('Add comment to financial state of member'), 'class' => 'action-icon popup_link'));
 				?>
 			</td>
 		</tr>
@@ -319,7 +319,7 @@
 		</tr>
 		<tr>
 			<th><?php echo  __('Speed class') ?></th>
-			<td><?php echo $member->speed_class->name ?></td>
+			<td><?php echo e($member->speed_class->name) ?></td>
 		</tr>
 		<tr>
 			<th><?php echo  __('QoS ceil') ?>&nbsp;<?php echo help::hint('qos_ceil') ?></th>
@@ -375,7 +375,7 @@
 	</tr>
 	<tr>
 		<th><?php echo  __('Username') ?></th>
-		<td><?php echo  $user->login ?></td>
+		<td><?php echo e($user->login) ?></td>
 	</tr>
 	<tr>
 		<th><?php echo  __('Name') ?></th>
@@ -383,13 +383,13 @@
 	</tr>
 	<tr>
 		<th><?php echo  __('Birthday') ?></th>
-		<td><?php echo  $user->birthday ?></td>
+		<td><?php echo e($user->birthday) ?></td>
 	</tr>
 	<?php if ($this->acl_check_view('Users_Controller', 'application_password', $member->id)) { ?>
 		<tr>
 			<th><?php echo  __('Application password') . '&nbsp;' . help::hint('application_password') ?></th>
 			<td>
-				<span id="application_password_span"><?php echo  $user->application_password ?></span>
+				<span id="application_password_span"><?php echo e($user->application_password) ?></span>
 				<span id="fake_application_password_span" class="dispNone">***********</span>
 				<a id="show_application_password_link" class="dispNone" href="#"><?php echo __('Show') ?></a>
 				<div class="clear"></div>
@@ -399,7 +399,7 @@
 	<?php if ($this->acl_check_view('Users_Controller', 'comment', $member->id)) { ?>
 		<tr>
 			<th><?php echo  __('Comment') ?></th>
-			<td style="padding:0px"><textarea rows="3" cols="100" readonly="readonly" style="border:0px; width:200px;"><?php echo  $user->comment ?></textarea></td>
+			<td style="padding:0px"><textarea rows="3" cols="100" readonly="readonly" style="border:0px; width:200px;"><?php echo e($user->comment) ?></textarea></td>
 		</tr>
 	<?php } ?>
 </table>
@@ -417,14 +417,14 @@
 							<td>
 								<?php
 								if (Settings::get('sms_enabled') && $this->acl_check_new('Sms_Controller', 'sms') && valid::phone($contact->value)) {
-									echo html::anchor('sms/send/' . $contact->value, html::image(array('src' => 'media/images/icons/send_sms.png', 'alt' => __('Send SMS'), 'title' => __('Send SMS'))), array('title' => __('Send SMS')));
+									echo html::anchor('sms/send/' . $contact->value, SafeHtml::make(html::image(array('src' => 'media/images/icons/send_sms.png', 'alt' => __('Send SMS'), 'title' => __('Send SMS')))), array('title' => __('Send SMS')));
 								}
 								?>
 							</td>
 						</tr>
 					</table>
 				</th>
-				<td><?php echo  $contact->value ?></td>
+				<td><?php echo e($contact->value) ?></td>
 			<?php elseif ($contact->type == Contact_Model::TYPE_EMAIL): ?>
 				<th>
 					<table class="picturebox">
@@ -440,10 +440,10 @@
 						</tr>
 					</table>
 				</th>
-				<td><?php echo $contact->value ?></td>
+				<td><?php echo e($contact->value) ?></td>
 			<?php else: ?>
-				<th><?php echo  $contact_types[$i] ?></th>
-				<td><?php echo  $contact->value ?></td>
+				<th><?php echo e($contact_types[$i]) ?></th>
+				<td><?php echo e($contact->value) ?></td>
 			<?php endif; ?>
 		</tr>
 	<?php endforeach; ?>

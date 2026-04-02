@@ -123,13 +123,20 @@ class html {
 			}
 		}
 		
+		// Escape link text unless it is already trusted HTML (SafeHtml instance).
+		// Callers that pass icon images or other markup as $title must wrap the
+		// value with SafeHtml::make() to prevent double-encoding.
+		$safe_title = ($title instanceof SafeHtml)
+			? (string) $title
+			: html::specialchars((string) $title);
+
 		return
 		// Parsed URL
 		'<a href="'.html::specialchars($site_url_modified, FALSE).'"'
 		// Attributes empty? Use an empty string
 		.(empty($attributes) ? '' : html::attributes($attributes)).'>'
-		// title
-		. $title .'</a>';
+		// title – already escaped above
+		. $safe_title .'</a>';
 	}
 
 	/**
@@ -370,7 +377,9 @@ class html {
 		$compiled = '';
 		foreach($attrs as $key => $val)
 		{
-			$compiled .= ' '.$key.'="'.$val.'"';
+			// Attribute values are always plain text – escape to prevent injection
+			// through title="...", alt="...", class="..." etc.
+			$compiled .= ' '.$key.'="'.html::specialchars((string) $val).'"';
 		}
 
 		return $compiled;

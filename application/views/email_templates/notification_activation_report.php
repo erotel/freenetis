@@ -25,7 +25,7 @@ $whitelist_member_counter = 0;
 			<?php if (!$member->whitelisted): ?>
 				<tr>
 					<td><?php echo html::anchor('members/show/' . $member->id, $member->id) ?></td>
-					<td><?php echo $member->name ?></td>
+					<td><?php echo e($member->name) ?></td>
 					<td><?php echo number_format((float) $member->balance, 2, ',', ' ') ?></td>
 				</tr>
 			<?php else: $whitelist_member_counter++; ?>
@@ -50,7 +50,7 @@ $whitelist_member_counter = 0;
 				<?php if ($member->whitelisted): ?>
 					<tr>
 						<td><?php echo html::anchor('members/show/' . $member->id, $member->id) ?></td>
-						<td><?php echo $member->name ?></td>
+						<td><?php echo e($member->name) ?></td>
 						<td><?php echo number_format((float) $member->balance, 2, ',', ' ') ?></td>
 					</tr>
 				<?php endif; ?>

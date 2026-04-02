@@ -108,7 +108,7 @@ echo '<pricestax pricehigh="' . round($price_high, 2) .
 	<dic></dic>
 	<tel><?php echo $invoice->phone_number ?></tel>
 	<fax></fax>
-	<email><?php echo $invoice->email ?></email>
+	<email><?php echo e($invoice->email) ?></email>
 	<remark></remark>
 <?php } ?>
 </supplier>
@@ -152,7 +152,7 @@ echo '<pricestax pricehigh="' . round($price_high, 2) .
 	<dic></dic>
 	<tel><?php echo $invoice->phone_number ?></tel>
 	<fax></fax>
-	<email><?php echo $invoice->email ?></email>
+	<email><?php echo e($invoice->email) ?></email>
 	<remark></remark>
 <?php } ?>
 </customer>

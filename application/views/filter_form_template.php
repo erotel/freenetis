@@ -259,7 +259,7 @@ $(document).ready(function(){
 		<select name="query" id="filter-query-select">
 			<option value="NULL">----- <?php echo __("Choose query") ?> -----</option>
 <?php foreach ($queries as $query): ?>
-			<option value="<?php echo $query->id ?>"><?php echo $query->name ?></option>
+			<option value="<?php echo $query->id ?>"><?php echo e($query->name) ?></option>
 <?php endforeach ?>
 		</select>
 		</div>

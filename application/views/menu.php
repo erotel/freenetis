@@ -1,6 +1,6 @@
 <ul>
     <?php foreach ($groups as $group): ?>
-	<li class="<?php echo $group->name ?>"><h2><?php echo $group->label ?></h2>
+	<li class="<?php echo e($group->name) ?>"><h2><?php echo e($group->label) ?></h2>
 	<ul>
 	    <?php foreach ($group->items as $item): ?>
 	    <li>

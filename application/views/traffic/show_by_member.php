@@ -40,7 +40,7 @@
 	
 //--></script>
 
-<h2><?php echo __('Traffic of member') ?> <?php echo $member->name ?></h2><br />
+<h2><?php echo __('Traffic of member') ?> <?php echo e($member->name) ?></h2><br />
 
 <div id="chart"></div>
 

@@ -65,7 +65,7 @@
 		<th colspan="2"><?php echo __('Text') ?></th>
 	</tr>
 	<tr>
-		<td><?php echo $sms->text ?></td>
+		<td><?php echo e($sms->text) ?></td>
 	</tr>
 </table>
 

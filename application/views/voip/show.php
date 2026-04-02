@@ -1,5 +1,5 @@
 <h2>
-	<?php echo __('VoIP account') . ' ' . $voip->name ?>
+	<?php echo __('VoIP account') . ' ' . e($voip->name) ?>
 </h2>
 <br />
 <?php echo $links ?>
@@ -12,7 +12,7 @@
 	</tr>
     <tr>
 		<th><?php echo __('username') ?></th>
-		<td><?php echo $voip->name ?></td>
+		<td><?php echo e($voip->name) ?></td>
 	</tr>
     <tr>
 		<th><?php echo __('password') ?></th>

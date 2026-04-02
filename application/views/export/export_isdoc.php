@@ -10,7 +10,7 @@ echo '<Invoice xmlns="' . $const['namespace'] . '" version="' . $const['isdoc_ve
 <IssueDate><?php echo $invoice->date_inv ?></IssueDate>
 <TaxPointDate><?php echo $invoice->date_vat ?></TaxPointDate>
 <VATApplicable><?php echo $invoice->vat ? 'true' : 'false' ?></VATApplicable>
-<Note><?php echo $invoice->note; ?></Note>
+<Note><?php echo e($invoice->note); ?></Note>
 <LocalCurrencyCode><?php echo $invoice->currency ?></LocalCurrencyCode>
 <CurrRate>1</CurrRate>
 <RefCurrRate>1</RefCurrRate>
@@ -21,7 +21,7 @@ echo '<Invoice xmlns="' . $const['namespace'] . '" version="' . $const['isdoc_ve
 		<ID><?php echo $supplier->organization_identifier ?></ID>
 	</PartyIdentification>
 	<PartyName>
-		<Name><?php echo $supplier->name ?></Name>
+		<Name><?php echo e($supplier->name) ?></Name>
 	</PartyName>
 	<PostalAddress>
 		<StreetName><?php if (!empty($supplier->address_point->street_id))
@@ -88,7 +88,7 @@ echo '<Invoice xmlns="' . $const['namespace'] . '" version="' . $const['isdoc_ve
 		<Name><?php echo $invoice->partner_name ?></Name>
 <?php	} ?>
 		<Telephone><?php echo $invoice->phone_number ?></Telephone>
-		<ElectronicMail><?php echo $invoice->email ?></ElectronicMail>
+		<ElectronicMail><?php echo e($invoice->email) ?></ElectronicMail>
 	</Contact>
 <?php	} ?>
 	</Party>
@@ -100,7 +100,7 @@ echo '<Invoice xmlns="' . $const['namespace'] . '" version="' . $const['isdoc_ve
 		<ID><?php echo $customer->organization_identifier; ?></ID>
 	</PartyIdentification>
 	<PartyName>
-		<Name><?php echo $customer->name ?></Name>
+		<Name><?php echo e($customer->name) ?></Name>
 	</PartyName>
 	<PostalAddress>
 		<StreetName><?php if (!empty($customer->address_point->street_id))
@@ -167,7 +167,7 @@ echo '<Invoice xmlns="' . $const['namespace'] . '" version="' . $const['isdoc_ve
 		<Name><?php echo $invoice->partner_name ?></Name>
 <?php	} ?>
 		<Telephone><?php echo $invoice->phone_number ?></Telephone>
-		<ElectronicMail><?php echo $invoice->email ?></ElectronicMail>
+		<ElectronicMail><?php echo e($invoice->email) ?></ElectronicMail>
 	</Contact>
 <?php } ?>
 	</Party>
@@ -187,7 +187,7 @@ foreach ($invoice->invoice_items as $item) {
 	}
 	?>
 	<InvoiceLine>
-	<ID><?php echo $item->code ?></ID>
+	<ID><?php echo e($item->code) ?></ID>
 	<InvoicedQuantity><?php echo $item->quantity ?></InvoicedQuantity>
 	<LineExtensionAmount><?php echo round($item->quantity * $item->price, 2) ?></LineExtensionAmount>
 	<LineExtensionAmountTaxInclusive><?php echo round($item->quantity * $item_price_vat, 2) ?></LineExtensionAmountTaxInclusive>
@@ -199,7 +199,7 @@ foreach ($invoice->invoice_items as $item) {
 		<VATCalculationMethod><?php echo $const['vat_method'] ?></VATCalculationMethod>
 	</ClassifiedTaxCategory>
 	<Item>
-		<Description><?php echo $item->name ?></Description>
+		<Description><?php echo e($item->name) ?></Description>
 	</Item>
 	</InvoiceLine>
 <?php 

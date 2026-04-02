@@ -21,7 +21,7 @@ echo implode(" | ",$links);
 	</tr>
 	<tr>
 		<th><?php echo __('Name') ?></th>
-		<td><?php echo $aro_group->name ?></td>
+		<td><?php echo e($aro_group->name) ?></td>
 	</tr>
 <?php
 if ($parent && $parent->id)

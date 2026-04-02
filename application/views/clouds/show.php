@@ -1,4 +1,4 @@
-<h2><?php echo $cloud->name ?></h2>
+<h2><?php echo e($cloud->name) ?></h2>
 <?php
 
 if ($this->acl_check_edit('Clouds_Controller', 'clouds'))

@@ -30,10 +30,10 @@ if ($this->acl_check_new('Devices_Controller', 'devices', $member_id))
 				<a name="device_<?php echo $id ?>_link" href="<?php echo url_lang::base() ?>devices/show/<?php echo $id ?>" title="<?php echo __('Show device') ?>"><?php echo __('device') ?> <?php echo $device['name'] ?> (<?php echo $device['type'] ?>)</a>
 				<img src="<?php echo url::base() ?>media/images/icons/ico_minus.gif" id="device_<?php echo $id ?>_button" class="device_button">
 				<?php if ($this->acl_check_edit('Devices_Controller', 'devices', $member_id)): ?>
-					<?php echo html::anchor('devices/edit/' . $id, html::image(array('src' => 'media/images/icons/gtk_edit.png')), array('title' => __('Edit device'))) ?>
+					<?php echo html::anchor('devices/edit/' . $id, SafeHtml::make(html::image(array('src' => 'media/images/icons/gtk_edit.png'))), array('title' => __('Edit device'))) ?>
 				<?php endif ?>
 				<?php if ($this->acl_check_delete('Devices_Controller', 'devices', $member_id)): ?>
-					<?php echo html::anchor('devices/delete/' . $id, html::image(array('src' => 'media/images/icons/delete.png')), array('title' => __('Delete device'), 'class' => 'delete_link')) ?>
+					<?php echo html::anchor('devices/delete/' . $id, SafeHtml::make(html::image(array('src' => 'media/images/icons/delete.png'))), array('title' => __('Delete device'), 'class' => 'delete_link')) ?>
 				<?php endif ?> 
 			</h3>
 

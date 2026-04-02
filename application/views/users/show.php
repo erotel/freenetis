@@ -117,7 +117,7 @@ echo implode (' | ', $links);
 	<tr>
 		<td colspan="2">
 			<div class="ssh-key">
-				<?php echo $key->key ?><br />
+				<?php echo e($key->key) ?><br />
 				<?php echo html::anchor('users_keys/delete/'.$key->id, __('Delete'), array('class' => 'delete_link ssh-key-link')) ?>
 				<?php echo html::anchor('users_keys/edit/'.$key->id, __('Edit'), array('class' => 'ssh-key-link')) ?>
 				<div class="clear"></div>

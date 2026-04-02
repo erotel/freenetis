@@ -33,7 +33,7 @@
 					);
 				?>
 				<?php else: ?>
-				<?php echo $connected_device->name ?>
+				<?php echo e($connected_device->name) ?>
 				<?php endif?>
 				<?php echo html::anchor(
 					'devices/show/'.$connected_device->id,

@@ -20,7 +20,7 @@ echo implode(' | ',$links);
 	</tr>
 	<tr>
 		<th><?php echo __('Description') ?></th>
-		<td><?php echo $acl->note ?></td>
+		<td><?php echo e($acl->note) ?></td>
 	</tr>
 </table>
 <br /><br />
