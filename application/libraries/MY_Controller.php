@@ -21,7 +21,7 @@ define('DATABASE_UPGRADE_NOT_ENABLED', 11);
 define('RECORD', 4);
 define('PAGE', 5);
 define('WRITABLE', 7);
-define('READONLY', 8);
+define('FN_READONLY', 8);
 
 // numbers of warnings, their identifier numbers have to differ from error messages
 // for example when programmer misleads error and warning
@@ -381,7 +381,7 @@ class Controller extends Controller_Core
 				$message = url_lang::lang('states.Directory or file is not writable.');
 				$response_code = 500; // Internal server error
 				break;
-			case READONLY:
+			case FN_READONLY:
 				$message = url_lang::lang('states.Item is read only.');
 				$response_code = 403; // Internal server error
 				break;

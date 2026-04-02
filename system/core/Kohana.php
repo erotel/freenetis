@@ -520,8 +520,9 @@ class Kohana {
 	 */
 	public static function exception_handler($exception, $message = NULL, $file = NULL, $line = NULL)
 	{
-		// PHP errors have 5 args, always
-		$PHP_ERROR = (func_num_args() === 5);
+		// PHP errors: 5 args in PHP 7, 4 args in PHP 8 ($context removed)
+		// Distinguish by checking if $exception is an int (error code) vs object
+		$PHP_ERROR = is_int($exception);
 
 		// Test to see if errors should be displayed
 		if ($PHP_ERROR AND (error_reporting() & $exception) === 0)
@@ -1078,8 +1079,8 @@ class Kohana_Exception extends Exception {
 
 	// Error code, filename, line number
 	protected $code = E_KOHANA;
-	protected $file = FALSE;
-	protected $line = FALSE;
+	protected string $file = '';
+	protected int $line = 0;
 
 	/**
 	 * Set exception message.
@@ -1185,8 +1186,8 @@ class Kohana_404_Exception extends Kohana_Exception {
 		}
 
 		$this->message = Kohana::lang('page_not_found', $page);
-		$this->file    = FALSE;
-		$this->line    = FALSE;
+		$this->file    = '';
+		$this->line    = 0;
 
 		$this->template = $template;
 	}

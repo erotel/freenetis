@@ -35,7 +35,7 @@ $kohana_system = 'system';
  * Set the error reporting level. Unless you have a special need, E_ALL is a
  * good level for error reporting.
  */
-error_reporting(E_ALL & ~E_STRICT);
+error_reporting(E_ALL & ~E_DEPRECATED);
 
 /**
  * Turning off display_errors will effectively disable Kohana error display

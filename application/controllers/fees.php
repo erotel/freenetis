@@ -303,7 +303,7 @@ class Fees_Controller extends Controller
 
 		// item is read only
 		if ($fee->readonly)
-			Controller::error(READONLY);
+			Controller::error(FN_READONLY);
 
 		$enum_type_name_model = new Enum_type_name_Model();
 		$enum_type_name = $enum_type_name_model->where('type_name', 'Fees types')->find();
@@ -419,7 +419,7 @@ class Fees_Controller extends Controller
 
 		// item is read only
 		if ($fee->readonly)
-			Controller::error(READONLY);
+			Controller::error(FN_READONLY);
 
 		// fee is used on some tariffs
 		if ($fee->members_fees->count())

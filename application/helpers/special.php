@@ -83,12 +83,12 @@ class special
 			{
 				$return .= ' '.html::anchor(
 						url::base().$index_page.$ind.'/'.url_lang::current(),
-						html::image(array
+						SafeHtml::make(html::image(array
 						(
 							'src'	=> 'media/images/icons/flags/'.$ind.'.'.$extension,
 							'alt'	=> $ind,
 							'title'	=> $val)
-						)
+						))
 				);
 			}
 			return $return;

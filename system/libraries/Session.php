@@ -188,11 +188,11 @@ class Session
 		if (version_compare(PHP_VERSION, '5.2', '>='))
 		{
 			session_set_cookie_params(
-					Config::get('session_expiration'),
+					(int) Config::get('session_expiration'),
 					//Config::get('cookie.path'),
-					'/', Config::get('cookie.domain'),
-					Config::get('cookie.secure'),
-					Config::get('cookie.httponly')
+					'/', (string) Config::get('cookie.domain'),
+					(bool) Config::get('cookie.secure'),
+					(bool) Config::get('cookie.httponly')
 			);
 		}
 		else

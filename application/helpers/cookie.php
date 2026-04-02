@@ -56,12 +56,13 @@ class cookie {
 		}
 
 		// Expiration timestamp
-		$expire = ($expire == 0) ? 0 : time() + (int) $expire;
+		// PHP 8: '' == 0 is FALSE, so check empty() first to treat '' as session cookie
+		$expire = (empty($expire) || (int) $expire === 0) ? 0 : time() + (int) $expire;
 
 		// Only set httponly if possible
 		return (version_compare(PHP_VERSION, '5.2', '>='))
-			? setcookie($prefix.$name, $value, $expire, $path, $domain, $secure, $httponly)
-			: setcookie($prefix.$name, $value, $expire, $path, $domain, $secure);
+			? setcookie($prefix.$name, $value, $expire, (string) $path, (string) $domain, (bool) $secure, (bool) $httponly)
+			: setcookie($prefix.$name, $value, $expire, (string) $path, (string) $domain, (bool) $secure);
 	}
 
 	/**
