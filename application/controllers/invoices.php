@@ -238,6 +238,9 @@ class Invoices_Controller extends Controller
 
 		// redirect to adding new invoice items
 		if ($_POST) {
+			if (!Csrf::check())
+				Controller::error(ACCESS);
+
 			$item_count = (int) $_POST['item_count'];
 			url::redirect('invoice_items/add/' . $invoice_id . '/' . $item_count);
 		}

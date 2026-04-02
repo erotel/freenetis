@@ -265,7 +265,7 @@ class Registration_Controller extends Controller
 					$enum_type = new Enum_type_Model();
 
 					$user->login = $form_data['login'];
-					$user->password = sha1($form_data['password']);
+					$user->password = password_hash($form_data['password'], PASSWORD_BCRYPT);
 					$user->name = $form_data['name'];
 					$user->middle_name = $form_data['middle_name'];
 					$user->surname = $form_data['surname'];

@@ -57,6 +57,8 @@ class Network_Controller extends Controller
     );
 
     if ($_POST) {
+      if (!Csrf::check()) self::error(ACCESS);
+
       $data['public_ip']  = trim($this->get_scalar('public_ip', '', 'post'));
       $data['private_ip'] = trim($this->get_scalar('private_ip', '', 'post'));
       $data['enabled']    = $this->input->post('enabled') ? 1 : 0;
@@ -99,6 +101,8 @@ class Network_Controller extends Controller
     );
 
     if ($_POST) {
+      if (!Csrf::check()) self::error(ACCESS);
+
       //$data['public_ip']  = trim($this->get_scalar('public_ip', '', 'post'));
       $data['private_ip'] = trim($this->get_scalar('private_ip', '', 'post'));
       $data['enabled']    = $this->input->post('enabled') ? 1 : 0;
@@ -206,6 +210,8 @@ class Network_Controller extends Controller
     );
 
     if ($_POST) {
+      if (!Csrf::check()) self::error(ACCESS);
+
       $data['public_ip'] = trim($this->get_scalar('public_ip', '', 'post'));
       $data['private_ip'] = trim($this->get_scalar('private_ip', '', 'post'));
 
@@ -264,6 +270,8 @@ class Network_Controller extends Controller
     );
 
     if ($_POST) {
+      if (!Csrf::check()) self::error(ACCESS);
+
       $data['public_ip'] = trim($this->get_scalar('public_ip', '', 'post'));
       $data['private_ip'] = trim($this->get_scalar('private_ip', '', 'post'));
 

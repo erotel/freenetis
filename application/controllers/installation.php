@@ -502,7 +502,7 @@ class Installation_Controller extends Controller
 						$user->surname = $form_data['login'];
 						$user->birthday = date('Y-m-d', $form_data['foundation']);
 						$user->login = $form_data['login'];
-						$user->password = sha1($form_data['password']);
+						$user->password = password_hash($form_data['password'], PASSWORD_BCRYPT);
 						$user->type = User_Model::MAIN_USER;
 						$user->application_password = security::generate_password();
 						$user->save_throwable();

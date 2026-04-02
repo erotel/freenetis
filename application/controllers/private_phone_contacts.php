@@ -139,6 +139,12 @@ class Private_phone_contacts_Controller extends Controller
 		{
 			if ($_POST && count($_POST))
 			{
+				if (!Csrf::check())
+				{
+					echo json_encode(array('error' => __('Invalid request.')));
+					return;
+				}
+
 				$im_names = @$_POST['im_name'];
 				$im_namefs = @$_POST['im_namef'];
 				$im_namels = @$_POST['im_namel'];

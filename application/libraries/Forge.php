@@ -219,8 +219,15 @@ class Forge {
 	 */
 	public function validate()
 	{
+		// CSRF check for POST forms – rejects the request immediately if the
+		// token is missing or does not match the session token.
+		if (strtolower($this->attr['method']) === 'post' && !Csrf::check())
+		{
+			return FALSE;
+		}
+
 		$status = TRUE;
-		
+
 		// validate inputs
 		foreach($this->inputs as $input)
 		{

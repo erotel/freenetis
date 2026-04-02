@@ -37,9 +37,13 @@ class Login_Controller extends Controller
 		if ($this->input->post('submit') != '')
 		{
 			// test if cookie is enabled
-			if (!isset($_COOKIE['testcookie'])) 
+			if (!isset($_COOKIE['testcookie']))
 			{
 				$error = __('Cookies must be enabled.');
+			}
+			elseif (!Csrf::check())
+			{
+				$error = __('Invalid request, please try again.');
 			}
 			else
 			{

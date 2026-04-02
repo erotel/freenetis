@@ -79,7 +79,12 @@ class Tools_Controller extends Controller
 			Controller::error(ACCESS);
 		
 		if (!$this->input->post('query') == NULL)
+		{
+			if (!Csrf::check())
+				Controller::error(ACCESS);
+
 			$hostname = $this->input->post('query');
+		}
 
 		$winfo = '';
 

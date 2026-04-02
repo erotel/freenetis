@@ -73,6 +73,7 @@
 
 	<?php if ($phone_invoice_user_lock_enabled && $phone_invoice->locked == 0): ?>
 	<form method="post">
+			<?php echo Csrf::field() ?>
 			<?php if ($phone_invoice_user->locked == 1): ?>
 			<button type="submit" name="phone_user_invoice_lock" value="unlock" class="button_big">
 				<?php echo html::image(array('src' => 'media/images/states/locked.png')); ?>

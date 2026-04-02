@@ -41,6 +41,7 @@ foreach ($defaults as $k => $v) {
 <?php endif; ?>
 
 <form method="post" action="">
+  <?php echo Csrf::field() ?>
   <table class="extended">
 
     <!-- PUBLIC IP -->

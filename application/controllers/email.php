@@ -69,6 +69,11 @@ class Email_Controller extends Controller
 	 */
 	public function send()
 	{
+		if (!Csrf::check())
+		{
+			Controller::error(ACCESS);
+		}
+
 		if ($this->input->post('email_from') == NULL ||
 			$this->input->post('email_to') == NULL ||
 			$this->input->post('email_member_id') == NULL)

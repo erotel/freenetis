@@ -47,6 +47,12 @@ class form {
 		// Add hidden fields immediate after opening tag
 		empty($hidden) or $form .= form::hidden($hidden);
 
+		// Auto-inject CSRF token for all POST forms
+		if (strtolower($attr['method']) === 'post')
+		{
+			$form .= form::hidden(Csrf::TOKEN_NAME, Csrf::token());
+		}
+
 		return $form;
 	}
 

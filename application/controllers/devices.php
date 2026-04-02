@@ -4116,6 +4116,9 @@ class Devices_Controller extends Controller
 			
 			if ($_POST)
 			{
+				if (!Csrf::check())
+					Controller::error(ACCESS);
+
 				$ifaces_vlan_model = new Ifaces_vlan_Model();
 				
 				try

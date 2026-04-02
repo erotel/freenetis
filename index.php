@@ -40,8 +40,13 @@ error_reporting(E_ALL & ~E_STRICT);
 /**
  * Turning off display_errors will effectively disable Kohana error display
  * and logging. You can turn off Kohana errors in application/config/config.php
+ * Debug mode is active when APP_DEBUG=true env variable is set OR when
+ * application/config/debug.php exists.
  */
-ini_set('display_errors', TRUE);
+$app_debug = getenv('APP_DEBUG') === 'true'
+	|| file_exists(__DIR__ . '/' . $kohana_application . '/config/debug.php');
+ini_set('display_errors', $app_debug ? '1' : '0');
+unset($app_debug);
 
 /**
  * If you rename all of your .php files to a different extension, set the new

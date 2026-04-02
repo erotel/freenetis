@@ -208,7 +208,7 @@ class Forgotten_password_Controller extends Controller
 			if ($form->validate()) {
 				$form_data = $form->as_array(FALSE);
 
-				$user->password = sha1($form_data['password']);
+				$user->password = password_hash($form_data['password'], PASSWORD_BCRYPT);
 				$user->password_request = null;
 				$user->save();
 

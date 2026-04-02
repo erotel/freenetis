@@ -882,7 +882,7 @@ class Users_Controller extends Controller
 
 			$user_data = new User_Model;
 			$user_data->login = $form_data['username'];
-			$user_data->password = sha1($form_data['password']);
+			$user_data->password = password_hash($form_data['password'], PASSWORD_BCRYPT);
 			$user_data->pre_title = $form_data['pre_title'];
 			$user_data->name = $form_data['name'];
 			$user_data->middle_name = $form_data['middle_name'];
@@ -1057,7 +1057,7 @@ class Users_Controller extends Controller
 			$form_data = $form->as_array(FALSE);
 			$user = new User_Model($user_id);
 			$user->set_logger(FALSE);
-			$user->password = sha1($form_data['password']);
+			$user->password = password_hash($form_data['password'], PASSWORD_BCRYPT);
 
 			if ($user->save())
 			{
@@ -1260,21 +1260,33 @@ class Users_Controller extends Controller
 		$user_model = new User_Model();
 		$user_model->select('password')->where('id', $this->_user_id)->find();
 		
-		if ($user_model->password != sha1($input->value) ||
-			trim($input->value) == '')
+		$stored  = $user_model->password;
+		$plain   = $input->value;
+		$valid   = FALSE;
+
+		if (trim($plain) !== '')
 		{
-			$error = TRUE;
-			
-			// see Settings for exclamation
-			if (Settings::get('pasword_check_for_md5'))
+			if (password_verify($plain, $stored))
 			{
-				$error = ($user_model->password != md5($input->value));
+				// bcrypt hash – OK
+				$valid = TRUE;
 			}
-			
-			if ($error)
+			elseif (strlen($stored) === 40 && hash_equals($stored, sha1($plain)))
 			{
-				$input->add_error('required', __('Wrong password.'));
+				// legacy sha1 – OK
+				$valid = TRUE;
 			}
+			elseif (Settings::get('pasword_check_for_md5') &&
+				strlen($stored) === 32 && hash_equals($stored, md5($plain)))
+			{
+				// legacy md5 – OK
+				$valid = TRUE;
+			}
+		}
+
+		if (!$valid)
+		{
+			$input->add_error('required', __('Wrong password.'));
 		}
 	}
 

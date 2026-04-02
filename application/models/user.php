@@ -427,32 +427,47 @@ class User_Model extends ORM
 	 */
 	public function login_request($username = '', $password = '')
 	{
-		$query = $this->db->from('users')->select('id')->where(array
-		(
-			'login' => $username,
-			'password' => sha1($password)
-		))->get();
-		
-		if ($query->count())
+		$query = $this->db->from('users')
+			->select('id, password')
+			->where('login', $username)
+			->get();
+
+		if (!$query->count())
 		{
-			return $query->current()->id;
+			return 0;
 		}
-		
-		// see Settings for exclamation
-		if (Settings::get('pasword_check_for_md5')) 
+
+		$row    = $query->current();
+		$stored = $row->password;
+		$id     = (int) $row->id;
+
+		// Modern bcrypt hash
+		if (password_verify($password, $stored))
 		{
-			$query = $this->db->from('users')->select('id')->where(array
-			(
-				'login' => $username,
-				'password' => md5($password)
-			))->get();
-			
-			if ($query->count())
-			{
-				return $query->current()->id;
-			}
+			return $id;
 		}
-		
+
+		// Legacy sha1 hash – migrate to bcrypt on-the-fly
+		if (strlen($stored) === 40 && hash_equals($stored, sha1($password)))
+		{
+			$this->db->update('users',
+				array('password' => password_hash($password, PASSWORD_BCRYPT)),
+				array('id' => $id)
+			);
+			return $id;
+		}
+
+		// Legacy md5 hash – migrate to bcrypt on-the-fly
+		if (Settings::get('pasword_check_for_md5') &&
+			strlen($stored) === 32 && hash_equals($stored, md5($password)))
+		{
+			$this->db->update('users',
+				array('password' => password_hash($password, PASSWORD_BCRYPT)),
+				array('id' => $id)
+			);
+			return $id;
+		}
+
 		return 0;
 	}
 

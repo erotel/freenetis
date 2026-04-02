@@ -310,6 +310,7 @@
     <h3><?php echo __('Imported contacts') ?></h3><br />
     <div id="import_message" class="message" style="display: none;"></div>
     <form action="" id="import_form" method="post">
+	<?php echo Csrf::field() ?>
 	<table id="import_form_table" class="main grid_table">
 	    <tr>
 			<th><?php echo __('Name') ?></th>

@@ -2755,7 +2755,7 @@ class Members_Controller extends Controller
 						$user->birthday	= date("Y-m-d", $form_data['birthday']);
 					}
 
-					$user->password	= sha1($form_data['password']);
+					$user->password	= password_hash($form_data['password'], PASSWORD_BCRYPT);
 					$user->type = User_Model::MAIN_USER;
 					$user->application_password = security::generate_password();
 

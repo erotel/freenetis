@@ -906,6 +906,9 @@ class Phone_invoices_Controller extends Controller
 		// save locking by user
 		if ($_POST && array_key_exists('phone_user_invoice_lock', $_POST))
 		{
+			if (!Csrf::check())
+				Controller::error(ACCESS);
+
 			$phone_inv_user_model->locked = ($_POST['phone_user_invoice_lock'] ==  'lock') ? 1 : 0;
 			$phone_inv_user_model->save();
 			unset($_POST['phone_user_invoice_lock']);
