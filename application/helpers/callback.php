@@ -1709,7 +1709,7 @@ class callback
 
 				echo html::anchor(
 					'private_phone_contacts/edit/' . $pucontact_id,
-					html::image(array('src' => 'media/images/icons/gtk_edit.png')),
+					SafeHtml::make(html::image(array('src' => 'media/images/icons/gtk_edit.png'))),
 					array(
 						'rel' => 'dialog',
 						'class' => 'link_private_contact_edit',
@@ -1719,7 +1719,7 @@ class callback
 
 				echo ' ' . html::anchor(
 					'private_phone_contacts/delete/' . $pucontact_id,
-					html::image(array('src' => 'media/images/icons/delete.png')),
+					SafeHtml::make(html::image(array('src' => 'media/images/icons/delete.png'))),
 					array(
 						'rel' => 'dialog',
 						'class' => 'link_private_contact_delete',
@@ -1734,7 +1734,7 @@ class callback
 					echo ' ' . html::anchor(
 						'phone_invoices/show_history/' .
 							$pucontact->user_id . '/' . $item->number . '/' . $item->phone_invoice_user_id,
-						html::image(array('src' => 'media/images/icons/history.png')),
+						SafeHtml::make(html::image(array('src' => 'media/images/icons/history.png'))),
 						array(
 							'rel' => 'dialog',
 							'class' => 'link_private_contact_delete',
@@ -1753,7 +1753,7 @@ class callback
 
 					echo html::anchor(
 						'private_phone_contacts/add/' . $item->user_id . '/' . $item->number,
-						html::image(array('src' => 'media/images/icons/ico_add.gif')),
+						SafeHtml::make(html::image(array('src' => 'media/images/icons/ico_add.gif'))),
 						array(
 							'rel' => 'dialog',
 							'class' => 'link_private_contact_add',
@@ -1766,7 +1766,7 @@ class callback
 					echo ' ' . html::anchor(
 						'phone_invoices/show_history/' .
 							$item->user_id . '/' . $item->number . '/' . $item->phone_invoice_user_id,
-						html::image(array('src' => 'media/images/icons/history.png')),
+						SafeHtml::make(html::image(array('src' => 'media/images/icons/history.png'))),
 						array(
 							'rel' => 'dialog',
 							'class' => 'link_private_contact_delete',

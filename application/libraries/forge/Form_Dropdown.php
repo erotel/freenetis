@@ -55,11 +55,11 @@ class Form_Dropdown extends Form_Input {
 		if ($add_button)
 		{
 			$html .= '&nbsp;' . html::anchor(
-				$this->data['add_button'], html::image(array
+				$this->data['add_button'], SafeHtml::make(html::image(array
 				(
 					'src'	=> 'media/images/icons/ico_add.gif',
 					'id'	=> $this->data['name'] . '_add_button'
-				)), array
+				))), array
 				(
 					'class'	=> 'popup-add popup_link',
 					'title' => $add_button_title

@@ -880,7 +880,7 @@ class VoIP_calls_Controller extends Controller
 					
 					$out .= html::anchor(
 							'private_phone_contacts/edit/' . $puc_id,
-							html::image('media/images/icons/gtk_edit.png'), array
+							SafeHtml::make(html::image('media/images/icons/gtk_edit.png')), array
 							(
 								'rel' => 'dialog',
 								'class' => 'link_private_contact_edit',
@@ -890,7 +890,7 @@ class VoIP_calls_Controller extends Controller
 					
 					$out .= html::anchor(
 							'private_phone_contacts/delete/' .
-							$puc_id, html::image('media/images/icons/delete.png'), array
+							$puc_id, SafeHtml::make(html::image('media/images/icons/delete.png')), array
 							(
 								'rel' => 'dialog',
 								'class' => 'delete_link link_private_contact_delete',
@@ -907,7 +907,7 @@ class VoIP_calls_Controller extends Controller
 						return $pretty_number . ' ' . html::anchor(
 								'private_phone_contacts/add/' .
 								$user_id . '/' . $country_code . $number,
-								html::image('media/images/icons/ico_add.gif')
+								SafeHtml::make(html::image('media/images/icons/ico_add.gif'))
 						);
 					}
 					

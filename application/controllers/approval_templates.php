@@ -445,7 +445,7 @@ class Approval_templates_Controller extends Controller
 			{
 				echo html::anchor(
 						'approval_template_items/move_up/'.$item->item_id,
-						html::image('media/images/icons/uparrow.png')
+						SafeHtml::make(html::image('media/images/icons/uparrow.png'))
 				);
 			}
 			
@@ -456,7 +456,7 @@ class Approval_templates_Controller extends Controller
 			{
 				echo html::anchor(
 						'approval_template_items/move_down/'.$item->item_id,
-						html::image('media/images/icons/downarrow.png')
+						SafeHtml::make(html::image('media/images/icons/downarrow.png'))
 				);
 			}				
 		}

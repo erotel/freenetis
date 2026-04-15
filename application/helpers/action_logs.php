@@ -64,11 +64,11 @@ class action_logs {
 		{
 			// link to details
 			$html = html::anchor('logs/show_object/'.$table.'/'.$object_id,
-					html::image(array
+					SafeHtml::make(html::image(array
 					(
 						'src' => 'media/images/icons/action_logs.png',
 						'title' => __('Show object action logs')
-					))).
+					)))).
 					'&nbsp<span title="'.__('Last changed date').'">'.$time.'</span>';
 		}
 		
