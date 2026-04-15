@@ -140,6 +140,8 @@ class Sms_message_Model extends ORM
 				IFNULL(e_s.value, m_s.type) AS sender_type,
 				IFNULL(e_r.value, m_r.type) AS receiver_type
 			FROM sms_messages sms
+			JOIN (SELECT id FROM sms_messages ORDER BY id DESC LIMIT 200) AS last200
+				ON sms.id = last200.id
 			LEFT JOIN contacts c_s ON c_s.type = ? AND INSTR(sms.sender, c_s.value) > 0
 			LEFT JOIN users_contacts uc_s ON uc_s.contact_id = c_s.id
 			LEFT JOIN users u_s ON uc_s.user_id = u_s.id
@@ -228,10 +230,12 @@ class Sms_message_Model extends ORM
 		{
 			$where = 'WHERE ' . $filter_sql;
 		}
-		// Return the total number of records in a table
+		// Return the total number of records in a table (limited to last 200)
 			return $this->db->query("
 				SELECT COUNT(*) AS total
 				FROM sms_messages sms
+				JOIN (SELECT id FROM sms_messages ORDER BY id DESC LIMIT 200) AS last200
+					ON sms.id = last200.id
 				$where
 			")->current()->total;
 		}

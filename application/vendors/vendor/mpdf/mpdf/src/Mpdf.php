@@ -9097,7 +9097,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 			$v = explode("=", $v, 2);
 			$sp[$v[0]] = $v[1];
 		}
-		return (unserialize($sp['objattr']));
+		return (@unserialize($sp['objattr']));
 	}
 
 	function inlineObject($type, $x, $y, $objattr, $Lmargin, $widthUsed, $maxWidth, $lineHeight, $paint = false, $is_table = false)

@@ -76,8 +76,8 @@ class Email_queue_Model	extends ORM
 		$order_by_direction = 'ASC',
 		$filter_sql = ''
 	) {
-		// args
-		$args = array(Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL, self::STATE_OK);
+		// args: subquery state, fc.type, tc.type, WHERE state
+		$args = array(self::STATE_OK, Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL, self::STATE_OK);
 
 		// sql body
 		$body = "SELECT eq.id, eq.from, eq.to, eq.subject, eq.state, eq.access_time,
@@ -86,6 +86,8 @@ class Email_queue_Model	extends ORM
 					tuc.user_id AS to_user_id,
 					CONCAT(tu.name,' ',tu.surname) AS to_user_name
 				FROM email_queues eq
+				JOIN (SELECT id FROM email_queues WHERE state = ? ORDER BY id DESC LIMIT 200) AS last200
+					ON eq.id = last200.id
 				LEFT JOIN contacts fc ON eq.from = fc.value AND fc.type = ?
 				LEFT JOIN users_contacts fuc ON fc.id = fuc.contact_id
 				LEFT JOIN users fu ON fuc.user_id = fu.id
@@ -124,8 +126,7 @@ class Email_queue_Model	extends ORM
 		if (empty($filter_sql)) {
 			return  $this->db->query("
 				SELECT COUNT(*) AS total
-				FROM email_queues eq
-				WHERE eq.state = ?
+				FROM (SELECT id FROM email_queues WHERE state = ? ORDER BY id DESC LIMIT 200) AS last200
 			", self::STATE_OK)->current()->total;
 		}
 
@@ -144,6 +145,8 @@ class Email_queue_Model	extends ORM
 					tuc.user_id AS to_user_id,
 					CONCAT(tu.name,' ',tu.surname) AS to_user_name
 				FROM email_queues eq
+				JOIN (SELECT id FROM email_queues WHERE state = ? ORDER BY id DESC LIMIT 200) AS last200
+					ON eq.id = last200.id
 				LEFT JOIN contacts fc ON eq.from = fc.value AND fc.type = ?
 				LEFT JOIN users_contacts fuc ON fc.id = fuc.contact_id
 				LEFT JOIN users fu ON fuc.user_id = fu.id
@@ -154,6 +157,7 @@ class Email_queue_Model	extends ORM
 			) eq
 			$where
 		", array(
+			self::STATE_OK,
 			Contact_Model::TYPE_EMAIL,
 			Contact_Model::TYPE_EMAIL,
 			self::STATE_OK
@@ -276,6 +280,8 @@ class Email_queue_Model	extends ORM
 				tuc.user_id,
 				CONCAT(tu.name,' ',tu.surname) AS to_user_name
 			FROM email_queues eq
+			JOIN (SELECT id FROM email_queues WHERE state <> ? ORDER BY id DESC LIMIT 200) AS last200
+				ON eq.id = last200.id
 			LEFT JOIN contacts fc ON eq.from = fc.value AND fc.type = ?
 			LEFT JOIN users_contacts fuc ON fc.id = fuc.contact_id
 			LEFT JOIN users fu ON fuc.user_id = fu.id
@@ -287,7 +293,7 @@ class Email_queue_Model	extends ORM
 			$having
 			ORDER BY " . $this->db->escape_column($order_by) . " $order_by_direction
 			LIMIT " . intval($limit_from) . "," . intval($limit_results) . "
-		", Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL, self::STATE_OK);
+		", array(self::STATE_OK, Contact_Model::TYPE_EMAIL, Contact_Model::TYPE_EMAIL, self::STATE_OK));
 	}
 
 	/**
@@ -302,8 +308,7 @@ class Email_queue_Model	extends ORM
 		if (empty($filter_sql)) {
 			return  $this->db->query("
 				SELECT COUNT(*) AS total
-				FROM email_queues eq
-				WHERE eq.state <> ?
+				FROM (SELECT id FROM email_queues WHERE state <> ? ORDER BY id DESC LIMIT 200) AS last200
 			", self::STATE_OK)->current()->total;
 		}
 
@@ -322,6 +327,8 @@ class Email_queue_Model	extends ORM
 					tuc.user_id AS to_user_id,
 					CONCAT(tu.name,' ',tu.surname) AS to_user_name
 				FROM email_queues eq
+				JOIN (SELECT id FROM email_queues WHERE state <> ? ORDER BY id DESC LIMIT 200) AS last200
+					ON eq.id = last200.id
 				LEFT JOIN contacts fc ON eq.from = fc.value AND fc.type = ?
 				LEFT JOIN users_contacts fuc ON fc.id = fuc.contact_id
 				LEFT JOIN users fu ON fuc.user_id = fu.id
@@ -332,6 +339,7 @@ class Email_queue_Model	extends ORM
 			) eq
 			$where
 		", array(
+			self::STATE_OK,
 			Contact_Model::TYPE_EMAIL,
 			Contact_Model::TYPE_EMAIL,
 			self::STATE_OK
